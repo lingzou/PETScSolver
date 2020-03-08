@@ -29,6 +29,7 @@ public:
   void writeSolution();
 
   void FillJacobianMatrixNonZeroPattern(Mat & P_Mat);
+  void computeJacobianMatrix(Mat & P_Mat);
 
 protected:
   double _dt;

@@ -15,6 +15,7 @@ struct ApplicationCtx
   SNES            snes;       // SNES
   KSP             ksp;        // KSP
 
+  PetscBool       hasFDColoring;
   MatFDColoring   fdcoloring;   // MatFDColoring
   Mat             J_Mat;        // Jacobian matrix
   Mat             P_Mat;        // Preconditioning matrix
@@ -33,6 +34,8 @@ struct ApplicationCtx
   void FreePETScWorkSpace();
   void setupMatrices();
 };
+
+PetscErrorCode FormJacobian(SNES, Vec, Mat, Mat, void*);
 
 void
 ApplicationCtx::setupPETScWorkSpace()
@@ -64,8 +67,8 @@ ApplicationCtx::setupPETScWorkSpace()
   setupMatrices();
 
   // Setup KSP
-  PetscReal ksp_rtol = 1.0e-3;
-  PetscInt ksp_maxits = 30;
+  PetscReal ksp_rtol = 1.0e-3;  // Hard-coded value
+  PetscInt ksp_maxits = 30;     // Hard-coded value
   SNESGetKSP(snes, &ksp);
   KSPSetTolerances(ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, ksp_maxits);
 
@@ -76,8 +79,22 @@ ApplicationCtx::setupPETScWorkSpace()
 void
 ApplicationCtx::setupMatrices()
 {
-  bool fd_coloring = true;
-  if(fd_coloring)
+  bool exact_jacobian = true;     // True if want to use hand-calculated Jacobian
+  hasFDColoring = PETSC_FALSE;    // True if finite differencing Jacobian
+  if(exact_jacobian)
+  {
+    // Create Matrix-free context
+    // MatCreateSNESMF(snes, &J_MatrixFree); Why Jacobian-free not working here?
+
+    // Let the problem setup Jacobian matrix sparsity
+    myPETScProblem->FillJacobianMatrixNonZeroPattern(P_Mat);
+
+    // See PETSc example:
+    // https://www.mcs.anl.gov/petsc/petsc-current/src/snes/examples/tutorials/ex1.c.html
+    // Use hand-calculated Jacobian
+    SNESSetJacobian(snes, P_Mat, P_Mat, FormJacobian, this);
+  }
+  else if(hasFDColoring)
   {
     // Create Matrix-free context
     MatCreateSNESMF(snes, &J_MatrixFree);
@@ -149,7 +166,8 @@ ApplicationCtx::FreePETScWorkSpace()
   SNESDestroy(&snes);
 
   // Destroy MatFDColoring
-  MatFDColoringDestroy(&fdcoloring);
+  if (hasFDColoring)
+    MatFDColoringDestroy(&fdcoloring);
 
   delete myPETScProblem;
 }
@@ -177,6 +195,15 @@ PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
 
   // assemble final residuals: f = transient - RHS
   VecWAXPY(f, -1.0, appCtx->res_RHS, appCtx->res_transient);
+
+  return 0;
+}
+
+PetscErrorCode FormJacobian(SNES snes, Vec u, Mat jac, Mat B, void * AppCtx)
+{
+  ApplicationCtx * appCtx = (ApplicationCtx *) AppCtx;
+  HeatConduction1D * myProblem = appCtx->myPETScProblem;
+  myProblem->computeJacobianMatrix(B);
 
   return 0;
 }

@@ -79,10 +79,9 @@ HeatConduction1D::updateSolution(double * u, TimeStepIndex index)
 void
 HeatConduction1D::transientResidual(double * res)
 {
-  // zero these two residuals
-  // will apply hard-coded boundary conditions later
-  res[0] = 0.0;
-  res[n_DOFs-1] = 0.0;
+  // hard-coded BC; T_left = 0; T_right = 0
+  res[0] = T[0] - 0;
+  res[n_Node-1] = T[n_DOFs-1] - 0;
 
   // The remaining nodes
   for (unsigned int i = 1; i < n_DOFs-1; i++)
@@ -92,9 +91,7 @@ HeatConduction1D::transientResidual(double * res)
 void
 HeatConduction1D::RHS(double * rhs)
 {
-  // hard-coded BC; T_left = 0; T_right = 0
-  rhs[0] = T[0] - 0;
-  rhs[n_Node-1] = T[n_DOFs-1] - 0;
+  // no spatial terms for the first and last node (applied Direchlet BC)
 
   for (unsigned int i = 1; i < n_DOFs-1; i++)
   {
@@ -135,4 +132,31 @@ HeatConduction1D::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
   /*
   MatView(P_Mat, PETSC_VIEWER_STDOUT_SELF);
   MatView(P_Mat, PETSC_VIEWER_DRAW_WORLD); */
+}
+
+void
+HeatConduction1D::computeJacobianMatrix(Mat & P_Mat)
+{
+  PetscInt     row, col;
+  PetscScalar  v = 1.0;
+
+  row = 0; col = 0;
+  MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
+  row = n_DOFs-1; col = n_DOFs-1;
+  MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
+
+  PetscInt cols[3];
+  PetscReal jac[3];
+  for (row = 1; row < n_DOFs-1; row++)
+  {
+    cols[0] = row - 1; cols[1] = row; cols[2] = row + 1;
+    jac[0] = -1.0 / dx2;
+    jac[1] = 1.0 / _dt / alpha + 2.0 / dx2;
+    jac[2] = -1.0 / dx2;
+
+    MatSetValues(P_Mat, 1, &row, 3, cols, jac, INSERT_VALUES);
+  }
+
+  MatAssemblyBegin(P_Mat, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(P_Mat, MAT_FINAL_ASSEMBLY);
 }
