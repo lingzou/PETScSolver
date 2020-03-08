@@ -76,11 +76,36 @@ ApplicationCtx::setupPETScWorkSpace()
 void
 ApplicationCtx::setupMatrices()
 {
-  bool fd_coloring = false;
+  bool fd_coloring = true;
   if(fd_coloring)
   {
-    // MatCreateSNESMF(snes, &J_MatrixFree);
-    // TO DO
+    // Create Matrix-free context
+    MatCreateSNESMF(snes, &J_MatrixFree);
+
+    // Let the problem setup Jacobian matrix sparsity
+    myPETScProblem->FillJacobianMatrixNonZeroPattern(P_Mat);
+
+    // See PETSc examples:
+    // https://www.mcs.anl.gov/petsc/petsc-current/src/snes/examples/tutorials/ex14.c.html
+    // https://www.mcs.anl.gov/petsc/petsc-current/src/mat/examples/tutorials/ex16.c.html
+    ISColoring      iscoloring;
+    MatColoring     mc;
+    MatColoringCreate(P_Mat, &mc);
+    MatColoringSetType(mc, MATCOLORINGSL);
+    MatColoringSetFromOptions(mc);
+    MatColoringApply(mc, &iscoloring);
+    MatColoringDestroy(&mc);
+    MatFDColoringCreate(P_Mat, iscoloring, &fdcoloring);
+    MatFDColoringSetFunction(fdcoloring, (PetscErrorCode (*)(void))SNESFormFunction, this);
+    MatFDColoringSetFromOptions(fdcoloring);
+    MatFDColoringSetUp(P_Mat, iscoloring, fdcoloring);
+    ISColoringDestroy(&iscoloring);
+
+    SNESSetJacobian(snes,           // snes
+                    J_MatrixFree,   // Jacobian-free
+                    P_Mat,          // Preconditioning matrix
+                    SNESComputeJacobianDefaultColor,  // Use finite differencing and coloring
+                    fdcoloring);    // fdcoloring
   }
   else
   {
@@ -123,8 +148,8 @@ ApplicationCtx::FreePETScWorkSpace()
   // Destroy SNES
   SNESDestroy(&snes);
 
-  //if (fdcoloring != NULL)
-  //  MatFDColoringDestroy(&fdcoloring);
+  // Destroy MatFDColoring
+  MatFDColoringDestroy(&fdcoloring);
 
   delete myPETScProblem;
 }

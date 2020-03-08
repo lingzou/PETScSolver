@@ -28,7 +28,7 @@ public:
   void RHS(double * rhs);
   void writeSolution();
 
-  void FillJacobianMatrix(Mat P_mat);
+  void FillJacobianMatrixNonZeroPattern(Mat & P_Mat);
 
 protected:
   double _dt;

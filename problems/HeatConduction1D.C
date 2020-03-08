@@ -113,7 +113,26 @@ HeatConduction1D::writeSolution()
 }
 
 void
-HeatConduction1D::FillJacobianMatrix(Mat P_mat)
+HeatConduction1D::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
 {
-  // TODO
+  MatCreateSeqAIJ(PETSC_COMM_SELF, n_DOFs, n_DOFs, 3, NULL, &P_Mat);
+
+  PetscInt     row, col;
+  PetscScalar  v = 1.0;
+
+  row = 0; col = 0;
+  MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
+  row = n_DOFs-1; col = n_DOFs-1;
+  MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
+
+  for (row = 1; row < n_DOFs-1; row++)
+    for (col = row-1; col <= row+1; col++)
+      MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
+
+  MatAssemblyBegin(P_Mat, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(P_Mat, MAT_FINAL_ASSEMBLY);
+
+  /*
+  MatView(P_Mat, PETSC_VIEWER_STDOUT_SELF);
+  MatView(P_Mat, PETSC_VIEWER_DRAW_WORLD); */
 }
