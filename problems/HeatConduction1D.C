@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <iomanip>
 
 #include "HeatConduction1D.h"
 
@@ -12,6 +13,7 @@ HeatConduction1D::HeatConduction1D()
   // At steady state, let T(x) = sin(pi * x)
   // such that: q(x) = k * pi * pi * sin(pi * x)
 
+  _time_scheme = BDF1;
   _dt = 1.0;
 
   length = 1.0;
@@ -104,9 +106,13 @@ HeatConduction1D::RHS(double * rhs)
 void
 HeatConduction1D::writeSolution()
 {
-  std::cout << "x             T               T_exact" << std::endl;
+  std::cout << std::setw(20) << "x"
+            << std::setw(20) << "T"
+            << std::setw(20) << "T_exact" << std::endl;
   for (unsigned int i = 0; i < T.size(); i++)
-    std::cout << x[i] << " " << T[i] << " " << sin(PI * x[i]) << std::endl;
+    std::cout << std::setw(20) << x[i]
+              << std::setw(20) << T[i]
+              << std::setw(20) << sin(PI * x[i]) << std::endl;
 }
 
 void

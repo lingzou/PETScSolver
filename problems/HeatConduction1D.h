@@ -11,6 +11,13 @@ enum TimeStepIndex
   OLDOLD = 2
 };
 
+enum TimeScheme
+{
+  BDF1 = 0,
+  BDF2 = 1,
+  CN   = 2
+};
+
 static const double PI = asin(1) * 2;
 
 class HeatConduction1D
@@ -20,6 +27,7 @@ public:
   ~HeatConduction1D();
 
   unsigned int getNDOF() { return n_DOFs; }
+  TimeScheme getTimeScheme() { return _time_scheme; }
 
   void SetupInitialCondition(double * u);
   void updateSolution(double *u, TimeStepIndex index);
@@ -32,6 +40,7 @@ public:
   void computeJacobianMatrix(Mat & P_Mat);
 
 protected:
+  TimeScheme _time_scheme;
   double _dt;
 
   double length;

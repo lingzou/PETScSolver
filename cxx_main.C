@@ -28,6 +28,7 @@ struct ApplicationCtx
   Vec             r;               // total residual = res_transient - res_RHS
   Vec             res_transient;   /* residual from transient term */
   Vec             res_RHS;         /* residual from RHS */
+  Vec             res_RHS_old;     /* residual from RHS (old time step)*/
 
   void setupPETScWorkSpace();
   void setupInitialConditions();
@@ -57,6 +58,7 @@ ApplicationCtx::setupPETScWorkSpace()
   VecDuplicate(u, &r);
   VecDuplicate(u, &res_transient);
   VecDuplicate(u, &res_RHS);
+  VecDuplicate(u, &res_RHS_old);
 
   // Setup SNES
   SNESCreate(PETSC_COMM_WORLD, &snes);
@@ -79,8 +81,8 @@ ApplicationCtx::setupPETScWorkSpace()
 void
 ApplicationCtx::setupMatrices()
 {
-  bool exact_jacobian = true;     // True if want to use hand-calculated Jacobian
-  hasFDColoring = PETSC_FALSE;    // True if finite differencing Jacobian
+  bool exact_jacobian = false;     // True if want to use hand-calculated Jacobian
+  hasFDColoring = PETSC_TRUE;      // True if finite differencing Jacobian
   if(exact_jacobian)
   {
     // Create Matrix-free context
@@ -156,6 +158,7 @@ ApplicationCtx::FreePETScWorkSpace()
   VecDestroy(&r);
   VecDestroy(&res_transient);
   VecDestroy(&res_RHS);
+  VecDestroy(&res_RHS_old);
 
   // Destroy PETSc matrix
   if (J_Mat != NULL)        MatDestroy(&J_Mat);
@@ -176,6 +179,7 @@ PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
 {
   ApplicationCtx * appCtx = (ApplicationCtx *) AppCtx;
   HeatConduction1D * myProblem = appCtx->myPETScProblem;
+  TimeScheme ts = myProblem->getTimeScheme();
 
   // get vectors
   PetscScalar *uu, *res_tran, *res_RHS;
@@ -193,8 +197,23 @@ PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
   VecRestoreArray(appCtx->res_transient, &res_tran);
   VecRestoreArray(appCtx->res_RHS, &res_RHS);
 
-  // assemble final residuals: f = transient - RHS
-  VecWAXPY(f, -1.0, appCtx->res_RHS, appCtx->res_transient);
+  switch (ts)
+  {
+    case BDF1:
+      // assemble final residuals: f = transient - RHS
+      VecWAXPY(f, -1.0, appCtx->res_RHS, appCtx->res_transient);
+      break;
+
+    case CN:
+      // assemble final residuals: f = transient - 0.5(RHS + RHS_old)
+      VecAXPBYPCZ(f, -0.5, -0.5, 0, appCtx->res_RHS, appCtx->res_RHS_old); // f = -0.5(RHS + RHS_old)
+      VecAXPY(f, 1, appCtx->res_transient); // f = f + transient = transient - 0.5(RHS + RHS_old)
+      break;
+
+    defaut:
+      std::cerr << "ERROR: not implemented." << std::endl;
+      exit(1);
+  }
 
   return 0;
 }
@@ -248,20 +267,39 @@ int main(int argc, char **argv)
   //std::string time_scheme = "CN";  // "BDF1", "BDF2"
   double t_start = 0.0;
   double dt = 1.0;
-  int N_Steps = 10;
+  int N_Steps = 20;
+  TimeScheme ts = AppCtx.myPETScProblem->getTimeScheme();
 
   for (int step = 1; step <= N_Steps; step++)
   {
-    // PETSc solving
+    // 1. Before PETSc Solving
+    // 1.1 (If applicable) preparing CN old time step RHS (only for the very first time step)
+    if ((ts == CN) && (step == 1))
+    {
+      PetscReal * res_RHS_old;
+      VecGetArray(AppCtx.res_RHS_old, &res_RHS_old);
+      AppCtx.myPETScProblem->RHS(res_RHS_old);
+      VecRestoreArray(AppCtx.res_RHS_old, &res_RHS_old);
+    }
+
+    // 2. PETSc solving
     PetscPrintf(PETSC_COMM_WORLD, "Solving time step %d, dt = %g. \n", step, dt);
     SNESSolve(AppCtx.snes, NULL, AppCtx.u);
 
-    // After solving each time step, the NEW solution now becomes the OLD solution
+    // 3. After PETSc solving
+    // 3.1. the NEW solution now becomes the OLD solution
+    //   3.1.1 Copy NEW solution vec to OLD solution vec
     VecCopy(AppCtx.u, AppCtx.u_old);
+    //   3.1.2 Inform the problem to update its OLD solutions using this vec
+    //         (maybe can just let problem copy & paste solutions)
     PetscScalar *uu;
     VecGetArray(AppCtx.u, &uu);
     AppCtx.myPETScProblem->updateSolution(uu, OLD);
     VecRestoreArray(AppCtx.u, &uu);
+
+    // 3.2. (If applicable) save the NEW RHS to OLD RHS for the next time step CN
+    if (ts == CN)
+      VecCopy(AppCtx.res_RHS, AppCtx.res_RHS_old);
   }
   AppCtx.myPETScProblem->writeSolution();
 
