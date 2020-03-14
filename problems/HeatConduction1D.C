@@ -87,8 +87,19 @@ HeatConduction1D::transientResidual(double * res)
   res[n_Node-1] = T[n_DOFs-1] - 0;
 
   // The remaining nodes
-  for (unsigned int i = 1; i < n_DOFs-1; i++)
-    res[i] = (T[i] - T_old[i]) / _dt / alpha;
+  if ((_time_scheme == BDF2) && (_step > 1))
+  {
+    // It is typical to use BDF1 for step 1 to startup BDF2
+    // however, it is also associated with large error
+    // see H. Nishikawa, "On large start-up error of BDF2", Journal of Computational Physics, Vol. 392, 2019, Pages 456-461
+    for (unsigned int i = 1; i < n_DOFs-1; i++)
+      res[i] = (1.5 * T[i] - 2.0 * T_old[i] + 0.5 * T_oldold[i]) / _dt / alpha;
+  }
+  else
+  {
+    for (unsigned int i = 1; i < n_DOFs-1; i++)
+      res[i] = (T[i] - T_old[i]) / _dt / alpha;
+  }
 }
 
 void
@@ -108,13 +119,14 @@ void
 HeatConduction1D::onTimestepEnd()
 {
   // March time forward
-  _step ++;
   _t += _dt;
 
   // write solution
   writeSolution(_step);
+  _step ++;
 
-  // Copy new solution into old solution
+  // Copy oldold solution into old; new solution into old solution
+  if (_time_scheme == BDF2) T_oldold = T_old;
   T_old = T; // Vector = operator
 }
 

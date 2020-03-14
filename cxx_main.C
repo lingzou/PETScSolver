@@ -201,6 +201,7 @@ PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
   switch (ts)
   {
     case BDF1:
+    case BDF2:
       // assemble final residuals: f = transient - RHS
       VecWAXPY(f, -1.0, appCtx->res_RHS, appCtx->res_transient);
       break;

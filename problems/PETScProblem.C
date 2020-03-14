@@ -2,7 +2,7 @@
 #include "PETScProblem.h"
 
 PETScProblem::PETScProblem(TimeScheme ts, double t_start, double dt) :
-  _time_scheme(ts), _t(t_start), _dt(dt), _step(0)
+  _time_scheme(ts), _t(t_start), _dt(dt), _step(1)
 {}
 
 PETScProblem::~PETScProblem()
