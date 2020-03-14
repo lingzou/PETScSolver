@@ -1,5 +1,5 @@
 # PETSc for PDEs
-*PETSc as a solver non-linear PDEs*
+*PETSc as a solver for non-linear PDEs*
 
 PETSc is a suite of data structures and routines for the scalable (parallel) solution of scientific applications modeled by partial differential equations [See: https://www.mcs.anl.gov/petsc/]
 

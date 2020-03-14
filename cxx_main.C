@@ -266,11 +266,11 @@ int main(int argc, char **argv)
    */
   //std::string time_scheme = "CN";  // "BDF1", "BDF2"
   double t_start = 0.0;
-  double dt = 1.0;
-  int N_Steps = 20;
+  double dt = 0.02;
+  int N_Steps = 40;
   TimeScheme ts = AppCtx.myPETScProblem->getTimeScheme();
 
-  for (int step = 1; step <= N_Steps; step++)
+  for (unsigned int step = 1; step <= N_Steps; step++)
   {
     // 1. Before PETSc Solving
     // 1.1 (If applicable) preparing CN old time step RHS (only for the very first time step)
@@ -287,21 +287,22 @@ int main(int argc, char **argv)
     SNESSolve(AppCtx.snes, NULL, AppCtx.u);
 
     // 3. After PETSc solving
-    // 3.1. the NEW solution now becomes the OLD solution
-    //   3.1.1 Copy NEW solution vec to OLD solution vec
+    // 3.1. Write solution files
+    AppCtx.myPETScProblem->writeSolution(step);
+    // 3.2. the NEW solution now becomes the OLD solution
+    //   3.2.1 Copy NEW solution vec to OLD solution vec
     VecCopy(AppCtx.u, AppCtx.u_old);
-    //   3.1.2 Inform the problem to update its OLD solutions using this vec
+    //   3.2.2 Inform the problem to update its OLD solutions using this vec
     //         (maybe can just let problem copy & paste solutions)
     PetscScalar *uu;
     VecGetArray(AppCtx.u, &uu);
     AppCtx.myPETScProblem->updateSolution(uu, OLD);
     VecRestoreArray(AppCtx.u, &uu);
 
-    // 3.2. (If applicable) save the NEW RHS to OLD RHS for the next time step CN
+    // 3.3. (If applicable) save the NEW RHS to OLD RHS for the next time step CN
     if (ts == CN)
       VecCopy(AppCtx.res_RHS, AppCtx.res_RHS_old);
   }
-  AppCtx.myPETScProblem->writeSolution();
 
   /*
    *  Free work space

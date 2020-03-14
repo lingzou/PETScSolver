@@ -34,7 +34,7 @@ public:
 
   void transientResidual(double * res);
   void RHS(double * rhs);
-  void writeSolution();
+  void writeSolution(unsigned int step);
 
   void FillJacobianMatrixNonZeroPattern(Mat & P_Mat);
   void computeJacobianMatrix(Mat & P_Mat);
@@ -42,6 +42,7 @@ public:
 protected:
   TimeScheme _time_scheme;
   double _dt;
+  double _t;
 
   double length;
   double dx, dx2;

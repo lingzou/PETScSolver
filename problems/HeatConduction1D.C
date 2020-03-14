@@ -13,11 +13,15 @@ HeatConduction1D::HeatConduction1D()
   // At steady state, let T(x) = sin(pi * x)
   // such that: q(x) = k * pi * pi * sin(pi * x)
 
-  _time_scheme = BDF1;
-  _dt = 1.0;
+  // This problem also has time-dependent analytical solutions:
+  // T(x, t) = (1-exp(-alpha*pi*pi*t))*sin(pi*x)
+
+  _time_scheme = CN;
+  _dt = 0.02;
+  _t = 0.0;
 
   length = 1.0;
-  n_Cell = 40;
+  n_Cell = 100;
   k = 1.0;
   alpha = 1.0;
 
@@ -104,15 +108,45 @@ HeatConduction1D::RHS(double * rhs)
 }
 
 void
-HeatConduction1D::writeSolution()
+HeatConduction1D::writeSolution(unsigned int step)
 {
-  std::cout << std::setw(20) << "x"
-            << std::setw(20) << "T"
-            << std::setw(20) << "T_exact" << std::endl;
-  for (unsigned int i = 0; i < T.size(); i++)
-    std::cout << std::setw(20) << x[i]
-              << std::setw(20) << T[i]
-              << std::setw(20) << sin(PI * x[i]) << std::endl;
+  _t += _dt;  // This should be moved to somewhere else
+
+  FILE * ptr_File;
+  std::string file_name = "output/Solution_step_" + std::to_string(step) + ".vtk";
+  ptr_File = fopen(file_name.c_str(), "w");
+
+  fprintf(ptr_File, "# vtk DataFile Version 4.0\n");
+  fprintf(ptr_File, "my data\n");
+  fprintf(ptr_File, "ASCII\n");
+  fprintf(ptr_File, "DATASET STRUCTURED_GRID\n");
+  fprintf(ptr_File, "DIMENSIONS %u 1 1\n", n_Node);
+  fprintf(ptr_File, "POINTS %u Float32\n", n_Node);
+  for (unsigned int i = 0; i < n_Node; i++)
+    fprintf(ptr_File, "%f 0 0\n", x[i]);
+
+  // point data
+  fprintf(ptr_File, "POINT_DATA %u\n", n_Node);
+  // Temperature point data
+  fprintf(ptr_File, "SCALARS temperature Float32 1\n");
+  fprintf(ptr_File, "LOOKUP_TABLE temperature\n");
+  for (unsigned int i = 0; i < n_Node; i++)
+    fprintf(ptr_File, "%f\n", T[i]);
+  // Exact solutin
+  fprintf(ptr_File, "SCALARS T_exact Float32 1\n");
+  fprintf(ptr_File, "LOOKUP_TABLE T_exact\n");
+  for (unsigned int i = 0; i < n_Node; i++)
+    fprintf(ptr_File, "%f\n", (1.0 - exp(-alpha * PI * PI * _t)) * sin(PI * x[i]));
+
+  // cell data
+  fprintf(ptr_File, "CELL_DATA %u\n", n_Cell);
+  // A fake cell data
+  fprintf(ptr_File, "SCALARS mu Float32 1\n");
+  fprintf(ptr_File, "LOOKUP_TABLE mu\n");
+  for (unsigned int i = 0; i < n_Cell; i++)
+    fprintf(ptr_File, "%f\n", T[i]*exp(x[i]));
+
+  fclose(ptr_File);
 }
 
 void
