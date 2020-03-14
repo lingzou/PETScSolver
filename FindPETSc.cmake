@@ -23,8 +23,8 @@
 #
 
 # Change these two lines to your PETSc location
-set (PETSC_DIR /Users/lingzou/Downloads/petsc-3.11.3)
-set (PETSC_ARCH arch-darwin-c-opt)
+set (PETSC_DIR /opt/moose/petsc-3.11.4/mpich-3.3_clang-9.0.0-opt)
+#set (PETSC_ARCH arch-darwin-c-opt)
 
 message(${PETSC_DIR})
 

@@ -6,7 +6,8 @@
 SET (CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
 
 # Change this line to your gcc location
-SET (CMAKE_C_COMPILER             "/usr/local/bin/gcc")
+SET (CMAKE_C_COMPILER             "/opt/moose/gcc-9.2.0/bin/gcc")
+#SET (CMAKE_C_COMPILER             "/usr/local/bin/gcc")
 #SET (CMAKE_C_FLAGS                "-Wall -std=c99")
 #SET (CMAKE_C_FLAGS_DEBUG          "-g")
 #SET (CMAKE_C_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
@@ -14,7 +15,8 @@ SET (CMAKE_C_COMPILER             "/usr/local/bin/gcc")
 #SET (CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g")
 
 # Change this line to your g++ location
-SET (CMAKE_CXX_COMPILER             "/usr/local/bin/g++")
+SET (CMAKE_CXX_COMPILER             "/opt/moose/gcc-9.2.0/bin/g++")
+#SET (CMAKE_CXX_COMPILER             "/usr/local/bin/g++")
 #SET (CMAKE_CXX_FLAGS                "-Wall")
 #SET (CMAKE_CXX_FLAGS_DEBUG          "-g")
 #SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
