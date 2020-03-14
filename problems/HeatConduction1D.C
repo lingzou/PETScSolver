@@ -4,7 +4,8 @@
 
 #include "HeatConduction1D.h"
 
-HeatConduction1D::HeatConduction1D()
+HeatConduction1D::HeatConduction1D(TimeScheme ts, double t_start, double dt) :
+  PETScProblem(ts, t_start, dt)
 {
   // Using Finite Difference Method for heat conduction problem
   // 1/alpha * dT/dt = Laplacian(T) + q/k
@@ -15,10 +16,6 @@ HeatConduction1D::HeatConduction1D()
 
   // This problem also has time-dependent analytical solutions:
   // T(x, t) = (1-exp(-alpha*pi*pi*t))*sin(pi*x)
-
-  _time_scheme = CN;
-  _dt = 0.02;
-  _t = 0.0;
 
   length = 1.0;
   n_Cell = 100;
@@ -108,10 +105,22 @@ HeatConduction1D::RHS(double * rhs)
 }
 
 void
+HeatConduction1D::onTimestepEnd()
+{
+  // March time forward
+  _step ++;
+  _t += _dt;
+
+  // write solution
+  writeSolution(_step);
+
+  // Copy new solution into old solution
+  T_old = T; // Vector = operator
+}
+
+void
 HeatConduction1D::writeSolution(unsigned int step)
 {
-  _t += _dt;  // This should be moved to somewhere else
-
   FILE * ptr_File;
   std::string file_name = "output/Solution_step_" + std::to_string(step) + ".vtk";
   ptr_File = fopen(file_name.c_str(), "w");

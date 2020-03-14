@@ -1,6 +1,7 @@
 #include <iostream>
 #include <petscsnes.h>
 
+#include "PETScProblem.h"
 #include "HeatConduction1D.h"
 
 PetscErrorCode SNESFormFunction(SNES, Vec, Vec, void*);
@@ -9,7 +10,7 @@ PetscErrorCode KSPMonitor(KSP, PetscInt, PetscReal, void*);
 
 struct ApplicationCtx
 {
-  HeatConduction1D * myPETScProblem;
+  PETScProblem *  myPETScProblem;
   PetscInt        N_DOFs;     // Number of degrees of freedom
 
   SNES            snes;       // SNES
@@ -178,7 +179,7 @@ ApplicationCtx::FreePETScWorkSpace()
 PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
 {
   ApplicationCtx * appCtx = (ApplicationCtx *) AppCtx;
-  HeatConduction1D * myProblem = appCtx->myPETScProblem;
+  PETScProblem * myProblem = appCtx->myPETScProblem;
   TimeScheme ts = myProblem->getTimeScheme();
 
   // get vectors
@@ -221,7 +222,7 @@ PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
 PetscErrorCode FormJacobian(SNES snes, Vec u, Mat jac, Mat B, void * AppCtx)
 {
   ApplicationCtx * appCtx = (ApplicationCtx *) AppCtx;
-  HeatConduction1D * myProblem = appCtx->myPETScProblem;
+  PETScProblem * myProblem = appCtx->myPETScProblem;
   myProblem->computeJacobianMatrix(B);
 
   return 0;
@@ -229,13 +230,13 @@ PetscErrorCode FormJacobian(SNES snes, Vec u, Mat jac, Mat B, void * AppCtx)
 
 PetscErrorCode SNESMonitor(SNES snes, PetscInt its, PetscReal fnorm, void* /*AppCtx*/)
 {
-  PetscPrintf(PETSC_COMM_WORLD, "        Non-linear Step = %2D, fnorm = %12.5E\n", its, fnorm);
+  PetscPrintf(PETSC_COMM_WORLD, "    NL Step = %2D, fnorm = %12.5E\n", its, fnorm);
   return 0;
 }
 
 PetscErrorCode KSPMonitor(KSP ksp, PetscInt its, PetscReal rnorm, void* /*AppCtx*/)
 {
-  PetscPrintf(PETSC_COMM_WORLD, "          Linear step = %2D, rnorm = %12.5E\n", its, rnorm);
+  PetscPrintf(PETSC_COMM_WORLD, "      Linear step = %2D, rnorm = %12.5E\n", its, rnorm);
   return 0;
 }
 
@@ -249,7 +250,10 @@ int main(int argc, char **argv)
   //  if (AppCtx.size != 1)
   //    SETERRQ(PETSC_COMM_SELF, 1, "This is a uniprocessor example only!");
 
-  AppCtx.myPETScProblem = new HeatConduction1D();
+  double t_start = 0.0;
+  double dt = 0.02;
+  TimeScheme ts = CN;
+  AppCtx.myPETScProblem = new HeatConduction1D(ts, t_start, dt);
 
   /*
    *  Setup PETSc work space
@@ -264,12 +268,7 @@ int main(int argc, char **argv)
   /*
    *  Solving
    */
-  //std::string time_scheme = "CN";  // "BDF1", "BDF2"
-  double t_start = 0.0;
-  double dt = 0.02;
   int N_Steps = 40;
-  TimeScheme ts = AppCtx.myPETScProblem->getTimeScheme();
-
   for (unsigned int step = 1; step <= N_Steps; step++)
   {
     // 1. Before PETSc Solving
@@ -283,25 +282,20 @@ int main(int argc, char **argv)
     }
 
     // 2. PETSc solving
-    PetscPrintf(PETSC_COMM_WORLD, "Solving time step %d, dt = %g. \n", step, dt);
+    PetscPrintf(PETSC_COMM_WORLD, "Time step = %d, dt = %g\n", step, dt);
     SNESSolve(AppCtx.snes, NULL, AppCtx.u);
 
     // 3. After PETSc solving
-    // 3.1. Write solution files
-    AppCtx.myPETScProblem->writeSolution(step);
-    // 3.2. the NEW solution now becomes the OLD solution
-    //   3.2.1 Copy NEW solution vec to OLD solution vec
-    VecCopy(AppCtx.u, AppCtx.u_old);
-    //   3.2.2 Inform the problem to update its OLD solutions using this vec
-    //         (maybe can just let problem copy & paste solutions)
-    PetscScalar *uu;
-    VecGetArray(AppCtx.u, &uu);
-    AppCtx.myPETScProblem->updateSolution(uu, OLD);
-    VecRestoreArray(AppCtx.u, &uu);
+    //    March time forward; write solutions; update old solutions etc.
+    AppCtx.myPETScProblem->onTimestepEnd();
 
-    // 3.3. (If applicable) save the NEW RHS to OLD RHS for the next time step CN
+    // 3.1. (If applicable) save the NEW RHS to OLD RHS for the next time step CN
     if (ts == CN)
       VecCopy(AppCtx.res_RHS, AppCtx.res_RHS_old);
+
+    // 3.2. Print some additional info.
+    double current_t = AppCtx.myPETScProblem->getCurrentTime();
+    PetscPrintf(PETSC_COMM_WORLD, "End of Time step = %d, current time = %g\n\n", step, current_t);
   }
 
   /*

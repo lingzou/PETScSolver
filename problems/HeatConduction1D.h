@@ -1,54 +1,34 @@
 #ifndef HEAT_CONDUCTION_1D_H
 #define HEAT_CONDUCTION_1D_H
 
-#include <petsc.h>
 #include <vector>
-
-enum TimeStepIndex
-{
-  NEW = 0,
-  OLD = 1,
-  OLDOLD = 2
-};
-
-enum TimeScheme
-{
-  BDF1 = 0,
-  BDF2 = 1,
-  CN   = 2
-};
+#include "PETScProblem.h"
 
 static const double PI = asin(1) * 2;
 
-class HeatConduction1D
+class HeatConduction1D : public PETScProblem
 {
 public:
-  HeatConduction1D();
+  HeatConduction1D(TimeScheme ts, double t_start, double dt);
   ~HeatConduction1D();
 
-  unsigned int getNDOF() { return n_DOFs; }
-  TimeScheme getTimeScheme() { return _time_scheme; }
+  virtual void onTimestepEnd() final;
 
-  void SetupInitialCondition(double * u);
-  void updateSolution(double *u, TimeStepIndex index);
+  virtual void SetupInitialCondition(double * u) final;
+  virtual void updateSolution(double *u, TimeStepIndex index) final;
 
-  void transientResidual(double * res);
-  void RHS(double * rhs);
-  void writeSolution(unsigned int step);
+  virtual void transientResidual(double * res) final;
+  virtual void RHS(double * rhs) final;
+  virtual void writeSolution(unsigned int step) final;
 
-  void FillJacobianMatrixNonZeroPattern(Mat & P_Mat);
-  void computeJacobianMatrix(Mat & P_Mat);
+  virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) final;
+  virtual void computeJacobianMatrix(Mat & P_Mat) final;
 
 protected:
-  TimeScheme _time_scheme;
-  double _dt;
-  double _t;
-
   double length;
   double dx, dx2;
   unsigned int n_Cell;
   unsigned int n_Node;
-  unsigned int n_DOFs;
 
   std::vector<double> x;          // x position
   std::vector<double> T;          // Temperature
