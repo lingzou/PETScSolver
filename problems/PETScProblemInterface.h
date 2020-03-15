@@ -36,6 +36,7 @@ struct ApplicationCtx
   Vec             res_RHS;         /* residual from RHS */
   Vec             res_RHS_old;     /* residual from RHS (old time step)*/
 
+  void initializePETScApp();
   void setupPETScWorkSpace();
   void setupInitialConditions();
   void FreePETScWorkSpace();

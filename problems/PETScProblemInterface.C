@@ -1,12 +1,26 @@
 #include <iostream>
 #include "PETScProblemInterface.h"
+#include "HeatConduction1D.h"
+
+void
+ApplicationCtx::initializePETScApp()
+{
+  std::string problem_name = PetscOptionsGetRequiredString("-problem");
+  if (problem_name.compare("HeatConduction1D") == 0)
+    myPETScProblem = new HeatConduction1D();
+  else
+  {
+    std::cerr << "ERROR: UNKNOWN problem: '" << problem_name << "'." << std::endl;
+    exit(1);
+  }
+
+  // Get total number of DOF
+  N_DOFs = myPETScProblem->getNDOF();
+}
 
 void
 ApplicationCtx::setupPETScWorkSpace()
 {
-  // Get total number of DOF
-  N_DOFs = myPETScProblem->getNDOF();
-
   // Prepare NULL matrix
   J_Mat = NULL;
   J_MatrixFree = NULL;

@@ -14,21 +14,14 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  ApplicationCtx AppCtx;
-
   // PETSc application starts with PetscInitialize
   PetscInitialize(&argc, &argv, argv[1], PETSC_NULL);
-  //  MPI_Comm_size(PETSC_COMM_WORLD, &(AppCtx.size));
-  //  if (AppCtx.size != 1)
-  //    SETERRQ(PETSC_COMM_SELF, 1, "This is a uniprocessor example only!");
 
-  double t_start = 0.0;
-
-  double dt          = PetscOptionsGetRequiredReal("-dt");
-  std::string ts_str = PetscOptionsGetRequiredString("-ts");
-  TimeScheme ts = StringToEnum(ts_str);
-
-  AppCtx.myPETScProblem = new HeatConduction1D(ts, t_start, dt);
+  /*
+   * Initialize PETSc App
+   */
+  ApplicationCtx AppCtx;
+  AppCtx.initializePETScApp();
 
   /*
    *  Setup PETSc work space
@@ -43,6 +36,7 @@ int main(int argc, char **argv)
   /*
    *  Solving
    */
+  TimeScheme ts = AppCtx.myPETScProblem->getTimeScheme();
   int N_Steps = 40;
   for (unsigned int step = 1; step <= N_Steps; step++)
   {
@@ -57,7 +51,7 @@ int main(int argc, char **argv)
     }
 
     // 2. PETSc solving
-    PetscPrintf(PETSC_COMM_WORLD, "Time step = %d, dt = %g\n", step, dt);
+    PetscPrintf(PETSC_COMM_WORLD, "Time step = %d, dt = %g\n", step, AppCtx.myPETScProblem->getDt());
     SNESSolve(AppCtx.snes, NULL, AppCtx.u);
 
     // 3. After PETSc solving

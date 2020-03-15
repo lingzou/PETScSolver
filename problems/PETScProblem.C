@@ -1,5 +1,6 @@
 #include <iostream>
 #include "PETScProblem.h"
+#include "PETScProblemInterface.h"
 
 TimeScheme
 StringToEnum(std::string str)
@@ -10,9 +11,13 @@ StringToEnum(std::string str)
   else { std::cerr << "ERROR: UNKNOWN TimeScheme: " << str << std::endl; exit(1); return INVALID; }
 }
 
-PETScProblem::PETScProblem(TimeScheme ts, double t_start, double dt) :
-  _time_scheme(ts), _t(t_start), _dt(dt), _step(1)
-{}
+PETScProblem::PETScProblem() :
+  _time_scheme(INVALID), _t(0.0), _dt(0.0), _step(1), n_DOFs(1)
+{
+  _dt = PetscOptionsGetRequiredReal("-dt");
+  std::string ts_str = PetscOptionsGetRequiredString("-ts");
+  _time_scheme = StringToEnum(ts_str);
+}
 
 PETScProblem::~PETScProblem()
 {}
@@ -22,4 +27,5 @@ PETScProblem::computeJacobianMatrix(Mat & P_Mat)
 {
   // By default this is not required
   std::cerr << "Exact Jacobian has not been implemented." << std::endl;
+  exit(1);
 }

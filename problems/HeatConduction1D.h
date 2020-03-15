@@ -9,7 +9,7 @@ static const double PI = asin(1) * 2;
 class HeatConduction1D : public PETScProblem
 {
 public:
-  HeatConduction1D(TimeScheme ts, double t_start, double dt);
+  HeatConduction1D();
   ~HeatConduction1D();
 
   virtual void onTimestepEnd() final;

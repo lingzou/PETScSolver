@@ -23,12 +23,13 @@ TimeScheme StringToEnum(std::string str);
 class PETScProblem
 {
 public:
-  PETScProblem(TimeScheme ts, double t_start, double dt);
+  PETScProblem();
   ~PETScProblem();
 
   virtual unsigned int getNDOF() { return n_DOFs; }
   virtual TimeScheme getTimeScheme() { return _time_scheme; }
   virtual double getCurrentTime() { return _t; }
+  virtual double getDt() { return _dt; }
 
   virtual void onTimestepEnd() = 0;
 
@@ -44,8 +45,8 @@ public:
 
 protected:
   TimeScheme _time_scheme;
-  double _dt;
   double _t;
+  double _dt;
   unsigned int _step;
 
   unsigned int n_DOFs;
