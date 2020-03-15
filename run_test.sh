@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # run
-./PETScSolver > run_test_output
+./PETScSolver input/HeatCond1D.i > run_test_output
 
 # do diff for each case
 temp=$(diff output/Solution_step_20.vtk output/expected/Solution_step_20.vtk)

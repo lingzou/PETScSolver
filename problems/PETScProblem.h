@@ -12,10 +12,13 @@ enum TimeStepIndex
 
 enum TimeScheme
 {
-  BDF1 = 0,
-  BDF2 = 1,
-  CN   = 2
+  BDF1    = 0,
+  BDF2    = 1,
+  CN      = 2,
+  INVALID = 99
 };
+
+TimeScheme StringToEnum(const char* str);
 
 class PETScProblem
 {

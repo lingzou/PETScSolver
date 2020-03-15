@@ -243,17 +243,30 @@ PetscErrorCode KSPMonitor(KSP ksp, PetscInt its, PetscReal rnorm, void* /*AppCtx
 
 int main(int argc, char **argv)
 {
+  // Require an input file
+  if (argc != 2)
+  {
+    std::cerr << "Invalid input command line." << std::endl;
+    std::cerr << "Please use: './PETScSolver <input_file_name>" << std::endl;
+    exit(1);
+  }
+
   ApplicationCtx AppCtx;
 
   // PETSc application starts with PetscInitialize
-  PetscInitialize(&argc, &argv, (char *)0, PETSC_NULL);
+  PetscInitialize(&argc, &argv, argv[1], PETSC_NULL);
   //  MPI_Comm_size(PETSC_COMM_WORLD, &(AppCtx.size));
   //  if (AppCtx.size != 1)
   //    SETERRQ(PETSC_COMM_SELF, 1, "This is a uniprocessor example only!");
 
   double t_start = 0.0;
-  double dt = 0.02;
-  TimeScheme ts = CN;
+  double dt = 0.0;
+  char ts_str[256];
+
+  PetscOptionsGetReal(NULL, NULL, "-dt", &dt, NULL);
+  PetscOptionsGetString(NULL, NULL, "-ts", ts_str, sizeof(ts_str), NULL);
+  TimeScheme ts = StringToEnum(ts_str);
+
   AppCtx.myPETScProblem = new HeatConduction1D(ts, t_start, dt);
 
   /*
