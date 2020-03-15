@@ -18,7 +18,7 @@ enum TimeScheme
   INVALID = 99
 };
 
-TimeScheme StringToEnum(const char* str);
+TimeScheme StringToEnum(std::string str);
 
 class PETScProblem
 {

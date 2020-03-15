@@ -2,11 +2,11 @@
 #include "PETScProblem.h"
 
 TimeScheme
-StringToEnum(const char* str)
+StringToEnum(std::string str)
 {
-  if      (strcmp("BDF1", str) == 0)  return BDF1;
-  else if (strcmp("BDF2", str) == 0)  return BDF2;
-  else if (strcmp("CN", str) == 0)    return CN;
+  if      (str.compare("BDF1") == 0)  return BDF1;
+  else if (str.compare("BDF2") == 0)  return BDF2;
+  else if (str.compare("CN")   == 0)  return CN;
   else { std::cerr << "ERROR: UNKNOWN TimeScheme: " << str << std::endl; exit(1); return INVALID; }
 }
 

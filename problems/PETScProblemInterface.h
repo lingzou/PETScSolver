@@ -8,6 +8,11 @@ PetscErrorCode SNESMonitor(SNES, PetscInt, PetscReal, void*);
 PetscErrorCode KSPMonitor(KSP, PetscInt, PetscReal, void*);
 PetscErrorCode FormJacobian(SNES, Vec, Mat, Mat, void*);
 
+// Wrap up several PETSc built-in function with additional check;
+//   e.g., PETSc built-in function 'PetscOptionsGetReal' -> 'PetscOptionsGetRequiredReal'
+double      PetscOptionsGetRequiredReal(std::string name);
+std::string PetscOptionsGetRequiredString(std::string name); /* max string length 4096 */
+
 struct ApplicationCtx
 {
   PETScProblem *  myPETScProblem;

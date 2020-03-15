@@ -23,11 +23,9 @@ int main(int argc, char **argv)
   //    SETERRQ(PETSC_COMM_SELF, 1, "This is a uniprocessor example only!");
 
   double t_start = 0.0;
-  double dt = 0.0;
-  char ts_str[256];
 
-  PetscOptionsGetReal(NULL, NULL, "-dt", &dt, NULL);
-  PetscOptionsGetString(NULL, NULL, "-ts", ts_str, sizeof(ts_str), NULL);
+  double dt          = PetscOptionsGetRequiredReal("-dt");
+  std::string ts_str = PetscOptionsGetRequiredString("-ts");
   TimeScheme ts = StringToEnum(ts_str);
 
   AppCtx.myPETScProblem = new HeatConduction1D(ts, t_start, dt);

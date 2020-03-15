@@ -202,3 +202,34 @@ PetscErrorCode KSPMonitor(KSP ksp, PetscInt its, PetscReal rnorm, void* /*AppCtx
   PetscPrintf(PETSC_COMM_WORLD, "      Linear step = %2D, rnorm = %12.5E\n", its, rnorm);
   return 0;
 }
+
+double PetscOptionsGetRequiredReal(std::string name)
+{
+  PetscBool hasInput = PETSC_FALSE;
+  double value = 0.0;
+
+  PetscOptionsGetReal(NULL, NULL, name.c_str(), &value, &hasInput);
+
+  if (!hasInput)
+  {
+    std::cerr << "Required PETSc <Real> input '" << name << "' is not found." << std::endl;
+    exit(1);
+  }
+
+  return value;
+}
+
+std::string PetscOptionsGetRequiredString(std::string name)
+{
+  PetscBool hasInput = PETSC_FALSE;
+  char value[4096];
+  PetscOptionsGetString(NULL, NULL, name.c_str(), value, 4096, &hasInput);
+
+  if (!hasInput)
+  {
+    std::cerr << "Required PETSc <String> input '" << name << "' is not found." << std::endl;
+    exit(1);
+  }
+
+  return std::string(value);
+}
