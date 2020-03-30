@@ -1,6 +1,7 @@
 #include <iostream>
 #include "PETScProblemInterface.h"
 #include "HeatConduction1D.h"
+#include "EulerEquation1D.h"
 
 void
 ApplicationCtx::initializePETScApp()
@@ -8,6 +9,8 @@ ApplicationCtx::initializePETScApp()
   std::string problem_name = PetscOptionsGetRequiredString("-problem");
   if (problem_name.compare("HeatConduction1D") == 0)
     myPETScProblem = new HeatConduction1D();
+  else if (problem_name.compare("EulerEquation1D") == 0)
+    myPETScProblem = new EulerEquation1D();
   else
   {
     std::cerr << "ERROR: UNKNOWN problem: '" << problem_name << "'." << std::endl;
