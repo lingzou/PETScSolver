@@ -8,11 +8,11 @@
 EulerEquation1D::EulerEquation1D() :
   PETScProblem()
 {
-  _order = 2;
+  _order = PetscOptionsGetRequiredInt("-order");
   _gamma = 1.4;
 
   length = 1.0;
-  n_Cell = 100;
+  n_Cell = PetscOptionsGetRequiredInt("-n_cells");
   n_Node = n_Cell + 1;
   n_DOFs = n_Cell * 3;
 

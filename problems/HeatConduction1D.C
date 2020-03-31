@@ -18,7 +18,7 @@ HeatConduction1D::HeatConduction1D() :
   // T(x, t) = (1-exp(-alpha*pi*pi*t))*sin(pi*x)
 
   length = 1.0;
-  n_Cell = 100;
+  n_Cell = PetscOptionsGetRequiredInt("-n_cells");
   k = 1.0;
   alpha = 1.0;
 

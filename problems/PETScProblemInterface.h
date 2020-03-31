@@ -2,6 +2,7 @@
 #define PETSC_PROBLEM_INTERFACE_H
 
 #include "PETScProblem.h"
+class PETScProblem;
 
 PetscErrorCode SNESFormFunction(SNES, Vec, Vec, void*);
 PetscErrorCode SNESMonitor(SNES, PetscInt, PetscReal, void*);
@@ -10,6 +11,7 @@ PetscErrorCode FormJacobian(SNES, Vec, Mat, Mat, void*);
 
 // Wrap up several PETSc built-in function with additional check;
 //   e.g., PETSc built-in function 'PetscOptionsGetReal' -> 'PetscOptionsGetRequiredReal'
+int         PetscOptionsGetRequiredInt(std::string name);
 double      PetscOptionsGetRequiredReal(std::string name);
 std::string PetscOptionsGetRequiredString(std::string name); /* max string length 4096 */
 

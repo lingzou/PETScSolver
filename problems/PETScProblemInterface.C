@@ -220,6 +220,22 @@ PetscErrorCode KSPMonitor(KSP ksp, PetscInt its, PetscReal rnorm, void* /*AppCtx
   return 0;
 }
 
+int PetscOptionsGetRequiredInt(std::string name)
+{
+  PetscBool hasInput = PETSC_FALSE;
+  PetscInt  value = 0;
+
+  PetscOptionsGetInt(NULL, NULL, name.c_str(), &value, &hasInput);
+
+  if (!hasInput)
+  {
+    std::cerr << "Required PETSc <Int> input '" << name << "' is not found." << std::endl;
+    exit(1);
+  }
+
+  return int(value);
+}
+
 double PetscOptionsGetRequiredReal(std::string name)
 {
   PetscBool hasInput = PETSC_FALSE;

@@ -2,7 +2,6 @@
 #include <petscsnes.h>
 
 #include "PETScProblemInterface.h"
-#include "HeatConduction1D.h"
 
 int main(int argc, char **argv)
 {
@@ -37,7 +36,7 @@ int main(int argc, char **argv)
    *  Solving
    */
   TimeScheme ts = AppCtx.myPETScProblem->getTimeScheme();
-  int N_Steps = 40;
+  int N_Steps = PetscOptionsGetRequiredInt("-n_steps");
   for (unsigned int step = 1; step <= N_Steps; step++)
   {
     // 1. Before PETSc Solving

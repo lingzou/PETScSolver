@@ -2,6 +2,7 @@
 #define PETSC_PROBLEM_H
 
 #include <petsc.h>
+#include "PETScProblemInterface.h"
 
 enum TimeStepIndex
 {
