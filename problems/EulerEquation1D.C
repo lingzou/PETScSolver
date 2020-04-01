@@ -209,20 +209,10 @@ EulerEquation1D::linearReconstruction(double l_ghost, double r_ghost,
     double u_W = (i == 0) ? l_ghost : u[i - 1];
     double u_E = (i == u.size() - 1) ? r_ghost : u[i + 1];
 
-    double r = 0.0;
-    if ((u_E - u_P)*(u_P - u_W) < 0.0) // local extremum
-      r = 0.0;
-    else // u_P is in between u_E and u_W
-    {
-      if (std::fabs(u_E - u_W) < 1.e-10)  // do not bother to perform reconstruction
-        r = 0.0;
-      else
-        r = (u_P - u_W) / (u_E - u_P);
-    }
-    // The codes above could be tranformed into a more compact form,
-    //   but really not necessary to do so.
-    // r = (((u_E - u_P)*(u_P - u_W) > 0.0) && (std::fabs(u_E - u_W) > 1.e-10)) ?
-    //        (u_P - u_W) / (u_E - u_P) : 0.0;
+    double r = 0.0;                       // = 0.0 means no reconstruction
+    if ((u_E - u_P)*(u_P - u_W) > 0.0)    // u_P is in between u_W and u_E, i.e., not a local extremum
+      if (std::fabs(u_E - u_W) > 1.e-10)  // The difference is large enough, so reconstruction is meaningful
+        r = std::min((u_P - u_W) / (u_E - u_P), 1.0e5);
 
     // Van Albada 1
     double phir = (r > 0.0) ? (r + r*r) / (1.0 + r*r) : 0.0;
@@ -268,7 +258,7 @@ EulerEquation1D::writeSolution(unsigned int step)
 
   // point data
   fprintf(ptr_File, "POINT_DATA %u\n", n_Node);
-  // Temperature point data
+  // node id
   fprintf(ptr_File, "SCALARS node_id Float32 1\n");
   fprintf(ptr_File, "LOOKUP_TABLE node_id\n");
   for (unsigned int i = 0; i < n_Node; i++)
@@ -300,40 +290,29 @@ EulerEquation1D::writeSolution(unsigned int step)
 void
 EulerEquation1D::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
 {
-  MatCreateSeqAIJ(PETSC_COMM_SELF, n_DOFs, n_DOFs, 9, NULL, &P_Mat);
+  MatCreateSeqAIJ(PETSC_COMM_SELF, n_DOFs, n_DOFs, 15, NULL, &P_Mat);
 
-  PetscInt row;
-  for(unsigned int var = 0; var < 3; var++)
-  {
-    // First cell
-    row = var;
-    PetscInt cols_first[6] = {0, 1, 2, 3, 4, 5};
-    PetscScalar ones[6] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-    MatSetValues(P_Mat, 1, &row, 6, cols_first, ones, INSERT_VALUES);
-    // Last cell
-    row = 3 * (n_Cell - 1) + var;
-    PetscInt start = 3 * (n_Cell - 2);
-    PetscInt cols_last[6] = {start, start + 1, start + 2,
-                             start + 3, start + 4, start + 5};
-    MatSetValues(P_Mat, 1, &row, 6, cols_last, ones, INSERT_VALUES);
-  }
-
-  // Cells in between
-  for(unsigned int i = 1; i < n_Cell - 1; i++)
-  {
-    for(unsigned int var = 0; var < 3; var++)
+  int n_Var = 3;
+  PetscReal v = 1.0;
+  PetscInt row, col;
+  for (int i = 0; i < n_Cell; i++)                 // loop on cells
+    for (int i_var = 0; i_var < n_Var; i_var++)    // loop on the 3 variables on each cells
     {
-      row = i * 3 + var;
-      PetscInt s = 3 * (i - 1);
-      PetscInt cols[9] = {s, s+1, s+2, s+3, s+4, s+5, s+6, s+7, s+8};
-      PetscScalar ones[9] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-      MatSetValues(P_Mat, 1, &row, 9, cols, ones, INSERT_VALUES);
+      row = i * n_Var + i_var;                     // This loops on rows
+      for (int j = i-2; j <= i+2; j++)             // loop on its -2 to 2 neighbors; maybe out of bound
+        for (int j_var = 0; j_var < n_Var; j_var++)
+        {
+          // This loops on variables on neighboring cells
+          col = j * n_Var + j_var;  // might be smaller than zero
+          if ((col >= 0) && (col < n_DOFs))
+            MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
+        }
     }
-  }
 
   MatAssemblyBegin(P_Mat, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(P_Mat, MAT_FINAL_ASSEMBLY);
   /*
   MatView(P_Mat, PETSC_VIEWER_STDOUT_SELF);
-  MatView(P_Mat, PETSC_VIEWER_DRAW_WORLD); */
+  MatView(P_Mat, PETSC_VIEWER_DRAW_WORLD);
+  */
 }
