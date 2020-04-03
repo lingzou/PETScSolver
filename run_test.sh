@@ -4,7 +4,7 @@
 ./PETScSolver input/HeatCond1D.i > run_test_output
 
 # do diff for each case
-temp=$(diff output/Solution_step_20.vtk output/expected/Solution_step_20.vtk)
+temp=$(diff output/HeatCond1D_step_20.vtk output/expected/HeatCond1D_step_20.vtk)
 error=$?
 if [ $error -eq 0 ]
 then
@@ -13,7 +13,7 @@ else
   printf "%24b........" "\e[1;31m[Step 20; DIFF ERROR]\e[m" "\n"
 fi
 
-temp=$(diff output/Solution_step_40.vtk output/expected/Solution_step_40.vtk)
+temp=$(diff output/HeatCond1D_step_40.vtk output/expected/HeatCond1D_step_40.vtk)
 error=$?
 if [ $error -eq 0 ]
 then
@@ -25,7 +25,7 @@ fi
 ./PETScSolver input/SodShockTube.i > run_test_output
 
 # do diff for each case
-temp=$(diff output/EulerEquation1D_step_20.vtk output/expected/EulerEquation1D_step_20.vtk)
+temp=$(diff output/SodShockTube_step_20.vtk output/expected/SodShockTube_step_20.vtk)
 error=$?
 if [ $error -eq 0 ]
 then
@@ -34,7 +34,7 @@ else
   printf "%24b........" "\e[1;31m[Step 20; DIFF ERROR]\e[m" "\n"
 fi
 
-temp=$(diff output/EulerEquation1D_step_40.vtk output/expected/EulerEquation1D_step_40.vtk)
+temp=$(diff output/SodShockTube_step_40.vtk output/expected/SodShockTube_step_40.vtk)
 error=$?
 if [ $error -eq 0 ]
 then

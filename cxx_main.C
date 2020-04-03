@@ -15,6 +15,7 @@ int main(int argc, char **argv)
 
   // PETSc application starts with PetscInitialize
   PetscInitialize(&argc, &argv, argv[1], PETSC_NULL);
+  PetscOptionsSetValue(NULL, "-input_file_name", argv[1]);
 
   /*
    * Initialize PETSc App

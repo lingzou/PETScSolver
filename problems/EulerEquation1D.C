@@ -244,7 +244,7 @@ void
 EulerEquation1D::writeSolution(unsigned int step)
 {
   FILE * ptr_File;
-  std::string file_name = "output/EulerEquation1D_step_" + std::to_string(step) + ".vtk";
+  std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".vtk";
   ptr_File = fopen(file_name.c_str(), "w");
 
   fprintf(ptr_File, "# vtk DataFile Version 4.0\n");

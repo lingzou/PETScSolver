@@ -21,6 +21,8 @@ enum TimeScheme
 
 TimeScheme StringToEnum(std::string str);
 
+std::string trim_file_name(std::string file_name_with_path);
+
 class PETScProblem
 {
 public:
@@ -45,6 +47,7 @@ public:
   virtual void computeJacobianMatrix(Mat & P_Mat);
 
 protected:
+  std::string _input_file_name;
   TimeScheme _time_scheme;
   double _t;
   double _dt;
