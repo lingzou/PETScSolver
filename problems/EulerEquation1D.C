@@ -209,17 +209,20 @@ EulerEquation1D::linearReconstruction(double l_ghost, double r_ghost,
     double u_W = (i == 0) ? l_ghost : u[i - 1];
     double u_E = (i == u.size() - 1) ? r_ghost : u[i + 1];
 
-    double r = 0.0;                       // = 0.0 means no reconstruction
+    // I think this is a more decent implementation of TVD limiter
+    // Reference:
+    // [1] Berger, M., Aftosmis, M.J., Murman, S.M., 2005. Analysis of slope limiters on irreg- ular grids.
+    //     In: AIAA Paper 2005-0490, 43rd AIAA Aerospace Sciences Meeting, Jan. 10e13, Reno, NV, 2005.
+    double wf = 0.0;
     if ((u_E - u_P)*(u_P - u_W) > 0.0)    // u_P is in between u_W and u_E, i.e., not a local extremum
       if (std::fabs(u_E - u_W) > 1.e-10)  // The difference is large enough, so reconstruction is meaningful
-        r = std::min((u_P - u_W) / (u_E - u_P), 1.0e5);
-
-    // Van Albada 1
-    double phir = (r > 0.0) ? (r + r*r) / (1.0 + r*r) : 0.0;
-
+      {
+        double f = (u_P - u_W) / (u_E - u_W);
+        wf = 2.0 * f * (1.0 - f) / ((1.0 - f) * (1.0 - f) + f * f);   // Eqn. (10) of Ref. [1]
+      }
     // Linear reconstructed values
-    u_w[i] = u_P - 0.5 * phir * (u_E - u_P);
-    u_e[i] = u_P + 0.5 * phir * (u_E - u_P);
+    u_w[i] = u_P - 0.25 * wf * (u_E - u_W);   // Eqn. (5) of Ref. [1]
+    u_e[i] = u_P + 0.25 * wf * (u_E - u_W);
   }
 }
 
