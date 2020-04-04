@@ -62,3 +62,27 @@ AUX_SOURCE_DIRECTORY(${CMAKE_SOURCE_DIR}/problems SRC_PROBLEMS)
 
 ADD_EXECUTABLE (PETScSolver ${SRC_ROOT} ${SRC_PROBLEMS})
 TARGET_LINK_LIBRARIES(PETScSolver ${PETSC_LIBRARIES})
+
+# CTEST
+ENABLE_TESTING()
+
+set (ALL_TESTS HeatCond1D SodShockTube)
+# The following are for each test in the format of a LIST: (test_name, 1st_step_to_test, 2nd_step_to_test)
+#   (Name         TestName; int; int)
+set (HeatCond1D   HeatCond1D;   20; 40)
+set (SodShockTube SodShockTube; 20; 40)
+
+
+foreach(TEST IN LISTS ALL_TESTS)
+  LIST(GET ${TEST} 0 TEST_NAME)
+  LIST(GET ${TEST} 1 STEP_VAL_1)
+  LIST(GET ${TEST} 2 STEP_VAL_2)
+  ADD_TEST( NAME ${TEST_NAME}
+            COMMAND ${CMAKE_COMMAND}
+            -DTEST_PROG=$<TARGET_FILE:PETScSolver>
+            -DSOURCEDIR=${CMAKE_SOURCE_DIR}
+            -DTEST_NAME=${TEST}
+            -DSTEP_1=${STEP_VAL_1}
+            -DSTEP_2=${STEP_VAL_2}
+            -P runtest.cmake)
+endforeach()
