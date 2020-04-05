@@ -66,11 +66,12 @@ TARGET_LINK_LIBRARIES(PETScSolver ${PETSC_LIBRARIES})
 # CTEST
 ENABLE_TESTING()
 
-set (ALL_TESTS HeatCond1D SodShockTube)
+set (ALL_TESTS HeatCond1D SodShockTube LaxRiemannProblem)
 # The following are for each test in the format of a LIST: (test_name, 1st_step_to_test, 2nd_step_to_test)
-#   (Name         TestName; int; int)
-set (HeatCond1D   HeatCond1D;   20; 40)
-set (SodShockTube SodShockTube; 20; 40)
+#   (Name               TestName;           step; step)
+set (HeatCond1D         HeatCond1D;         20;   40)
+set (SodShockTube       SodShockTube;       20;   40)
+set (LaxRiemannProblem  LaxRiemannProblem;  80;   160)
 
 
 foreach(TEST IN LISTS ALL_TESTS)

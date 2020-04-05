@@ -25,6 +25,8 @@ protected:
   void updateFluxes2ndOrder();
   void linearReconstruction(double, double, std::vector<double> &, std::vector<double> &, std::vector<double> &);
 
+  double p_IG(double rho, double m, double E) { return (_gamma - 1.0) * (E - 0.5 * m * m / rho); }
+
 protected:
   unsigned int _order;
   double _gamma;
@@ -32,6 +34,10 @@ protected:
   double length;
   double dx;
   unsigned int n_Cell, n_Node;
+
+  // Initial conditions
+  double RHO_L, M_L, E_L, P_L;
+  double RHO_R, M_R, E_R, P_R;
 
   std::vector<double> rho, m, E;              // rho; m=rho*u; E=rho*e+0.5*u*u
   std::vector<double> rho_old, m_old, E_old;  // old solutions
