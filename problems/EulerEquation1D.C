@@ -311,6 +311,18 @@ EulerEquation1D::writeSolution(unsigned int step)
   for (unsigned int i = 0; i < n_Cell; i++)
     fprintf(ptr_File, "%f\n", E[i]);
 
+  // p
+  fprintf(ptr_File, "SCALARS p Float32 1\n");
+  fprintf(ptr_File, "LOOKUP_TABLE p\n");
+  for (unsigned int i = 0; i < n_Cell; i++)
+    fprintf(ptr_File, "%f\n", p[i]);
+
+  // velocity u = m/rho
+  fprintf(ptr_File, "SCALARS u Float32 1\n");
+  fprintf(ptr_File, "LOOKUP_TABLE u\n");
+  for (unsigned int i = 0; i < n_Cell; i++)
+    fprintf(ptr_File, "%f\n", m[i]/rho[i]);
+
   fclose(ptr_File);
 }
 
