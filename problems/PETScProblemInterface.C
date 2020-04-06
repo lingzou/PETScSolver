@@ -126,6 +126,9 @@ ApplicationCtx::setupInitialConditions()
   VecGetArray(u, &uu);
   myPETScProblem->SetupInitialCondition(uu);
   VecRestoreArray(u, &uu);
+
+  // Write output for t = 0
+  myPETScProblem->writeSolution(0);
 }
 
 void
