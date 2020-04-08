@@ -6,10 +6,11 @@
 int main(int argc, char **argv)
 {
   // Require an input file
-  if (argc != 2)
+  if (argc < 2)
   {
     std::cerr << "Invalid input command line." << std::endl;
-    std::cerr << "Please use: './PETScSolver <input_file_name>" << std::endl;
+    std::cerr << "Please use: './PETScSolver <input_file_name> [PETSc options]" << std::endl;
+    std::cerr << "<required> [optional]" << std::endl;
     exit(1);
   }
 
