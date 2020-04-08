@@ -36,16 +36,16 @@ EulerEquation1D::EulerEquation1D() :
   P_L = p_IG(RHO_L, M_L, E_L);
   P_R = p_IG(RHO_R, M_R, E_R);
 
-  rho.resize(n_DOFs);       m.resize(n_DOFs);       E.resize(n_DOFs);     p.resize(n_DOFs);
-  rho_old.resize(n_DOFs);   m_old.resize(n_DOFs);   E_old.resize(n_DOFs);
-  rho_oo.resize(n_DOFs);    m_oo.resize(n_DOFs);    E_oo.resize(n_DOFs);
+  rho.resize(n_Cell);       m.resize(n_Cell);       E.resize(n_Cell);     p.resize(n_Cell);
+  rho_old.resize(n_Cell);   m_old.resize(n_Cell);   E_old.resize(n_Cell);
+  rho_oo.resize(n_Cell);    m_oo.resize(n_Cell);    E_oo.resize(n_Cell);
 
   flux_rho.resize(n_Cell + 1); flux_m.resize(n_Cell + 1); flux_E.resize(n_Cell + 1);
 
   if (_order > 1)
   {
-    rho_w.resize(n_DOFs);       m_w.resize(n_DOFs);       E_w.resize(n_DOFs);
-    rho_e.resize(n_DOFs);       m_e.resize(n_DOFs);       E_e.resize(n_DOFs);
+    rho_w.resize(n_Cell);       m_w.resize(n_Cell);       E_w.resize(n_Cell);
+    rho_e.resize(n_Cell);       m_e.resize(n_Cell);       E_e.resize(n_Cell);
   }
 }
 
