@@ -73,9 +73,7 @@ HeatConduction1D::updateSolution(double * u, TimeStepIndex index)
       break;
 
     default:
-      std::cerr << "ERROR.\n";
-      exit(1);
-      break;
+      sysError("Unknown TimeStepIndex");
   }
 }
 

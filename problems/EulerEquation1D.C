@@ -30,9 +30,8 @@ EulerEquation1D::EulerEquation1D() :
     RHO_R = 0.500;    M_R = 0.000;    E_R = 1.4275;
   }
   else
-  {
-    std::cerr << "case = 1 for Sod problem; case = 2 for Lax problem";  exit(1);
-  }
+    sysError("case = 1 for Sod problem; case = 2 for Lax problem");
+
   P_L = p_IG(RHO_L, M_L, E_L);
   P_R = p_IG(RHO_R, M_R, E_R);
 
@@ -102,9 +101,7 @@ EulerEquation1D::updateSolution(double * u, TimeStepIndex index)
       break;
 
     default:
-      std::cerr << "ERROR.\n";
-      exit(1);
-      break;
+      sysError("Unknown TimeStepIndex");
   }
 }
 
@@ -142,7 +139,7 @@ EulerEquation1D::RHS(double * rhs)
   {
     case 1:   updateFluxes();           break;
     case 2:   updateFluxes2ndOrder();   break;
-    defaut:   std::cerr << "Spatial order not implemented." << std::endl; exit(1);
+    defaut:   sysError("Spatial order not implemented.");
   }
 
   unsigned int idx = 0;

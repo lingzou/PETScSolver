@@ -12,10 +12,7 @@ ApplicationCtx::initializePETScApp()
   else if (problem_name.compare("EulerEquation1D") == 0)
     myPETScProblem = new EulerEquation1D();
   else
-  {
-    std::cerr << "ERROR: UNKNOWN problem: '" << problem_name << "'." << std::endl;
-    exit(1);
-  }
+    sysError("ERROR: UNKNOWN problem: " + problem_name);
 
   // Get total number of DOF
   N_DOFs = myPETScProblem->getNDOF();
@@ -195,8 +192,7 @@ PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
       break;
 
     defaut:
-      std::cerr << "ERROR: not implemented." << std::endl;
-      exit(1);
+      sysError("ERROR: not implemented.");
   }
 
   return 0;
@@ -231,10 +227,7 @@ int PetscOptionsGetRequiredInt(std::string name)
   PetscOptionsGetInt(NULL, NULL, name.c_str(), &value, &hasInput);
 
   if (!hasInput)
-  {
-    std::cerr << "Required PETSc <Int> input '" << name << "' is not found." << std::endl;
-    exit(1);
-  }
+    sysError("Required PETSc <Int> input '" + name + "' is not found.");
 
   return int(value);
 }
@@ -247,10 +240,7 @@ double PetscOptionsGetRequiredReal(std::string name)
   PetscOptionsGetReal(NULL, NULL, name.c_str(), &value, &hasInput);
 
   if (!hasInput)
-  {
-    std::cerr << "Required PETSc <Real> input '" << name << "' is not found." << std::endl;
-    exit(1);
-  }
+    sysError("Required PETSc <Real> input '" + name + "' is not found.");
 
   return value;
 }
@@ -262,10 +252,12 @@ std::string PetscOptionsGetRequiredString(std::string name)
   PetscOptionsGetString(NULL, NULL, name.c_str(), value, 4096, &hasInput);
 
   if (!hasInput)
-  {
-    std::cerr << "Required PETSc <String> input '" << name << "' is not found." << std::endl;
-    exit(1);
-  }
+    sysError("Required PETSc <String> input '" + name + "' is not found.");
 
   return std::string(value);
+}
+
+void sysError(std::string message)
+{
+  std::cerr << message << std::endl; exit(1);
 }

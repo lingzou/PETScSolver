@@ -15,6 +15,9 @@ int         PetscOptionsGetRequiredInt(std::string name);
 double      PetscOptionsGetRequiredReal(std::string name);
 std::string PetscOptionsGetRequiredString(std::string name); /* max string length 4096 */
 
+// Some helper functions
+void sysError(std::string);
+
 struct ApplicationCtx
 {
   PETScProblem *  myPETScProblem;

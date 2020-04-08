@@ -8,7 +8,7 @@ StringToEnum(std::string str)
   if      (str.compare("BDF1") == 0)  return BDF1;
   else if (str.compare("BDF2") == 0)  return BDF2;
   else if (str.compare("CN")   == 0)  return CN;
-  else { std::cerr << "ERROR: UNKNOWN TimeScheme: " << str << std::endl; exit(1); return INVALID; }
+  else    {sysError("ERROR: UNKNOWN TimeScheme: " + str); return INVALID;}
 }
 
 std::string
@@ -19,8 +19,7 @@ trim_file_name(std::string full_file_name)
   unsigned int length = pos_of_point - pos_of_slash - 1;
   if(length < 1)
   {
-    std::cerr << "ERROR: The input file name, '" << full_file_name << "', cannot be properly trimmed.\n";
-    exit(1);
+    sysError("ERROR: The input file name, '" + full_file_name + "', cannot be properly trimmed.");
     return std::string("");
   }
   else
@@ -45,6 +44,5 @@ void
 PETScProblem::computeJacobianMatrix(Mat & P_Mat)
 {
   // By default this is not required
-  std::cerr << "Exact Jacobian has not been implemented." << std::endl;
-  exit(1);
+  sysError("Exact Jacobian has not been implemented.");
 }
