@@ -10,7 +10,7 @@ class HeatConduction1D : public PETScProblem
 {
 public:
   HeatConduction1D();
-  ~HeatConduction1D();
+  virtual ~HeatConduction1D();
 
   virtual void onTimestepEnd() final;
 

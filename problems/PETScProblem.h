@@ -27,7 +27,7 @@ class PETScProblem
 {
 public:
   PETScProblem();
-  ~PETScProblem();
+  virtual ~PETScProblem();
 
   virtual unsigned int getNDOF() { return n_DOFs; }
   virtual TimeScheme getTimeScheme() { return _time_scheme; }

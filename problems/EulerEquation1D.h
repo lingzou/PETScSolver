@@ -8,7 +8,7 @@ class EulerEquation1D : public PETScProblem
 {
 public:
   EulerEquation1D();
-  ~EulerEquation1D();
+  virtual ~EulerEquation1D();
 
   virtual void onTimestepEnd() final;
 

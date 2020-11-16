@@ -191,6 +191,7 @@ PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
       VecAXPY(f, 1, appCtx->res_transient); // f = f + transient = transient - 0.5(RHS + RHS_old)
       break;
 
+    case INVALID:
     defaut:
       sysError("ERROR: not implemented.");
   }
