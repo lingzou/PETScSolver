@@ -122,10 +122,6 @@ HeatConduction1D::onTimestepEnd()
   // write solution
   writeSolution(_step);
   _step ++;
-
-  // Copy oldold solution into old; new solution into old solution
-  if (_time_scheme == BDF2) T_oldold = T_old;
-  T_old = T; // Vector = operator
 }
 
 void

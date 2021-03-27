@@ -52,6 +52,7 @@ protected:
   double _t;
   double _dt;
   unsigned int _step;
+  int _output_interval;
 
   unsigned int n_DOFs;
 };

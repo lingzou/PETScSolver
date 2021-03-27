@@ -14,7 +14,7 @@ PetscErrorCode FormJacobian(SNES, Vec, Mat, Mat, void*);
 int         PetscOptionsGetRequiredInt(std::string name);
 double      PetscOptionsGetRequiredReal(std::string name);
 std::string PetscOptionsGetRequiredString(std::string name); /* max string length 4096 */
-
+int         PetscOptionsGetOptionalInt(std::string name, int value);
 // Some helper functions
 void sysError(std::string);
 

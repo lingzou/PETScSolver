@@ -256,12 +256,6 @@ EulerEquation1D::onTimestepEnd()
   // write solution
   writeSolution(_step);
   _step ++;
-
-  // Copy oldold solution into old; new solution into old solution
-  if (_time_scheme == BDF2)
-  { rho_oo = rho_old; m_oo = m_old; E_oo = E_old; }
-
-  rho_old = rho; m_old = m; E_old = E;
 }
 
 void

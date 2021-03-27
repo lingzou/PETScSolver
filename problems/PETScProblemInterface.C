@@ -2,6 +2,7 @@
 #include "PETScProblemInterface.h"
 #include "HeatConduction1D.h"
 #include "EulerEquation1D.h"
+#include "FiveEqnTwoP_StagGrid.h"
 
 void
 ApplicationCtx::initializePETScApp()
@@ -11,6 +12,8 @@ ApplicationCtx::initializePETScApp()
     myPETScProblem = new HeatConduction1D();
   else if (problem_name.compare("EulerEquation1D") == 0)
     myPETScProblem = new EulerEquation1D();
+  else if (problem_name.compare("FiveEqnTwoP_StagGrid") == 0)
+    myPETScProblem = new FiveEqnTwoP_StagGrid();
   else
     sysError("ERROR: UNKNOWN problem: " + problem_name);
 
@@ -123,6 +126,9 @@ ApplicationCtx::setupInitialConditions()
   VecGetArray(u, &uu);
   myPETScProblem->SetupInitialCondition(uu);
   VecRestoreArray(u, &uu);
+
+  VecCopy(u, u_old);
+  VecCopy(u, u_oldold);
 
   // Write output for t = 0
   myPETScProblem->writeSolution(0);
@@ -256,6 +262,16 @@ std::string PetscOptionsGetRequiredString(std::string name)
     sysError("Required PETSc <String> input '" + name + "' is not found.");
 
   return std::string(value);
+}
+
+int PetscOptionsGetOptionalInt(std::string name, int defaut_value)
+{
+  PetscBool hasInput = PETSC_FALSE;
+  PetscInt  value = 0;
+
+  PetscOptionsGetInt(NULL, NULL, name.c_str(), &value, &hasInput);
+
+  return hasInput ? int(value) : defaut_value;
 }
 
 void sysError(std::string message)

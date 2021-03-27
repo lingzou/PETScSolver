@@ -35,6 +35,8 @@ PETScProblem::PETScProblem() :
   _dt = PetscOptionsGetRequiredReal("-dt");
   std::string ts_str = PetscOptionsGetRequiredString("-ts");
   _time_scheme = StringToEnum(ts_str);
+
+  _output_interval = PetscOptionsGetOptionalInt("-output_interval", 1);
 }
 
 PETScProblem::~PETScProblem()

@@ -52,12 +52,26 @@ int main(int argc, char **argv)
     }
 
     // 2. PETSc solving
+    // 2.1 Update the old (and oldold) solutions (for transient residual)
+
+    PetscScalar *uu_old, *uu_oldold;
+    VecGetArray(AppCtx.u_old, &uu_old);
+    VecGetArray(AppCtx.u_oldold, &uu_oldold);
+    AppCtx.myPETScProblem->updateSolution(uu_old, OLD);
+    AppCtx.myPETScProblem->updateSolution(uu_oldold, OLDOLD);
+    VecRestoreArray(AppCtx.u_old, &uu_old);
+    VecRestoreArray(AppCtx.u_oldold, &uu_oldold);
+
+    // 2.2 Solve the system by iterating the 'NEW' solutions
     PetscPrintf(PETSC_COMM_WORLD, "Time step = %d, dt = %g\n", step, AppCtx.myPETScProblem->getDt());
     SNESSolve(AppCtx.snes, NULL, AppCtx.u);
 
     // 3. After PETSc solving
     //    March time forward; write solutions; update old solutions etc.
     AppCtx.myPETScProblem->onTimestepEnd();
+    // 3.2 Save the old (and oldold) solutions
+    VecCopy(AppCtx.u_old, AppCtx.u_oldold);
+    VecCopy(AppCtx.u, AppCtx.u_old);
 
     // 3.1. (If applicable) save the NEW RHS to OLD RHS for the next time step CN
     if (ts == CN)
