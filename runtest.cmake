@@ -3,7 +3,7 @@
 #
 EXECUTE_PROCESS(
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-	COMMAND ${TEST_PROG} input/${TEST_NAME}.i
+	COMMAND ${TEST_PROG} Testing/input/${TEST_NAME}.i
   RESULT_VARIABLE EXE_HAD_ERROR
 )
 
@@ -18,7 +18,7 @@ endif()
 message("Now check the first time stamp at N = ${STEP_1}")
 EXECUTE_PROCESS(
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMAND ${CMAKE_SOURCE_DIR}/vtk_diff.py output/${TEST_NAME}_step_${STEP_1}.vtk output/expected/${TEST_NAME}_step_${STEP_1}.vtk
+  COMMAND ${CMAKE_SOURCE_DIR}/vtk_diff.py output/${TEST_NAME}_step_${STEP_1}.vtk Testing/expected/${TEST_NAME}_step_${STEP_1}.vtk
   RESULT_VARIABLE FILES_ARE_DIFF
 )
 
@@ -31,7 +31,7 @@ message("") # an empty line
 message("Now check the second time stamp at N = ${STEP_2}")
 EXECUTE_PROCESS(
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMAND ${CMAKE_SOURCE_DIR}/vtk_diff.py output/${TEST_NAME}_step_${STEP_2}.vtk output/expected/${TEST_NAME}_step_${STEP_2}.vtk
+  COMMAND ${CMAKE_SOURCE_DIR}/vtk_diff.py output/${TEST_NAME}_step_${STEP_2}.vtk Testing/expected/${TEST_NAME}_step_${STEP_2}.vtk
   RESULT_VARIABLE FILES_ARE_DIFF
 )
 
