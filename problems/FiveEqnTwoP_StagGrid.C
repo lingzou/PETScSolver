@@ -37,7 +37,6 @@ FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid() :
 
   _order = PetscOptionsGetRequiredInt("-order");
   H_inv = PetscOptionsGetRequiredReal("-H_inv");
-  std::cout << "H_inv = " << H_inv << std::endl;
 
   length = 12.0;
   n_Cell = PetscOptionsGetRequiredInt("-n_cells");

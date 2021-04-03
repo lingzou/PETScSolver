@@ -198,7 +198,7 @@ PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
       break;
 
     case INVALID:
-    defaut:
+    default:
       sysError("ERROR: not implemented.");
   }
 
