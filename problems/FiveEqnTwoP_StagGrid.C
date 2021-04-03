@@ -329,20 +329,7 @@ FiveEqnTwoP_StagGrid::linearReconstruction(double l_ghost, double r_ghost,
 }
 
 void
-FiveEqnTwoP_StagGrid::onTimestepEnd()
-{
-  // March time forward
-  _t += _dt;
-
-  // write solution
-  int N_Steps = PetscOptionsGetRequiredInt("-n_steps");
-  if ((_step % _output_interval == 0) || (_step == N_Steps))
-    writeSolution(_step);
-  _step ++;
-}
-
-void
-FiveEqnTwoP_StagGrid::writeSolution(unsigned int step)
+FiveEqnTwoP_StagGrid::writeVTKOutput(unsigned int step)
 {
   FILE * ptr_File;
   std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".vtk";

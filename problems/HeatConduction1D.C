@@ -114,18 +114,7 @@ HeatConduction1D::RHS(double * rhs)
 }
 
 void
-HeatConduction1D::onTimestepEnd()
-{
-  // March time forward
-  _t += _dt;
-
-  // write solution
-  writeSolution(_step);
-  _step ++;
-}
-
-void
-HeatConduction1D::writeSolution(unsigned int step)
+HeatConduction1D::writeVTKOutput(unsigned int step)
 {
   FILE * ptr_File;
   std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".vtk";

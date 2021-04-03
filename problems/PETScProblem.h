@@ -34,14 +34,14 @@ public:
   virtual double getCurrentTime() { return _t; }
   virtual double getDt() { return _dt; }
 
-  virtual void onTimestepEnd() = 0;
+  virtual void onTimestepEnd();
 
   virtual void SetupInitialCondition(double * u) = 0;
   virtual void updateSolution(double *u, TimeStepIndex index) = 0;
 
   virtual void transientResidual(double * res) = 0;
   virtual void RHS(double * rhs) = 0;
-  virtual void writeSolution(unsigned int step) = 0;
+  virtual void writeVTKOutput(unsigned int step) = 0;
 
   virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) = 0;
   virtual void computeJacobianMatrix(Mat & P_Mat);

@@ -248,18 +248,7 @@ EulerEquation1D::linearReconstruction(double l_ghost, double r_ghost,
 }
 
 void
-EulerEquation1D::onTimestepEnd()
-{
-  // March time forward
-  _t += _dt;
-
-  // write solution
-  writeSolution(_step);
-  _step ++;
-}
-
-void
-EulerEquation1D::writeSolution(unsigned int step)
+EulerEquation1D::writeVTKOutput(unsigned int step)
 {
   FILE * ptr_File;
   std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".vtk";

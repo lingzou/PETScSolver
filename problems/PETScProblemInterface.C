@@ -131,7 +131,7 @@ ApplicationCtx::setupInitialConditions()
   VecCopy(u, u_oldold);
 
   // Write output for t = 0
-  myPETScProblem->writeSolution(0);
+  myPETScProblem->writeVTKOutput(0);
 }
 
 void

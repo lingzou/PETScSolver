@@ -10,14 +10,12 @@ public:
   FiveEqnTwoP_StagGrid();
   ~FiveEqnTwoP_StagGrid();
 
-  virtual void onTimestepEnd() final;
-
   virtual void SetupInitialCondition(double * u) final;
   virtual void updateSolution(double *u, TimeStepIndex index) final;
 
   virtual void transientResidual(double * res) final;
   virtual void RHS(double * rhs) final;
-  virtual void writeSolution(unsigned int step) final;
+  virtual void writeVTKOutput(unsigned int step) final;
 
   virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) final;
 protected:

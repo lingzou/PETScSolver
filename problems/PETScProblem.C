@@ -43,6 +43,19 @@ PETScProblem::~PETScProblem()
 {}
 
 void
+PETScProblem::onTimestepEnd()
+{
+  // March time forward
+  _t += _dt;
+
+  // write solution
+  int N_Steps = PetscOptionsGetRequiredInt("-n_steps");
+  if ((_step % _output_interval == 0) || (_step == N_Steps))
+    writeVTKOutput(_step);
+  _step ++;
+}
+
+void
 PETScProblem::computeJacobianMatrix(Mat & P_Mat)
 {
   // By default this is not required
