@@ -131,7 +131,7 @@ ApplicationCtx::setupInitialConditions()
   VecCopy(u, u_oldold);
 
   // Write output for t = 0
-  myPETScProblem->writeVTKOutput(0);
+  myPETScProblem->writeOutput(0);
 }
 
 void
@@ -272,6 +272,16 @@ int PetscOptionsGetOptionalInt(std::string name, int defaut_value)
   PetscOptionsGetInt(NULL, NULL, name.c_str(), &value, &hasInput);
 
   return hasInput ? int(value) : defaut_value;
+}
+
+bool PetscOptionsGetOptionalBool(std::string name, bool defaut_value)
+{
+  PetscBool hasInput = PETSC_FALSE;
+  PetscBool value = PETSC_FALSE;
+
+  PetscOptionsGetBool(NULL, NULL, name.c_str(), &value, &hasInput);
+
+  return hasInput ? bool(value) : defaut_value;
 }
 
 void sysError(std::string message)

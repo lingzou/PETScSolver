@@ -41,7 +41,10 @@ public:
 
   virtual void transientResidual(double * res) = 0;
   virtual void RHS(double * rhs) = 0;
+
+  void writeOutput(unsigned int step);
   virtual void writeVTKOutput(unsigned int step) = 0;
+  virtual void writeTextOutput(unsigned int step);
 
   virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) = 0;
   virtual void computeJacobianMatrix(Mat & P_Mat);
@@ -53,6 +56,7 @@ protected:
   double _dt;
   unsigned int _step;
   int _output_interval;
+  bool _text_output;
 
   unsigned int n_DOFs;
 };

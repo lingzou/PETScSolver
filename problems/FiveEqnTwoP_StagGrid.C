@@ -418,6 +418,30 @@ FiveEqnTwoP_StagGrid::writeVTKOutput(unsigned int step)
 }
 
 void
+FiveEqnTwoP_StagGrid::writeTextOutput(unsigned int step)
+{
+  std::cout << "FiveEqnTwoP_StagGrid::writeTextOutput" << std::endl;
+  FILE * ptr_File;
+  std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".dat";
+  ptr_File = fopen(file_name.c_str(), "w");
+
+  // cell data
+  fprintf(ptr_File, "Time = %20.6e\n", _t);
+  fprintf(ptr_File, "#Cell data\n");
+  fprintf(ptr_File, "%20s%20s%20s%20s%20s%20s%20s%20s\n", "x", "alpha", "p_l", "p_g", "rho_l", "rho_g", "mu", "p_hat");
+  for (unsigned int i = 0; i < n_Cell; i++)
+    fprintf(ptr_File, "%20.6e%20.6e%20.6e%20.6e%20.6e%20.6e%20.6e%20.6e\n", (i+0.5)*dx, alpha[i], p_l[i], p_g[i], rho_l[i], rho_g[i], mu[i], p_hat[i]);
+
+  // edge data
+  fprintf(ptr_File, "#Edge data\n");
+  fprintf(ptr_File, "%20s%20s%20s%20s\n", "x", "v_l", "v_g", "v_hat");
+  for (unsigned int i = 0; i < n_Node; i++)
+    fprintf(ptr_File, "%20.6e%20.6e%20.6e%20.6e\n", i*dx, v_l[i], v_g[i], v_hat[i]);
+
+  fclose(ptr_File);
+}
+
+void
 FiveEqnTwoP_StagGrid::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
 {
   MatCreateSeqAIJ(PETSC_COMM_SELF, n_DOFs, n_DOFs, 25, NULL, &P_Mat);

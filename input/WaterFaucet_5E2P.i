@@ -4,10 +4,11 @@
 -order    1           # First-order spatial scheme
 -ts       BDF1        # Backward Euler (aka BDF1)
 -dt       5.0e-4      # Time step size
--n_steps  2000        # Total number of time steps
+-n_steps  100         # Total number of time steps
 -n_cells  768         # Number of finite volumes (cells)
 
 -output_interval 100  # Output interval, write output file every 100 time steps
+-text_output true
 
 #-snes_converged_reason
 #-ksp_converged_reason

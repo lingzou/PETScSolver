@@ -27,7 +27,7 @@ trim_file_name(std::string full_file_name)
 }
 
 PETScProblem::PETScProblem() :
-  _time_scheme(INVALID), _t(0.0), _dt(0.0), _step(1), n_DOFs(1)
+  _time_scheme(INVALID), _t(0.0), _dt(0.0), _step(1), _text_output(false), n_DOFs(1)
 {
   std::string full_name = PetscOptionsGetRequiredString("-input_file_name");
   _input_file_name = trim_file_name(full_name);
@@ -37,6 +37,7 @@ PETScProblem::PETScProblem() :
   _time_scheme = StringToEnum(ts_str);
 
   _output_interval = PetscOptionsGetOptionalInt("-output_interval", 1);
+  _text_output = PetscOptionsGetOptionalBool("-text_output", false);
 }
 
 PETScProblem::~PETScProblem()
@@ -51,7 +52,8 @@ PETScProblem::onTimestepEnd()
   // write solution
   int N_Steps = PetscOptionsGetRequiredInt("-n_steps");
   if ((_step % _output_interval == 0) || (_step == N_Steps))
-    writeVTKOutput(_step);
+    writeOutput(_step);
+
   _step ++;
 }
 
@@ -60,4 +62,17 @@ PETScProblem::computeJacobianMatrix(Mat & P_Mat)
 {
   // By default this is not required
   sysError("Exact Jacobian has not been implemented.");
+}
+
+void
+PETScProblem::writeOutput(unsigned int step)
+{
+  writeVTKOutput(step);
+  if (_text_output) writeTextOutput(step);
+}
+
+void
+PETScProblem::writeTextOutput(unsigned int step)
+{
+  sysError("writeTextOutput() function has not been implemented.");
 }

@@ -16,6 +16,7 @@ public:
   virtual void transientResidual(double * res) final;
   virtual void RHS(double * rhs) final;
   virtual void writeVTKOutput(unsigned int step) final;
+  virtual void writeTextOutput(unsigned int step) final;
 
   virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) final;
 protected:
