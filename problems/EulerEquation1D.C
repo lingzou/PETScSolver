@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "EulerEquation1D.h"
+#include "utils.h"
 
 EulerEquation1D::EulerEquation1D() :
   PETScProblem()
@@ -190,9 +191,9 @@ EulerEquation1D::updateFluxes2ndOrder()
   //   The reconstruction is directly performed on the conservative variables.
   //   Some papers (I cannot find the references now FIXME) claim that it is preferred to use primitive
   //   variables for reconstruction. This has not been tested in this code.
-  linearReconstruction(RHO_L, RHO_R, rho, rho_w, rho_e);
-  linearReconstruction(M_L, M_R, m, m_w, m_e);
-  linearReconstruction(E_L, E_R, E, E_w, E_e);
+  UTILS::linearReconstruction(RHO_L, RHO_R, rho, rho_w, rho_e);
+  UTILS::linearReconstruction(M_L, M_R, m, m_w, m_e); // should it be linearReconstruction(-M_L, -M_R, m, m_w, m_e) ?
+  UTILS::linearReconstruction(E_L, E_R, E, E_w, E_e);
 
   for(unsigned int i = 0; i <= n_Cell; i++)
   {
@@ -217,33 +218,6 @@ EulerEquation1D::updateFluxes2ndOrder()
     flux_rho[i] = 0.5 * (m_left + m_right) + 0.5 * eigen_max * (rho_left - rho_right);
     flux_m[i] = 0.5 * (m_left*m_left/rho_left + p_left + m_right*m_right/rho_right + p_right) + 0.5 * eigen_max * (m_left - m_right);
     flux_E[i] = 0.5 * ((E_left + p_left)*u_left + (E_right + p_right)*u_right) + 0.5 * eigen_max * (E_left - E_right);
-  }
-}
-
-void
-EulerEquation1D::linearReconstruction(double l_ghost, double r_ghost,
-  std::vector<double> &u, std::vector<double> &u_w, std::vector<double> &u_e)
-{
-  for(int i = 0; i < u.size(); i++)
-  {
-    double u_P = u[i];
-    double u_W = (i == 0) ? l_ghost : u[i - 1];
-    double u_E = (i == u.size() - 1) ? r_ghost : u[i + 1];
-
-    // I think this is a more decent implementation of TVD limiter
-    // Reference:
-    // [1] Berger, M., Aftosmis, M.J., Murman, S.M., 2005. Analysis of slope limiters on irreg- ular grids.
-    //     In: AIAA Paper 2005-0490, 43rd AIAA Aerospace Sciences Meeting, Jan. 10e13, Reno, NV, 2005.
-    double wf = 0.0;
-    if ((u_E - u_P)*(u_P - u_W) > 0.0)    // u_P is in between u_W and u_E, i.e., not a local extremum
-      if (std::fabs(u_E - u_W) > 1.e-10)  // The difference is large enough, so reconstruction is meaningful
-      {
-        double f = (u_P - u_W) / (u_E - u_W);
-        wf = 2.0 * f * (1.0 - f) / ((1.0 - f) * (1.0 - f) + f * f);   // Eqn. (10) of Ref. [1]
-      }
-    // Linear reconstructed values
-    u_w[i] = u_P - 0.25 * wf * (u_E - u_W);   // Eqn. (5) of Ref. [1]
-    u_e[i] = u_P + 0.25 * wf * (u_E - u_W);
   }
 }
 

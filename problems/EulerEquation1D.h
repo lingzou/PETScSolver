@@ -21,7 +21,6 @@ public:
 protected:
   void updateFluxes();
   void updateFluxes2ndOrder();
-  void linearReconstruction(double, double, std::vector<double> &, std::vector<double> &, std::vector<double> &);
 
   double p_IG(double rho, double m, double E) { return (_gamma - 1.0) * (E - 0.5 * m * m / rho); }
 

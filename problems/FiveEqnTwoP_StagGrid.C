@@ -420,7 +420,6 @@ FiveEqnTwoP_StagGrid::writeVTKOutput(unsigned int step)
 void
 FiveEqnTwoP_StagGrid::writeTextOutput(unsigned int step)
 {
-  std::cout << "FiveEqnTwoP_StagGrid::writeTextOutput" << std::endl;
   FILE * ptr_File;
   std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".dat";
   ptr_File = fopen(file_name.c_str(), "w");
