@@ -19,6 +19,9 @@ public:
   virtual void writeTextOutput(unsigned int step) final;
 
   virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) final;
+
+  void RHS_1st_order(double * rhs);
+  void RHS_2nd_order(double * rhs);
 protected:
   void updateFluxes();
   void updateFluxes2ndOrder();
@@ -54,6 +57,10 @@ protected:
 
   // Fluxes
   std::vector<double> alpha_flux, rho_l_flux, rho_g_flux;
+
+  // Second-order helper variables
+  std::vector<double> alpha_w, alpha_e, p_l_w, p_l_e, p_g_w, p_g_e;
+  std::vector<double> v_l_w, v_l_e, v_g_w, v_g_e;
 };
 
 #endif /*EULER_EQUATION_1D_H*/

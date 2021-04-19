@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "FiveEqnTwoP_StagGrid.h"
+#include "utils.h"
 
 // Reference:
 //   [1] L. Zou, H. Zhao, and H. Zhang, A revisit to the Hicks' hyperbolic two-pressure
@@ -65,6 +66,13 @@ FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid() :
 
   // Fluxes
   alpha_flux.resize(n_Node);  rho_l_flux.resize(n_Node);  rho_g_flux.resize(n_Node);
+
+  // Second-order helper variables
+  if (_order == 2)
+  {
+    alpha_w.resize(n_Cell);       p_l_w.resize(n_Cell);       p_g_w.resize(n_Cell);       v_l_w.resize(n_Node);       v_g_w.resize(n_Node);
+    alpha_e.resize(n_Cell);       p_l_e.resize(n_Cell);       p_g_e.resize(n_Cell);       v_l_e.resize(n_Node);       v_g_e.resize(n_Node);
+  }
 }
 
 FiveEqnTwoP_StagGrid::~FiveEqnTwoP_StagGrid()
@@ -223,6 +231,17 @@ FiveEqnTwoP_StagGrid::transientResidual(double * res)
 void
 FiveEqnTwoP_StagGrid::RHS(double * rhs)
 {
+  switch (_order)
+  {
+    case 1:     RHS_1st_order(rhs);     break;
+    case 2:     RHS_2nd_order(rhs);     break;
+    default :   sysError("Spatial order not implemented.");
+  }
+}
+
+void
+FiveEqnTwoP_StagGrid::RHS_1st_order(double * rhs)
+{
   // Boundary values and ghost values
   double p_l_inlet_ghost = p_l[0];
   double p_g_inlet_ghost = p_g[0];
@@ -270,6 +289,128 @@ FiveEqnTwoP_StagGrid::RHS(double * rhs)
     double dv_g_dx = (v_g[i] > 0) ? (v_g[i] - v_g_west)/dx : (v_g_east - v_g[i])/dx;
 
     // d(alpha*p)_dx term
+    double d_alphap_l_dx = (i == n_Cell) ? (P_OUTLET * (1. - alpha_outlet_ghost) - p_l[n_Cell-1]*(1. - alpha[n_Cell-1]))/dx*2. : (p_l[i]*(1. - alpha[i]) - p_l[i-1]*(1. - alpha[i-1]))/dx;
+    double d_alphap_g_dx = (i == n_Cell) ? (P_OUTLET * alpha_outlet_ghost - p_g[n_Cell-1]*alpha[n_Cell-1])/dx*2. : (p_g[i]*alpha[i] - p_g[i-1]*alpha[i-1])/dx;
+    double alpha_grad = (i == n_Cell) ? (alpha_outlet_ghost - alpha[n_Cell-1])/dx*2. : (alpha[i] - alpha[i-1])/dx;
+
+    // assemble RHS for liquid and gas phase momentum equations
+    double rhs_v_l = -(1. - alpha_edge[i]) * rho_l_edge[i] * v_l[i] * dv_l_dx;
+    double rhs_v_g = -alpha_edge[i] * rho_g_edge[i] * v_g[i] * dv_g_dx;
+
+    rhs_v_l -= d_alphap_l_dx;
+    rhs_v_l -= p_hat_edge[i] * alpha_grad;
+    rhs_v_g -= d_alphap_g_dx;
+    rhs_v_g += p_hat_edge[i] * alpha_grad;
+
+    // gravity terms, alpha * rho * g
+    if (i < n_Cell)
+    {
+      rhs_v_l -= 0.5 * ((1. - alpha[i-1]) * rho_l[i-1] + (1. - alpha[i]) * rho_l[i]) * g;
+      rhs_v_g -= 0.5 * (alpha[i-1] * rho_g[i-1] + alpha[i] * rho_g[i]) * g;
+    }
+    else
+    {
+      rhs_v_l -= (1. - alpha[n_Cell-1]) * rho_l[n_Cell-1] * g;
+      rhs_v_g -= alpha[n_Cell-1] * rho_g[n_Cell-1] * g;
+    }
+
+    rhs[5*i] = rhs_v_l;
+    rhs[5*i+1] = rhs_v_g;
+  }
+
+  // RHS for void fraction and mass conservation equations
+  for(int i = 0; i < n_Cell; i++) //loop on cells
+  {
+    // alpha eqn, Eqn. (23) of Ref. [1]
+    double v_hat_grad = (v_hat[i+1] - v_hat[i]) / dx;
+    rhs[5*i+2] = -(alpha_flux[i+1] - alpha_flux[i]) / dx + alpha[i] * v_hat_grad + mu[i] * (p_g[i] - p_l[i]);
+
+    // mass conservation equations, Eqn. (2) and (4) of Ref. [1]
+    rhs[5*i+3] = -(rho_l_flux[i+1] - rho_l_flux[i]) / dx;
+    rhs[5*i+4] = -(rho_g_flux[i+1] - rho_g_flux[i]) / dx;
+  }
+}
+
+void
+FiveEqnTwoP_StagGrid::RHS_2nd_order(double * rhs)
+{
+  // 1. Linear reconstruction with linear-extrapolation boundary ghost cell values
+  // 1.1 void fraction
+  double alpha_inlet_ghost = 2.0 * ALPHA_INLET - alpha[0];
+  double alpha_outlet_ghost = (v_l[n_Cell] > 0) ? 2.0 * alpha[n_Cell - 1] - alpha[n_Cell - 2] : ALPHA_OUTLET;
+  UTILS::linearReconstruction(alpha_inlet_ghost, alpha_outlet_ghost, alpha, alpha_w, alpha_e);
+  // 1.2 liquid pressures
+  double p_l_inlet_ghost = 2.0 * p_l[0] - p_l[1];
+  double p_l_out_ghost = 2.0 * P_OUTLET - p_l[n_Cell - 1];
+  UTILS::linearReconstruction(p_l_inlet_ghost, p_l_out_ghost, p_l, p_l_w, p_l_e);
+  // 1.3 vapor pressures
+  double p_g_inlet_ghost = 2.0 * p_g[0] - p_g[1];
+  double p_g_out_ghost = 2.0 * P_OUTLET - p_g[n_Cell - 1];
+  UTILS::linearReconstruction(p_l_inlet_ghost, p_l_out_ghost, p_l, p_l_w, p_l_e);
+  // 1.4 velocities
+  //    v_l(g)_inlet_ghost are not used here, as the inlet will be treated differently, see the residual forms
+  double v_l_outlet_ghost = 2. * v_l[n_Cell - 1] - v_l[n_Cell - 2];
+  double v_g_outlet_ghost = 2. * v_g[n_Cell - 1] - v_g[n_Cell - 2];
+  UTILS::linearReconstruction(V_L_INIT, v_l_outlet_ghost, v_l, v_l_w, v_l_e);
+  UTILS::linearReconstruction(V_G_INIT, v_g_outlet_ghost, v_g, v_g_w, v_g_e);
+
+  // 2. Void fraction and mass equation fluxes
+  // Upwind donor cell method for void fraction and mass balance equations
+  double rho_l_inlet_bc = rho_l_func(p_l_inlet_ghost);
+  double rho_g_inlet_bc = rho_g_func(p_g_inlet_ghost);
+  double rho_l_outlet_bc = rho_l_func(P_OUTLET);
+  double rho_g_outlet_bc = rho_g_func(P_OUTLET);
+  alpha_flux[0] = (v_hat[0] > 0) ? v_hat[0] * ALPHA_INLET : v_hat[0] * alpha_w[0];
+  rho_l_flux[0] = (V_L_INIT > 0) ? V_L_INIT * (1.0 - ALPHA_INLET) * rho_l_inlet_bc : V_L_INIT * (1.0 - alpha_w[0]) * rho_l_func(p_l_w[0]);
+  rho_g_flux[0] = (V_G_INIT > 0) ? V_G_INIT * ALPHA_INLET * rho_g_inlet_bc : V_G_INIT * alpha_w[0] * rho_g_func(p_g_w[0]);
+
+  alpha_flux[n_Cell] = (v_hat[n_Cell] > 0) ? v_hat[n_Cell] * alpha_e[n_Cell-1] : v_hat[n_Cell] * ALPHA_OUTLET;
+  rho_l_flux[n_Cell] = (v_l[n_Cell] > 0) ? v_l[n_Cell] * (1. - alpha_e[n_Cell-1]) * rho_l_func(p_l_e[n_Cell-1]) : v_l[n_Cell] * (1.0 - ALPHA_OUTLET) * rho_l_outlet_bc;
+  rho_g_flux[n_Cell] = (v_g[n_Cell] > 0) ? v_g[n_Cell] * alpha_e[n_Cell-1] * rho_g_func(p_g_e[n_Cell-1]) : v_g[n_Cell] * alpha_outlet_ghost * rho_g_outlet_bc;
+
+  for(unsigned int i = 1; i < n_Cell; i++)
+  {
+    alpha_flux[i] = (v_hat[i] > 0) ? v_hat[i] * alpha_e[i-1] : v_hat[i] * alpha_w[i];
+    rho_l_flux[i] = (v_l[i] > 0) ? v_l[i] * (1. - alpha_e[i-1]) * rho_l_func(p_l_e[i-1]) : v_l[i] * (1. - alpha_w[i]) * rho_l_func(p_l_w[i]);
+    rho_g_flux[i] = (v_g[i] > 0) ? v_g[i] * alpha_e[i-1] * rho_g_func(p_g_e[i-1]) : v_g[i] * alpha_w[i] * rho_g_func(p_g_w[i]);
+  }
+
+  // 3. RHS
+  // Momentum equations RHS; Eqn. (22) of Ref. [1]
+  rhs[0] = v_l[0] - V_L_INIT;
+  rhs[1] = v_g[0] - V_G_INIT;
+  for(int i = 1; i < n_Cell + 1; i++) // loop on the remaining edges
+  {
+    // dv_dx term
+    double dv_l_dx = 0.;
+    double dv_g_dx = 0.;
+    if(v_l[i] > 0)
+    {
+      double v_l_west = (i == 1) ? 0.5*(V_L_INIT + v_l[1]) : v_l_e[i-1];
+      double v_l_east = v_l_e[i];
+      dv_l_dx = (v_l_east - v_l_west) / dx;
+    }
+    else
+    {
+      double v_l_east = (i == n_Cell-1) ? v_l_outlet_ghost : v_l_w[i+1];
+      double v_l_west = v_l_w[i];
+      dv_l_dx = (v_l_east - v_l_west) / dx;
+    }
+
+    if(v_g[i] > 0)
+    {
+      double v_g_west = (i == 1) ? 0.5*(V_G_INIT + v_g[1]) : v_g_e[i-1];
+      double v_g_east = v_g_e[i];
+      dv_g_dx = (v_g_east - v_g_west) / dx;
+    }
+    else
+    {
+      double v_g_east = (i == n_Cell-1) ? v_g_outlet_ghost : v_g_w[i+1];
+      double v_g_west = v_g_w[i];
+      dv_g_dx = (v_g_east - v_g_west) / dx;
+    }
+
+    // d(alpha*p)_dx term, the same as 1-st order, central differencing
     double d_alphap_l_dx = (i == n_Cell) ? (P_OUTLET * (1. - alpha_outlet_ghost) - p_l[n_Cell-1]*(1. - alpha[n_Cell-1]))/dx*2. : (p_l[i]*(1. - alpha[i]) - p_l[i-1]*(1. - alpha[i-1]))/dx;
     double d_alphap_g_dx = (i == n_Cell) ? (P_OUTLET * alpha_outlet_ghost - p_g[n_Cell-1]*alpha[n_Cell-1])/dx*2. : (p_g[i]*alpha[i] - p_g[i-1]*alpha[i-1])/dx;
     double alpha_grad = (i == n_Cell) ? (alpha_outlet_ghost - alpha[n_Cell-1])/dx*2. : (alpha[i] - alpha[i-1])/dx;
