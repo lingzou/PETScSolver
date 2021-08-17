@@ -11,22 +11,10 @@ enum TimeStepIndex
   OLDOLD = 2
 };
 
-enum TimeScheme
-{
-  BDF1    = 0,
-  BDF2    = 1,
-  CN      = 2,
-  INVALID = 99
-};
-
-TimeScheme StringToEnum(std::string str);
-
-std::string trim_file_name(std::string file_name_with_path);
-
 class PETScProblem
 {
 public:
-  PETScProblem();
+  PETScProblem(ParameterList & pList);
   virtual ~PETScProblem();
 
   virtual unsigned int getNDOF() { return n_DOFs; }
@@ -50,10 +38,12 @@ public:
   virtual void computeJacobianMatrix(Mat & P_Mat);
 
 protected:
+  ParameterList & paramList;
   std::string _input_file_name;
   TimeScheme _time_scheme;
   double _t;
   double _dt;
+  int _n_steps;
   unsigned int _step;
   int _output_interval;
   bool _text_output;

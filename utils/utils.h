@@ -3,8 +3,21 @@
 
 #include <vector>
 
+// Some helper functions
+void sysError(std::string);
+
+enum TimeScheme
+{
+  BDF1    = 0,
+  BDF2    = 1,
+  CN      = 2,
+  INVALID = 99
+};
+
 namespace UTILS
 {
+  TimeScheme StringToEnum(std::string str);
+  std::string trim_file_name(std::string file_name_with_path);
   void linearReconstruction(double, double, std::vector<double> &, std::vector<double> &, std::vector<double> &);
 }
 

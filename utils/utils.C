@@ -1,5 +1,33 @@
 #include <cmath>
+#include <iostream>
 #include "utils.h"
+
+void sysError(std::string message)
+{ std::cerr << message << std::endl; exit(1); }
+
+TimeScheme
+UTILS::StringToEnum(std::string str)
+{
+  if      (str.compare("BDF1") == 0)  return BDF1;
+  else if (str.compare("BDF2") == 0)  return BDF2;
+  else if (str.compare("CN")   == 0)  return CN;
+  else    {sysError("ERROR: UNKNOWN TimeScheme: " + str); return INVALID;}
+}
+
+std::string
+UTILS::trim_file_name(std::string full_file_name)
+{
+  unsigned int pos_of_point = full_file_name.find_last_of(".");
+  unsigned int pos_of_slash = full_file_name.find_last_of("\\/");
+  unsigned int length = pos_of_point - pos_of_slash - 1;
+  if(length < 1)
+  {
+    sysError("ERROR: The input file name, '" + full_file_name + "', cannot be properly trimmed.");
+    return std::string("");
+  }
+  else
+    return full_file_name.substr(pos_of_slash + 1, length);
+}
 
 void
 UTILS::linearReconstruction(double l_ghost, double r_ghost,

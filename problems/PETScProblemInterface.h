@@ -1,6 +1,7 @@
 #ifndef PETSC_PROBLEM_INTERFACE_H
 #define PETSC_PROBLEM_INTERFACE_H
 
+#include "ParameterList.h"
 #include "PETScProblem.h"
 class PETScProblem;
 
@@ -16,11 +17,10 @@ double      PetscOptionsGetRequiredReal(std::string name);
 std::string PetscOptionsGetRequiredString(std::string name); /* max string length 4096 */
 int         PetscOptionsGetOptionalInt(std::string name, int defaut_value);
 bool        PetscOptionsGetOptionalBool(std::string name, bool defaut_value);
-// Some helper functions
-void sysError(std::string);
 
 struct ApplicationCtx
 {
+  ParameterList*  paramList;
   PETScProblem *  myPETScProblem;
   PetscInt        N_DOFs;     // Number of degrees of freedom
 

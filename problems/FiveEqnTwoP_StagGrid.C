@@ -20,8 +20,8 @@
         4         9
 */
 
-FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid() :
-  PETScProblem()
+FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid(ParameterList & pList) :
+  PETScProblem(pList)
 {
   ALPHA_INIT =  0.2;
   V_L_INIT   = 10.0;

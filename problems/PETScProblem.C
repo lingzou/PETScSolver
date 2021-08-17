@@ -2,42 +2,18 @@
 #include "PETScProblem.h"
 #include "PETScProblemInterface.h"
 
-TimeScheme
-StringToEnum(std::string str)
+PETScProblem::PETScProblem(ParameterList & pList) :
+  paramList(pList),
+  _input_file_name(paramList.getParameterValue<std::string>("input_file_name")),
+  _time_scheme(paramList.getParameterValue<TimeScheme>("ts")),
+  _t(0.0),
+  _dt(paramList.getParameterValue<double>("dt")),
+  _step(1),
+  _n_steps(paramList.getParameterValue<int>("n_steps")),
+  _output_interval(paramList.getParameterValue<int>("output_interval")),
+  _text_output(paramList.getParameterValue<bool>("text_output")),
+  n_DOFs(1)
 {
-  if      (str.compare("BDF1") == 0)  return BDF1;
-  else if (str.compare("BDF2") == 0)  return BDF2;
-  else if (str.compare("CN")   == 0)  return CN;
-  else    {sysError("ERROR: UNKNOWN TimeScheme: " + str); return INVALID;}
-}
-
-std::string
-trim_file_name(std::string full_file_name)
-{
-  unsigned int pos_of_point = full_file_name.find_last_of(".");
-  unsigned int pos_of_slash = full_file_name.find_last_of("\\/");
-  unsigned int length = pos_of_point - pos_of_slash - 1;
-  if(length < 1)
-  {
-    sysError("ERROR: The input file name, '" + full_file_name + "', cannot be properly trimmed.");
-    return std::string("");
-  }
-  else
-    return full_file_name.substr(pos_of_slash + 1, length);
-}
-
-PETScProblem::PETScProblem() :
-  _time_scheme(INVALID), _t(0.0), _dt(0.0), _step(1), _text_output(false), n_DOFs(1)
-{
-  std::string full_name = PetscOptionsGetRequiredString("-input_file_name");
-  _input_file_name = trim_file_name(full_name);
-
-  _dt = PetscOptionsGetRequiredReal("-dt");
-  std::string ts_str = PetscOptionsGetRequiredString("-ts");
-  _time_scheme = StringToEnum(ts_str);
-
-  _output_interval = PetscOptionsGetOptionalInt("-output_interval", 1);
-  _text_output = PetscOptionsGetOptionalBool("-text_output", false);
 }
 
 PETScProblem::~PETScProblem()

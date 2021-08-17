@@ -2,6 +2,7 @@
 #include <petscsnes.h>
 
 #include "PETScProblemInterface.h"
+#include "ParameterList.h"
 
 int main(int argc, char **argv)
 {

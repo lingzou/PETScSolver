@@ -4,8 +4,8 @@
 
 #include "HeatConduction1D.h"
 
-HeatConduction1D::HeatConduction1D() :
-  PETScProblem()
+HeatConduction1D::HeatConduction1D(ParameterList & pList) :
+  PETScProblem(pList)
 {
   // Using Finite Difference Method for heat conduction problem
   // 1/alpha * dT/dt = Laplacian(T) + q/k

@@ -1,5 +1,6 @@
 #include <iostream>
 #include "PETScProblemInterface.h"
+#include "utils.h"
 #include "HeatConduction1D.h"
 #include "EulerEquation1D.h"
 #include "FiveEqnTwoP_StagGrid.h"
@@ -7,13 +8,23 @@
 void
 ApplicationCtx::initializePETScApp()
 {
+  paramList = new ParameterList("PETScProblemParamList");
+  paramList->AddParameter<int>("n_steps", PetscOptionsGetRequiredInt("-n_steps"));
+  paramList->AddParameter<double>("dt", PetscOptionsGetRequiredReal("-dt"));
+  paramList->AddParameter<TimeScheme>("ts", UTILS::StringToEnum(PetscOptionsGetRequiredString("-ts")));
+  paramList->AddParameter<int>("output_interval", PetscOptionsGetOptionalInt("-output_interval", 1));
+  paramList->AddParameter<bool>("text_output", PetscOptionsGetOptionalBool("-text_output", false));
+
+  std::string full_name = PetscOptionsGetRequiredString("-input_file_name");
+  paramList->AddParameter<std::string>("input_file_name", UTILS::trim_file_name(full_name));
+
   std::string problem_name = PetscOptionsGetRequiredString("-problem");
   if (problem_name.compare("HeatConduction1D") == 0)
-    myPETScProblem = new HeatConduction1D();
+    myPETScProblem = new HeatConduction1D(*paramList);
   else if (problem_name.compare("EulerEquation1D") == 0)
-    myPETScProblem = new EulerEquation1D();
+    myPETScProblem = new EulerEquation1D(*paramList);
   else if (problem_name.compare("FiveEqnTwoP_StagGrid") == 0)
-    myPETScProblem = new FiveEqnTwoP_StagGrid();
+    myPETScProblem = new FiveEqnTwoP_StagGrid(*paramList);
   else
     sysError("ERROR: UNKNOWN problem: " + problem_name);
 
@@ -158,6 +169,7 @@ ApplicationCtx::FreePETScWorkSpace()
   if (hasFDColoring)
     MatFDColoringDestroy(&fdcoloring);
 
+  delete paramList;
   delete myPETScProblem;
 }
 
@@ -282,9 +294,4 @@ bool PetscOptionsGetOptionalBool(std::string name, bool defaut_value)
   PetscOptionsGetBool(NULL, NULL, name.c_str(), &value, &hasInput);
 
   return hasInput ? bool(value) : defaut_value;
-}
-
-void sysError(std::string message)
-{
-  std::cerr << message << std::endl; exit(1);
 }

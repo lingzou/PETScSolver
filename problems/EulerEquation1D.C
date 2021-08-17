@@ -6,8 +6,8 @@
 #include "EulerEquation1D.h"
 #include "utils.h"
 
-EulerEquation1D::EulerEquation1D() :
-  PETScProblem()
+EulerEquation1D::EulerEquation1D(ParameterList & pList) :
+  PETScProblem(pList)
 {
   _order = PetscOptionsGetRequiredInt("-order");
   _gamma = 1.4;
