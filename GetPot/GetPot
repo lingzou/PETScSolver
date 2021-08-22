@@ -100,6 +100,7 @@ public:
     inline int                operator()(const char* VarName, int           Default) const;
     inline double             operator()(const char* VarName, const double& Default) const;
     inline const std::string  operator()(const char* VarName, const char*   Default) const;
+    inline bool               hasVariable(std::string VarName) const;
     //     -- vectors
     inline int                operator()(const char* VarName, int Default, unsigned Idx) const;
     inline double             operator()(const char* VarName, const double& Default, unsigned Idx) const;
@@ -1480,6 +1481,21 @@ GetPot::operator()(const char* VarName, const char* Default) const
     // -- returning a c_str() pointer is OK here, since the variable remains existant,
     //    while 'sv' of course is delete at the end of the function.
     return sv->original;
+}
+
+inline bool
+GetPot::hasVariable(std::string VarName) const
+{
+    const std::string Name = prefix + VarName;
+
+    // Don't intend to record, just to check if a variable exist
+    // ((GetPot*)this)->__record_variable_request(Name);
+
+    std::vector<variable>::const_iterator it = variables.begin();
+    for(; it != variables.end(); ++it) {
+        if( (*it).name == Name ) return true;
+    }
+    return false;
 }
 
 inline int
