@@ -14,6 +14,21 @@ UTILS::StringToEnum(std::string str)
   else    {sysError("ERROR: UNKNOWN TimeScheme: " + str); return INVALID;}
 }
 
+bool
+UTILS::StringToBool(std::string str)
+{
+  std::string temp_str = str;
+
+  // Keep the input str for later error message, this temp_str transformed to be all upper case
+  std::transform(temp_str.begin(), temp_str.end(), temp_str.begin(), ::toupper);
+
+  if(temp_str.compare("TRUE") == 0)         return true;
+  else if(temp_str.compare("FALSE") == 0)   return false;
+  else    { sysError("Input string '" + str + "' cannot be converted as a boolean value."); }
+
+  return false;
+}
+
 std::string
 UTILS::trim_file_name(std::string full_file_name)
 {

@@ -4,7 +4,7 @@
 
 #include "HeatConduction1D.h"
 
-HeatConduction1D::HeatConduction1D(ParameterList & pList) :
+HeatConduction1D::HeatConduction1D(InputParameterList & pList) :
   PETScProblem(pList)
 {
   // Using Finite Difference Method for heat conduction problem
@@ -17,8 +17,10 @@ HeatConduction1D::HeatConduction1D(ParameterList & pList) :
   // This problem also has time-dependent analytical solutions:
   // T(x, t) = (1-exp(-alpha*pi*pi*t))*sin(pi*x)
 
+  paramList.readRequiredInputParameter<int>("n_cells");
+
   length = 1.0;
-  n_Cell = PetscOptionsGetRequiredInt("-n_cells");
+  n_Cell = paramList.getParameterValue<int>("n_cells");
   k = 1.0;
   alpha = 1.0;
 

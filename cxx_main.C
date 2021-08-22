@@ -3,6 +3,7 @@
 
 #include "PETScProblemInterface.h"
 #include "ParameterList.h"
+#include <GetPot>
 
 int main(int argc, char **argv)
 {
@@ -16,14 +17,13 @@ int main(int argc, char **argv)
   }
 
   // PETSc application starts with PetscInitialize
-  PetscInitialize(&argc, &argv, argv[1], PETSC_NULL);
-  PetscOptionsSetValue(NULL, "-input_file_name", argv[1]);
+  PetscInitialize(&argc, &argv, (char *)0, PETSC_NULL);
 
   /*
    * Initialize PETSc App
    */
   ApplicationCtx AppCtx;
-  AppCtx.initializePETScApp();
+  AppCtx.initializePETScApp(argv[1]);
 
   /*
    *  Setup PETSc work space
@@ -38,8 +38,8 @@ int main(int argc, char **argv)
   /*
    *  Solving
    */
-  TimeScheme ts = AppCtx.myPETScProblem->getTimeScheme();
-  int N_Steps = PetscOptionsGetRequiredInt("-n_steps");
+  TimeScheme ts = AppCtx.paramList->getParameterValue<TimeScheme>("ts");
+  int N_Steps = AppCtx.paramList->getParameterValue<int>("n_steps");
   for (unsigned int step = 1; step <= N_Steps; step++)
   {
     // 1. Before PETSc Solving

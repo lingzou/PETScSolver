@@ -20,9 +20,13 @@
         4         9
 */
 
-FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid(ParameterList & pList) :
+FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid(InputParameterList & pList) :
   PETScProblem(pList)
 {
+  paramList.readRequiredInputParameter<int>("order");
+  paramList.readRequiredInputParameter<double>("H_inv");
+  paramList.readRequiredInputParameter<int>("n_cells");
+
   ALPHA_INIT =  0.2;
   V_L_INIT   = 10.0;
   V_G_INIT   =  0.0;
@@ -36,11 +40,11 @@ FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid(ParameterList & pList) :
   C_L = std::sqrt(1.0e7);
   C_G = std::sqrt(1.0e6);
 
-  _order = PetscOptionsGetRequiredInt("-order");
-  H_inv = PetscOptionsGetRequiredReal("-H_inv");
+  _order = paramList.getParameterValue<int>("order");
+  H_inv  = paramList.getParameterValue<double>("H_inv");
+  n_Cell = paramList.getParameterValue<int>("n_cells");
 
   length = 12.0;
-  n_Cell = PetscOptionsGetRequiredInt("-n_cells");
   n_Node = n_Cell + 1;
   n_DOFs = n_Cell * 5 + 2;
 

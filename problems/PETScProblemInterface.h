@@ -10,17 +10,9 @@ PetscErrorCode SNESMonitor(SNES, PetscInt, PetscReal, void*);
 PetscErrorCode KSPMonitor(KSP, PetscInt, PetscReal, void*);
 PetscErrorCode FormJacobian(SNES, Vec, Mat, Mat, void*);
 
-// Wrap up several PETSc built-in function with additional check;
-//   e.g., PETSc built-in function 'PetscOptionsGetReal' -> 'PetscOptionsGetRequiredReal'
-int         PetscOptionsGetRequiredInt(std::string name);
-double      PetscOptionsGetRequiredReal(std::string name);
-std::string PetscOptionsGetRequiredString(std::string name); /* max string length 4096 */
-int         PetscOptionsGetOptionalInt(std::string name, int defaut_value);
-bool        PetscOptionsGetOptionalBool(std::string name, bool defaut_value);
-
 struct ApplicationCtx
 {
-  ParameterList*  paramList;
+  InputParameterList *  paramList;
   PETScProblem *  myPETScProblem;
   PetscInt        N_DOFs;     // Number of degrees of freedom
 
@@ -42,7 +34,7 @@ struct ApplicationCtx
   Vec             res_RHS;         /* residual from RHS */
   Vec             res_RHS_old;     /* residual from RHS (old time step)*/
 
-  void initializePETScApp();
+  void initializePETScApp(const char* input_file_name);
   void setupPETScWorkSpace();
   void setupInitialConditions();
   void FreePETScWorkSpace();

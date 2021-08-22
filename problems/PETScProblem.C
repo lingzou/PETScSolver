@@ -2,7 +2,7 @@
 #include "PETScProblem.h"
 #include "PETScProblemInterface.h"
 
-PETScProblem::PETScProblem(ParameterList & pList) :
+PETScProblem::PETScProblem(InputParameterList & pList) :
   paramList(pList),
   _input_file_name(paramList.getParameterValue<std::string>("input_file_name")),
   _time_scheme(paramList.getParameterValue<TimeScheme>("ts")),
@@ -26,9 +26,7 @@ PETScProblem::onTimestepEnd()
   _t += _dt;
 
   // write solution
-  int N_Steps = PetscOptionsGetRequiredInt("-n_steps");
-  if ((_step % _output_interval == 0) || (_step == N_Steps))
-    writeOutput(_step);
+  if ((_step % _output_interval == 0) || (_step == _n_steps))     writeOutput(_step);
 
   _step ++;
 }

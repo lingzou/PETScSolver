@@ -6,20 +6,24 @@
 #include "EulerEquation1D.h"
 #include "utils.h"
 
-EulerEquation1D::EulerEquation1D(ParameterList & pList) :
+EulerEquation1D::EulerEquation1D(InputParameterList & pList) :
   PETScProblem(pList)
 {
-  _order = PetscOptionsGetRequiredInt("-order");
+  paramList.readRequiredInputParameter<int>("n_cells");
+  paramList.readRequiredInputParameter<int>("order");
+  paramList.readRequiredInputParameter<int>("p_case");
+
+  _order = paramList.getParameterValue<int>("order");
   _gamma = 1.4;
 
   length = 1.0;
-  n_Cell = PetscOptionsGetRequiredInt("-n_cells");
+  n_Cell = paramList.getParameterValue<int>("n_cells");
   n_Node = n_Cell + 1;
   n_DOFs = n_Cell * 3;
 
   dx = length / n_Cell;
 
-  int p_case = PetscOptionsGetRequiredInt("-p_case");
+  int p_case = paramList.getParameterValue<int>("p_case");
   if (p_case == 1)  // Sod problem
   {
     RHO_L = 1.0;      M_L = 0.0;    E_L = 2.5;

@@ -14,7 +14,7 @@ enum TimeStepIndex
 class PETScProblem
 {
 public:
-  PETScProblem(ParameterList & pList);
+  PETScProblem(InputParameterList & pList);
   virtual ~PETScProblem();
 
   virtual unsigned int getNDOF() { return n_DOFs; }
@@ -38,7 +38,7 @@ public:
   virtual void computeJacobianMatrix(Mat & P_Mat);
 
 protected:
-  ParameterList & paramList;
+  InputParameterList & paramList;
   std::string _input_file_name;
   TimeScheme _time_scheme;
   double _t;

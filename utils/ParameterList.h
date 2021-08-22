@@ -4,6 +4,7 @@
 #include <map>
 #include <iomanip>      // std::setw
 #include <vector>
+#include <GetPot>
 
 #include "utils.h"
 
@@ -41,6 +42,8 @@ public:
     for(it = parameter_map.begin(); it != parameter_map.end(); ++it)
       delete it->second;
   }
+
+  std::string name() { return _name; }
 
   template<typename T>
   void AddParameter(std::string para_name, T para_value)
@@ -94,4 +97,26 @@ protected:
   std::map<std::string, Parameter*> parameter_map;
   std::map<std::string, Parameter*>::iterator it;
 };
+
+class InputParameterList : public ParameterList
+{
+public:
+  InputParameterList(std::string name, std::string filename);
+  virtual ~InputParameterList();
+
+  // help function
+  void print() { ptr_ifile->print(); }
+  bool hasInput(std::string para_name) { return ptr_ifile->hasVariable(para_name); }
+
+  template <typename T>
+  void readRequiredInputParameter(std::string para_name);
+
+  template <typename T>
+  void readOptionalInputParameter(std::string para_name, T default_val)
+  { AddParameter<T>(para_name, (*ptr_ifile)(para_name.c_str(), default_val)); }
+
+protected:
+  GetPot * ptr_ifile;
+};
+
 #endif /*PARAMETER_LIST_H*/

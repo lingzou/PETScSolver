@@ -1,0 +1,76 @@
+#include "utils.h"
+#include "ParameterList.h"
+
+InputParameterList::InputParameterList(std::string name, std::string filename) :
+  ParameterList(name)
+{
+  ptr_ifile = new GetPot(filename.c_str());
+}
+
+InputParameterList::~InputParameterList()
+{
+  delete ptr_ifile;
+}
+
+template <>
+void InputParameterList::readRequiredInputParameter<int>(std::string para_name)
+{
+  if (hasInput(para_name))
+    AddParameter<int>(para_name, (*ptr_ifile)(para_name.c_str(), int(1)));
+  else
+    sysError("Inputfile does not have parameter: " + para_name);
+}
+
+template <>
+void InputParameterList::readRequiredInputParameter<double>(std::string para_name)
+{
+  if (hasInput(para_name))
+    AddParameter<double>(para_name, (*ptr_ifile)(para_name.c_str(), double(1.0)));
+  else
+    sysError("Inputfile does not have parameter: " + para_name);
+}
+
+template <>
+void InputParameterList::readRequiredInputParameter<std::string>(std::string para_name)
+{
+  if (hasInput(para_name))
+    AddParameter<std::string>(para_name, (*ptr_ifile)(para_name.c_str(), "string"));
+  else
+    sysError("Inputfile does not have parameter: " + para_name);
+}
+
+template <>
+void InputParameterList::readRequiredInputParameter<TimeScheme>(std::string para_name)
+{
+  if (hasInput(para_name))
+  {
+    std::string ts_str = (*ptr_ifile)(para_name.c_str(), "string");
+    AddParameter<TimeScheme>(para_name, UTILS::StringToEnum(ts_str));
+  }
+  else
+    sysError("Inputfile does not have parameter: " + para_name);
+}
+
+template <>
+void InputParameterList::readRequiredInputParameter<bool>(std::string para_name)
+{
+  if (hasInput(para_name))
+  {
+    std::string str = (*ptr_ifile)(para_name.c_str(), "string");
+    AddParameter<bool>(para_name, UTILS::StringToBool(str));
+  }
+  else
+    sysError("Inputfile does not have parameter: " + para_name);
+}
+
+template <>
+void InputParameterList::readOptionalInputParameter<bool>(std::string para_name, bool default_val)
+{
+  if (hasInput(para_name))
+  {
+    std::string str = (*ptr_ifile)(para_name.c_str(), "string");
+    AddParameter<bool>(para_name, UTILS::StringToBool(str));
+  }
+  else
+    AddParameter<bool>(para_name, default_val);
+}

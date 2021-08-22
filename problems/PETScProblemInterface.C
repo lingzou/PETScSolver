@@ -6,19 +6,18 @@
 #include "FiveEqnTwoP_StagGrid.h"
 
 void
-ApplicationCtx::initializePETScApp()
+ApplicationCtx::initializePETScApp(const char* input_file_name)
 {
-  paramList = new ParameterList("PETScProblemParamList");
-  paramList->AddParameter<int>("n_steps", PetscOptionsGetRequiredInt("-n_steps"));
-  paramList->AddParameter<double>("dt", PetscOptionsGetRequiredReal("-dt"));
-  paramList->AddParameter<TimeScheme>("ts", UTILS::StringToEnum(PetscOptionsGetRequiredString("-ts")));
-  paramList->AddParameter<int>("output_interval", PetscOptionsGetOptionalInt("-output_interval", 1));
-  paramList->AddParameter<bool>("text_output", PetscOptionsGetOptionalBool("-text_output", false));
+  paramList = new InputParameterList("PETScProblemParamList", input_file_name);
+  paramList->readRequiredInputParameter<std::string>("problem");
+  paramList->readRequiredInputParameter<int>("n_steps");
+  paramList->readRequiredInputParameter<double>("dt");
+  paramList->readRequiredInputParameter<TimeScheme>("ts");
+  paramList->readOptionalInputParameter<int>("output_interval", 1);
+  paramList->readOptionalInputParameter<bool>("text_output", false);
+  paramList->AddParameter<std::string>("input_file_name", UTILS::trim_file_name(input_file_name));
 
-  std::string full_name = PetscOptionsGetRequiredString("-input_file_name");
-  paramList->AddParameter<std::string>("input_file_name", UTILS::trim_file_name(full_name));
-
-  std::string problem_name = PetscOptionsGetRequiredString("-problem");
+  std::string problem_name = paramList->getParameterValue<std::string>("problem");
   if (problem_name.compare("HeatConduction1D") == 0)
     myPETScProblem = new HeatConduction1D(*paramList);
   else if (problem_name.compare("EulerEquation1D") == 0)
@@ -236,62 +235,4 @@ PetscErrorCode KSPMonitor(KSP ksp, PetscInt its, PetscReal rnorm, void* /*AppCtx
 {
   PetscPrintf(PETSC_COMM_WORLD, "      Linear step = %2D, rnorm = %12.5E\n", its, rnorm);
   return 0;
-}
-
-int PetscOptionsGetRequiredInt(std::string name)
-{
-  PetscBool hasInput = PETSC_FALSE;
-  PetscInt  value = 0;
-
-  PetscOptionsGetInt(NULL, NULL, name.c_str(), &value, &hasInput);
-
-  if (!hasInput)
-    sysError("Required PETSc <Int> input '" + name + "' is not found.");
-
-  return int(value);
-}
-
-double PetscOptionsGetRequiredReal(std::string name)
-{
-  PetscBool hasInput = PETSC_FALSE;
-  double value = 0.0;
-
-  PetscOptionsGetReal(NULL, NULL, name.c_str(), &value, &hasInput);
-
-  if (!hasInput)
-    sysError("Required PETSc <Real> input '" + name + "' is not found.");
-
-  return value;
-}
-
-std::string PetscOptionsGetRequiredString(std::string name)
-{
-  PetscBool hasInput = PETSC_FALSE;
-  char value[4096];
-  PetscOptionsGetString(NULL, NULL, name.c_str(), value, 4096, &hasInput);
-
-  if (!hasInput)
-    sysError("Required PETSc <String> input '" + name + "' is not found.");
-
-  return std::string(value);
-}
-
-int PetscOptionsGetOptionalInt(std::string name, int defaut_value)
-{
-  PetscBool hasInput = PETSC_FALSE;
-  PetscInt  value = 0;
-
-  PetscOptionsGetInt(NULL, NULL, name.c_str(), &value, &hasInput);
-
-  return hasInput ? int(value) : defaut_value;
-}
-
-bool PetscOptionsGetOptionalBool(std::string name, bool defaut_value)
-{
-  PetscBool hasInput = PETSC_FALSE;
-  PetscBool value = PETSC_FALSE;
-
-  PetscOptionsGetBool(NULL, NULL, name.c_str(), &value, &hasInput);
-
-  return hasInput ? bool(value) : defaut_value;
 }

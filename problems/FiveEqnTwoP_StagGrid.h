@@ -7,7 +7,7 @@
 class FiveEqnTwoP_StagGrid : public PETScProblem
 {
 public:
-  FiveEqnTwoP_StagGrid(ParameterList & pList);
+  FiveEqnTwoP_StagGrid(InputParameterList & pList);
   ~FiveEqnTwoP_StagGrid();
 
   virtual void SetupInitialCondition(double * u) final;
