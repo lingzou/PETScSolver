@@ -63,4 +63,4 @@ protected:
   std::vector<double> v_l_w, v_l_e, v_g_w, v_g_e;
 };
 
-#endif /*EULER_EQUATION_1D_H*/
+#endif /*FIVE_EQN_TWOP_STAGGRID_H*/

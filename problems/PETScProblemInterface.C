@@ -4,6 +4,7 @@
 #include "HeatConduction1D.h"
 #include "EulerEquation1D.h"
 #include "FiveEqnTwoP_StagGrid.h"
+#include "SinglePhaseFlow.h"
 
 void
 ApplicationCtx::initializePETScApp(const char* input_file_name)
@@ -24,6 +25,8 @@ ApplicationCtx::initializePETScApp(const char* input_file_name)
     myPETScProblem = new EulerEquation1D(*paramList);
   else if (problem_name.compare("FiveEqnTwoP_StagGrid") == 0)
     myPETScProblem = new FiveEqnTwoP_StagGrid(*paramList);
+  else if (problem_name.compare("SinglePhaseFlow") == 0)
+    myPETScProblem = new SinglePhaseFlow(*paramList);
   else
     sysError("ERROR: UNKNOWN problem: " + problem_name);
 
