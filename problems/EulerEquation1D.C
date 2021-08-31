@@ -53,9 +53,7 @@ EulerEquation1D::EulerEquation1D(InputParameterList & pList) :
   }
 }
 
-EulerEquation1D::~EulerEquation1D()
-{
-}
+EulerEquation1D::~EulerEquation1D() {}
 
 void
 EulerEquation1D::SetupInitialCondition(double * u)
@@ -78,35 +76,13 @@ EulerEquation1D::SetupInitialCondition(double * u)
 }
 
 void
-EulerEquation1D::updateSolution(double * u, TimeStepIndex index)
+EulerEquation1D::updateSolution(double * u)
 {
   unsigned int idx = 0;
-  switch (index)
+  for(unsigned int i = 0; i < n_Cell; i++)
   {
-    case NEW:
-      for(unsigned int i = 0; i < n_Cell; i++)
-      {
-        rho[i] = u[idx++];  m[i] = u[idx++];  E[i] = u[idx++];
-        p[i] = p_IG(rho[i], m[i], E[i]);
-      }
-      break;
-
-    case OLD:
-      for(unsigned int i = 0; i < n_Cell; i++)
-      {
-        rho_old[i] = u[idx++];  m_old[i] = u[idx++];  E_old[i] = u[idx++];
-      }
-      break;
-
-    case OLDOLD:
-      for(unsigned int i = 0; i < n_Cell; i++)
-      {
-        rho_oo[i] = u[idx++];  m_oo[i] = u[idx++];  E_oo[i] = u[idx++];
-      }
-      break;
-
-    default:
-      sysError("Unknown TimeStepIndex");
+    rho[i] = u[idx++];  m[i] = u[idx++];  E[i] = u[idx++];
+    p[i] = p_IG(rho[i], m[i], E[i]);
   }
 }
 
@@ -223,6 +199,15 @@ EulerEquation1D::updateFluxes2ndOrder()
     flux_m[i] = 0.5 * (m_left*m_left/rho_left + p_left + m_right*m_right/rho_right + p_right) + 0.5 * eigen_max * (m_left - m_right);
     flux_E[i] = 0.5 * ((E_left + p_left)*u_left + (E_right + p_right)*u_right) + 0.5 * eigen_max * (E_left - E_right);
   }
+}
+
+void
+EulerEquation1D::onTimestepEnd()
+{
+  PETScProblem::onTimestepEnd();
+  // save old solutions
+  rho_oo  = rho_old;  m_oo  = m_old;  E_oo  = E_old;
+  rho_old = rho;      m_old = m;      E_old = E;
 }
 
 void

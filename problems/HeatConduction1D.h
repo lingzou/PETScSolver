@@ -13,11 +13,12 @@ public:
   virtual ~HeatConduction1D();
 
   virtual void SetupInitialCondition(double * u) final;
-  virtual void updateSolution(double *u, TimeStepIndex index) final;
+  virtual void updateSolution(double *u) final;
 
   virtual void transientResidual(double * res) final;
   virtual void RHS(double * rhs) final;
   virtual void writeVTKOutput(unsigned int step) final;
+  virtual void onTimestepEnd();
 
   virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) final;
   virtual void computeJacobianMatrix(Mat & P_Mat) final;

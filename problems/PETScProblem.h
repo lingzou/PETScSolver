@@ -4,13 +4,6 @@
 #include <petsc.h>
 #include "PETScProblemInterface.h"
 
-enum TimeStepIndex
-{
-  NEW = 0,
-  OLD = 1,
-  OLDOLD = 2
-};
-
 class PETScProblem
 {
 public:
@@ -25,12 +18,12 @@ public:
   virtual void onTimestepEnd();
 
   virtual void SetupInitialCondition(double * u) = 0;
-  virtual void updateSolution(double *u, TimeStepIndex index) = 0;
+  virtual void updateSolution(double *u) = 0;
 
   virtual void transientResidual(double * res) = 0;
   virtual void RHS(double * rhs) = 0;
 
-  void writeOutput(unsigned int step);
+  virtual void writeOutput(unsigned int step);
   virtual void writeVTKOutput(unsigned int step) = 0;
   virtual void writeTextOutput(unsigned int step);
 

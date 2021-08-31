@@ -188,7 +188,7 @@ PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
   VecGetArray(appCtx->res_RHS, &res_RHS);
 
   // use the most updated solution vector to update solution, to compute RHS and transient residuals
-  myProblem->updateSolution(uu, NEW);
+  myProblem->updateSolution(uu);
   myProblem->RHS(res_RHS);
   myProblem->transientResidual(res_tran);
 

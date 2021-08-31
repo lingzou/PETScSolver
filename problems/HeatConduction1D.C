@@ -40,43 +40,21 @@ HeatConduction1D::HeatConduction1D(InputParameterList & pList) :
     x[i] = dx * i;
 }
 
-HeatConduction1D::~HeatConduction1D()
-{
-}
+HeatConduction1D::~HeatConduction1D() {}
 
 void
 HeatConduction1D::SetupInitialCondition(double * u)
 {
   for(unsigned int i = 0; i < n_DOFs; i++)
-  {
-    u[i] = 0.0;
-    T[i] = 0.0; T_old[i] = 0.0; T_oldold[i] = 0.0;
-  }
+  { u[i] = 0.0; T[i] = 0.0; }
+
+  T_oldold = T;     T_old = T;
 }
 
 void
-HeatConduction1D::updateSolution(double * u, TimeStepIndex index)
+HeatConduction1D::updateSolution(double * u)
 {
-  switch (index)
-  {
-    case NEW:
-      for(unsigned int i = 0; i < T.size(); i++)
-        T[i] = u[i];
-      break;
-
-    case OLD:
-      for(unsigned int i = 0; i < T_old.size(); i++)
-        T_old[i] = u[i];
-      break;
-
-    case OLDOLD:
-      for(unsigned int i = 0; i < T_oldold.size(); i++)
-        T_oldold[i] = u[i];
-      break;
-
-    default:
-      sysError("Unknown TimeStepIndex");
-  }
+  for(unsigned int i = 0; i < T.size(); i++)  T[i] = u[i];
 }
 
 void
@@ -113,6 +91,14 @@ HeatConduction1D::RHS(double * rhs)
     // RHS = Laplacian(T) + q/k
     rhs[i] = (T[i-1] - 2*T[i] + T[i+1]) / dx2 + qx / k;
   }
+}
+
+void
+HeatConduction1D::onTimestepEnd()
+{
+  PETScProblem::onTimestepEnd();
+  // Save old solutions
+  T_oldold = T_old; T_old = T;
 }
 
 void

@@ -109,69 +109,26 @@ SinglePhaseFlow::SetupInitialCondition(double * u)
 }
 
 void
-SinglePhaseFlow::updateSolution(double * u, TimeStepIndex index)
+SinglePhaseFlow::updateSolution(double * u)
 {
   unsigned int idx = 0;
-  switch (index)
+  for(unsigned int i = 0; i < n_Cell + 1; i++)
   {
-    case NEW:
-      for(unsigned int i = 0; i < n_Cell + 1; i++)
-      {
-        v[i] = u[idx++];
-        if (i < n_Cell)
-        {
-          p[i] = u[idx++];  T[i] = u[idx++];
-          rho[i] = rho_func(p[i], T[i]);
-          e[i]   = e_func(p[i], T[i]);
-        }
-      }
-      //update cell values
-      for(int i = 0; i < n_Cell; i++)
-        v_cell[i] = 0.5 * (v[i] + v[i+1]);
-      //update edge values
-      rho_edge[0] = rho[0];
-      for(unsigned int i = 1; i < n_Cell; i++)    rho_edge[i] = 0.5 * (rho[i-1] + rho[i]);
-      rho_edge[n_Cell] = rho[n_Cell - 1];
-
-      break;
-
-    case OLD:
-      for(unsigned int i = 0; i < n_Cell + 1; i++)
-      {
-        v_old[i] = u[idx++];
-        if (i < n_Cell)
-        {
-          p_old[i] = u[idx++];  T_old[i] = u[idx++];
-          rho_old[i] = rho_func(p_old[i], T_old[i]);
-          e_old[i]   = e_func(p_old[i], T_old[i]);
-        }
-      }
-      //update edge values
-      rho_edge_old[0] = rho_old[0];
-      for(unsigned int i = 1; i < n_Cell; i++)    rho_edge_old[i] = 0.5 * (rho_old[i-1] + rho_old[i]);
-      rho_edge_old[n_Cell] = rho_old[n_Cell - 1];
-      break;
-
-    case OLDOLD:
-      for(unsigned int i = 0; i < n_Cell + 1; i++)
-      {
-        v_oo[i] = u[idx++];
-        if (i < n_Cell)
-        {
-          p_oo[i] = u[idx++];  T_oo[i] = u[idx++];
-          rho_oo[i] = rho_func(p_oo[i], T_oo[i]);
-          e_oo[i]   = e_func(p_oo[i], T_oo[i]);
-        }
-      }
-      //update edge values
-      rho_edge_oo[0] = rho_oo[0];
-      for(unsigned int i = 1; i < n_Cell; i++)    rho_edge_oo[i] = 0.5 * (rho_oo[i-1] + rho_oo[i]);
-      rho_edge_oo[n_Cell] = rho_oo[n_Cell - 1];
-      break;
-
-    default:
-      sysError("TimeStepIndex should be one of NEW, OLD, and OLDOLD");
+    v[i] = u[idx++];
+    if (i < n_Cell)
+    {
+      p[i] = u[idx++];  T[i] = u[idx++];
+      rho[i] = rho_func(p[i], T[i]);
+      e[i]   = e_func(p[i], T[i]);
+    }
   }
+  //update cell values
+  for(int i = 0; i < n_Cell; i++)
+    v_cell[i] = 0.5 * (v[i] + v[i+1]);
+  //update edge values
+  rho_edge[0] = rho[0];
+  for(unsigned int i = 1; i < n_Cell; i++)    rho_edge[i] = 0.5 * (rho[i-1] + rho[i]);
+  rho_edge[n_Cell] = rho[n_Cell - 1];
 }
 
 void
@@ -292,6 +249,15 @@ SinglePhaseFlow::updateFluxes()
 void
 SinglePhaseFlow::updateFluxes2ndOrder()
 {
+}
+
+void
+SinglePhaseFlow::onTimestepEnd()
+{
+  PETScProblem::onTimestepEnd();
+  // save old solutions
+  p_oo = p_old; v_oo = v_old; T_oo = T_old; rho_oo = rho_old; e_oo = e_old; rho_edge_oo = rho_edge_old;
+  p_old = p; v_old = v; T_old = T; rho_old = rho; e_old = e; rho_edge_old = rho_edge;
 }
 
 void

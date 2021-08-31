@@ -116,82 +116,46 @@ FiveEqnTwoP_StagGrid::SetupInitialCondition(double * u)
 }
 
 void
-FiveEqnTwoP_StagGrid::updateSolution(double * u, TimeStepIndex index)
+FiveEqnTwoP_StagGrid::updateSolution(double * u)
 {
   unsigned int idx = 0;
-  switch (index)
+  for(unsigned int i = 0; i < n_Cell + 1; i++)
   {
-    case NEW:
-      for(unsigned int i = 0; i < n_Cell + 1; i++)
-      {
-        v_l[i] = u[idx++];  v_g[i] = u[idx++];
-        if (i < n_Cell)
-        {
-          alpha[i] = u[idx++];  p_l[i] = u[idx++];  p_g[i] = u[idx++];
-          rho_l[i] = rho_l_func(p_l[i]);
-          rho_g[i] = rho_g_func(p_g[i]);
-        }
-      }
-      //update cell values
-      for(int i = 0; i < n_Cell; i++)
-      {
-        mu[i]    = H_inv / (rho_l[i] * C_L + rho_g[i] * C_G);
-        p_hat[i] = (p_l[i] * rho_g[i] * C_G + p_g[i] * rho_l[i] * C_L) / (rho_l[i] * C_L + rho_g[i] * C_G);
-        v_l_cell[i] = 0.5 * (v_l[i] + v_l[i+1]);
-        v_g_cell[i] = 0.5 * (v_g[i] + v_g[i+1]);
-      }
-      //update edge values
-      rho_l_edge[0] = rho_l[0];
-      rho_g_edge[0] = rho_g[0];
-      alpha_edge[0] = ALPHA_INIT;
-      p_hat_edge[0] = p_hat[0];
-      for(unsigned int i = 1; i < n_Cell; i++)
-      {
-        rho_l_edge[i] = 0.5 * (rho_l[i-1] + rho_l[i]);
-        rho_g_edge[i] = 0.5 * (rho_g[i-1] + rho_g[i]);
-        alpha_edge[i] = 0.5 * (alpha[i-1] + alpha[i]);
-        p_hat_edge[i] = 0.5 * (p_hat[i-1] + p_hat[i]);
-      }
-      rho_l_edge[n_Cell] = rho_l[n_Cell - 1];
-      rho_g_edge[n_Cell] = rho_g[n_Cell - 1];
-      alpha_edge[n_Cell] = alpha[n_Cell - 1]; // FIXME FIXME
-      p_hat_edge[n_Cell] = p_hat[n_Cell - 1];
-
-      for(unsigned int i = 0; i < n_Cell + 1; i++)
-        v_hat[i] = alpha_edge[i] * v_g[i] + (1.0 - alpha_edge[i]) * v_l[i];
-      break;
-
-    case OLD:
-      for(unsigned int i = 0; i < n_Cell + 1; i++)
-      {
-        v_l_old[i] = u[idx++];  v_g_old[i] = u[idx++];
-        if (i < n_Cell)
-        {
-          alpha_old[i] = u[idx++];  p_l_old[i] = u[idx++];  p_g_old[i] = u[idx++];
-          rho_l_old[i] = rho_l_func(p_l_old[i]);
-          rho_g_old[i] = rho_g_func(p_g_old[i]);
-        }
-      }
-      break;
-
-    case OLDOLD:
-      for(unsigned int i = 0; i < n_Cell + 1; i++)
-      {
-        v_l_oo[i] = u[idx++];  v_g_oo[i] = u[idx++];
-        if (i < n_Cell)
-        {
-          alpha_oo[i] = u[idx++];  p_l_oo[i] = u[idx++];  p_g_oo[i] = u[idx++];
-          rho_l_oo[i] = rho_l_func(p_l_oo[i]);
-          rho_g_oo[i] = rho_g_func(p_g_oo[i]);
-        }
-      }
-      break;
-
-    default:
-      std::cerr << "ERROR.\n";
-      exit(1);
-      break;
+    v_l[i] = u[idx++];  v_g[i] = u[idx++];
+    if (i < n_Cell)
+    {
+      alpha[i] = u[idx++];  p_l[i] = u[idx++];  p_g[i] = u[idx++];
+      rho_l[i] = rho_l_func(p_l[i]);
+      rho_g[i] = rho_g_func(p_g[i]);
+    }
   }
+  //update cell values
+  for(int i = 0; i < n_Cell; i++)
+  {
+    mu[i]    = H_inv / (rho_l[i] * C_L + rho_g[i] * C_G);
+    p_hat[i] = (p_l[i] * rho_g[i] * C_G + p_g[i] * rho_l[i] * C_L) / (rho_l[i] * C_L + rho_g[i] * C_G);
+    v_l_cell[i] = 0.5 * (v_l[i] + v_l[i+1]);
+    v_g_cell[i] = 0.5 * (v_g[i] + v_g[i+1]);
+  }
+  //update edge values
+  rho_l_edge[0] = rho_l[0];
+  rho_g_edge[0] = rho_g[0];
+  alpha_edge[0] = ALPHA_INIT;
+  p_hat_edge[0] = p_hat[0];
+  for(unsigned int i = 1; i < n_Cell; i++)
+  {
+    rho_l_edge[i] = 0.5 * (rho_l[i-1] + rho_l[i]);
+    rho_g_edge[i] = 0.5 * (rho_g[i-1] + rho_g[i]);
+    alpha_edge[i] = 0.5 * (alpha[i-1] + alpha[i]);
+    p_hat_edge[i] = 0.5 * (p_hat[i-1] + p_hat[i]);
+  }
+  rho_l_edge[n_Cell] = rho_l[n_Cell - 1];
+  rho_g_edge[n_Cell] = rho_g[n_Cell - 1];
+  alpha_edge[n_Cell] = alpha[n_Cell - 1]; // FIXME FIXME
+  p_hat_edge[n_Cell] = p_hat[n_Cell - 1];
+
+  for(unsigned int i = 0; i < n_Cell + 1; i++)
+    v_hat[i] = alpha_edge[i] * v_g[i] + (1.0 - alpha_edge[i]) * v_l[i];
 }
 
 void
@@ -465,6 +429,16 @@ FiveEqnTwoP_StagGrid::updateFluxes()
 void
 FiveEqnTwoP_StagGrid::updateFluxes2ndOrder()
 {
+}
+
+void
+FiveEqnTwoP_StagGrid::onTimestepEnd()
+{
+  PETScProblem::onTimestepEnd();
+
+  // save old solutions
+  alpha_oo  = alpha_old;  p_l_oo  = p_l_old;   p_g_oo  = p_g_old;   v_l_oo  = v_l_old;   v_g_oo  = v_g_old;   rho_l_oo  = rho_l_old;   rho_g_oo  = rho_g_old;
+  alpha_old = alpha;      p_l_old = p_l;       p_g_old = p_g;       v_l_old = v_l;       v_g_old = v_g;       rho_l_old = rho_l;       rho_g_old = rho_g;
 }
 
 void
