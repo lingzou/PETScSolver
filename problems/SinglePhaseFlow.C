@@ -9,6 +9,11 @@
 // Reference:
 //   [1] L. Zou, H. Zhao, and S.J. Kim, Numerical study on the Welander oscillatory natural circulation
 //       problem using high-order numerical methods, Progress in Nuclear Energy, 94 (2017) 162-172
+//
+// The momentum equation is simplified to use the primitive form. In the end, we solve:
+// 1) Mass Equation:      d(rho)/dt + d(rho*v)/dx = 0
+// 2) Momentum Equation:  rho dv/dt + rho*v dv/dx + dp/dx + f/(2dh) * rho*v*|v| = 0
+// 3) Energy Equation:    d(rho*e)/dt + d(rho*v*e)/dx + p dv/dx - h_w*a_w*(T_w-T) = 0
 
 /* Staggered-grid mesh arrangement
 
@@ -65,8 +70,7 @@ SinglePhaseFlow::SinglePhaseFlow(InputParameterList & pList) :
   rho.resize(n_Cell);       e.resize(n_Cell);
   rho_old.resize(n_Cell);   e_old.resize(n_Cell);
   rho_oo.resize(n_Cell);    e_oo.resize(n_Cell);
-  rho_edge.resize(n_Node);  rho_edge_old.resize(n_Node);  rho_edge_oo.resize(n_Node);
-  v_cell.resize(n_Cell);
+  rho_edge.resize(n_Node);
 
   // Fluxes
   mass_flux.resize(n_Node);  energy_flux.resize(n_Node);
@@ -122,13 +126,9 @@ SinglePhaseFlow::updateSolution(double * u)
       e[i]   = e_func(p[i], T[i]);
     }
   }
-  //update cell values
-  for(int i = 0; i < n_Cell; i++)
-    v_cell[i] = 0.5 * (v[i] + v[i+1]);
   //update edge values
-  rho_edge[0] = rho[0];
+  rho_edge[0] = rho[0];   rho_edge[n_Cell] = rho[n_Cell - 1];
   for(unsigned int i = 1; i < n_Cell; i++)    rho_edge[i] = 0.5 * (rho[i-1] + rho[i]);
-  rho_edge[n_Cell] = rho[n_Cell - 1];
 }
 
 void
@@ -139,7 +139,7 @@ SinglePhaseFlow::transientResidual(double * res)
   {
     for(unsigned int i = 0; i < n_Cell + 1; i++)
     {
-      res[idx++] = (1.5 * rho_edge[i] * v[i] - 2.0 * rho_edge_old[i] * v_old[i] + 0.5 * rho_edge_oo[i] * v_oo[i]) / _dt;
+      res[idx++] = rho_edge[i] * (1.5 * v[i] - 2.0 * v_old[i] + 0.5 * v_oo[i]) / _dt;
       if (i < n_Cell)
       {
         res[idx++] = (1.5 * rho[i] - 2.0 * rho_old[i] + 0.5 * rho_oo[i]) / _dt;
@@ -151,7 +151,7 @@ SinglePhaseFlow::transientResidual(double * res)
   {
     for(unsigned int i = 0; i < n_Cell + 1; i++)
     {
-      res[idx++] = (rho_edge[i] * v[i] - rho_edge_old[i] * v_old[i]) / _dt;
+      res[idx++] = rho_edge[i] * (v[i] - v_old[i]) / _dt;
       if (i < n_Cell)
       {
         res[idx++] = (rho[i] - rho_old[i]) * dx / _dt;
@@ -178,13 +178,12 @@ SinglePhaseFlow::RHS(double * rhs)
 void
 SinglePhaseFlow::RHS_1st_order(double * rhs)
 {
-  // Boundary values and ghost values
-  double p_inlet_ghost = p[0]; // projection better?
+  double rho_inlet = rho_func(p[0], T_INLET); // better to use 1st-order extrapolation for p_inlet?
+  double e_inlet = e_func(p[0], T_INLET);
 
   // Upwind donor cell method for void fraction and mass balance equations
-  mass_flux[0]    = (v[0] > 0) ? v[0] * rho_func(p_inlet_ghost, T_INLET) : v[0] * rho[0];
-  energy_flux[0]  = (v[0] > 0) ? v[0] * rho_func(p_inlet_ghost, T_INLET) * e_func(p_inlet_ghost, T_INLET)
-                    : v[0] * rho[0] * e[0];
+  mass_flux[0]    = (v[0] > 0) ? v[0] * rho_inlet           : v[0] * rho[0];
+  energy_flux[0]  = (v[0] > 0) ? v[0] * rho_inlet * e_inlet : v[0] * rho[0] * e[0];
 
   mass_flux[n_Cell]    = (v[n_Cell] > 0) ? v[n_Cell] * rho[n_Cell-1] : v[n_Cell] * rho_func(P_OUTLET, T_OUTLET);
   energy_flux[n_Cell]  = (v[n_Cell] > 0) ? v[n_Cell] * rho[n_Cell-1] * e[n_Cell-1]
@@ -202,26 +201,18 @@ SinglePhaseFlow::RHS_1st_order(double * rhs)
   for(int i = 1; i < n_Cell + 1; i++) // loop on the remaining edges
   {
     // east and west velocities
-    double v_east   = (i == n_Cell) ? v[n_Cell]     : v[i+1];
-    double rho_east = (i == n_Cell) ? rho[n_Cell-1] : rho[i];
+    double v_east   = (i == n_Cell) ? v[n_Cell] : v[i+1];
     double v_west = (i == 1) ? V_INLET : v[i-1];
-    double rho_west = rho[i-1]; // always
-
-    // d(rho v v)_dx term
-    double drhovv_dx = (v[i] > 0) ? (rho_east * v[i] * v[i] - rho_west * v_west * v_west) / dx
-                                    : (rho_east * v_east * v_east - rho_west * v[i] * v[i]) / dx;
+    double dv_dx = (v[i] > 0) ? (v[i] - v_west) / dx : (v_east - v[i]) / dx;
 
     // dp_dx term
     double dp_dx = (i == n_Cell) ? (P_OUTLET - p[n_Cell-1])/dx*2. : (p[i] - p[i-1])/dx;
 
     // friction term
-    double fric = (i == n_Cell) ? 0.5 * _f / _dh * rho[n_Cell-1] * v_cell[n_Cell-1] * std::fabs(v_cell[n_Cell-1])
-                                : 0.5 * _f * 0.5 / _dh * rho[i-1] * v_cell[i-1] * std::fabs(v_cell[i-1])
-                                  + 0.5 * _f * 0.5 / _dh * rho[i] * v_cell[i] * std::fabs(v_cell[i]);
-    //double fric = 0.5 * rho_edge[i] * _f / _dh * v[i] * std::fabs(v[i]);
+    double fric  = 0.5 * _f / _dh * rho_edge[i] * v[i] * std::fabs(v[i]);
 
     // assemble RHS terms
-    rhs[3*i] = -drhovv_dx - dp_dx - fric;
+    rhs[3*i] = -rho_edge[i] * v[i] * dv_dx - dp_dx - fric;
   }
 
   // RHS for mass and energy equations
@@ -256,8 +247,8 @@ SinglePhaseFlow::onTimestepEnd()
 {
   PETScProblem::onTimestepEnd();
   // save old solutions
-  p_oo = p_old; v_oo = v_old; T_oo = T_old; rho_oo = rho_old; e_oo = e_old; rho_edge_oo = rho_edge_old;
-  p_old = p; v_old = v; T_old = T; rho_old = rho; e_old = e; rho_edge_old = rho_edge;
+  p_oo = p_old; v_oo = v_old; T_oo = T_old; rho_oo = rho_old; e_oo = e_old;
+  p_old = p; v_old = v; T_old = T; rho_old = rho; e_old = e;
 }
 
 void
@@ -319,7 +310,7 @@ SinglePhaseFlow::writeTextOutput(unsigned int step)
   fprintf(ptr_File, "#Cell data\n");
   fprintf(ptr_File, "%20s%20s%20s%20s%20s\n", "x", "p", "T", "rho", "v_cell");
   for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%20.6e%20.6e%20.6e%20.6e%20.6e\n", (i+0.5)*dx, p[i], T[i], rho[i], v_cell[i]);
+    fprintf(ptr_File, "%20.6e%20.6e%20.6e%20.6e%20.6e\n", (i+0.5)*dx, p[i], T[i], rho[i], 0.5 * (v[i] + v[i+1]));
 
   // edge data
   fprintf(ptr_File, "#Edge data\n");

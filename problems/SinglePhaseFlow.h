@@ -50,8 +50,7 @@ protected:
   std::vector<double> rho, rho_old, rho_oo, e, e_old, e_oo;
 
   // Helper variables
-  std::vector<double> rho_edge, rho_edge_old, rho_edge_oo;
-  std::vector<double> v_cell;
+  std::vector<double> rho_edge;
 
   // Fluxes
   std::vector<double> mass_flux, energy_flux;
