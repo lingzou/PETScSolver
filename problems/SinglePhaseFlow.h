@@ -21,12 +21,9 @@ public:
 
   virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) final;
 
-  void RHS_1st_order(double * rhs);
-  void RHS_2nd_order(double * rhs);
 protected:
   void updateFluxes();
   void updateFluxes2ndOrder();
-  void linearReconstruction(double, double, std::vector<double> &, std::vector<double> &, std::vector<double> &);
 
   double rho_func(double p, double T) { return 1.e3 + 4.e-7 * (p - 1.e5) - 0.46 * (T - 300.0); }
   double e_func(double /*p*/, double T) { return 112.55e3 + 4.e3 * (T - 300.0); }
@@ -56,7 +53,7 @@ protected:
   std::vector<double> mass_flux, energy_flux;
 
   // Second-order helper variables
-  std::vector<double> p_w, p_e, T_w, T_e;
+  std::vector<double> p_w, p_e, T_w, T_e, rho_w, rho_e, e_w, e_e;
 };
 
 #endif /*SINGLE_PHASE_FLOW_H*/

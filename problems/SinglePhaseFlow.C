@@ -78,14 +78,12 @@ SinglePhaseFlow::SinglePhaseFlow(InputParameterList & pList) :
   // Second-order helper variables
   if (_order == 2)
   {
-    p_w.resize(n_Cell);       T_w.resize(n_Cell);
-    p_e.resize(n_Cell);       T_e.resize(n_Cell);
+    p_w.resize(n_Cell);       T_w.resize(n_Cell);       rho_w.resize(n_Cell);     e_w.resize(n_Cell);
+    p_e.resize(n_Cell);       T_e.resize(n_Cell);       rho_e.resize(n_Cell);     e_e.resize(n_Cell);
   }
 }
 
-SinglePhaseFlow::~SinglePhaseFlow()
-{
-}
+SinglePhaseFlow::~SinglePhaseFlow() {}
 
 void
 SinglePhaseFlow::SetupInitialCondition(double * u)
@@ -110,6 +108,9 @@ SinglePhaseFlow::SetupInitialCondition(double * u)
 
   rho_old = rho;  v_old = v;  T_old = T;  e_old = e;
   rho_oo  = rho;  v_oo  = v;  T_oo  = T;  e_oo  = e;
+
+  rho_edge[0] = rho[0];   rho_edge[n_Cell] = rho[n_Cell - 1];
+  for(unsigned int i = 1; i < n_Cell; i++)    rho_edge[i] = 0.5 * (rho[i-1] + rho[i]);
 }
 
 void
@@ -169,30 +170,9 @@ SinglePhaseFlow::RHS(double * rhs)
 {
   switch (_order)
   {
-    case 1:     RHS_1st_order(rhs);     break;
-    case 2:     RHS_2nd_order(rhs);     break;
+    case 1:     updateFluxes();             break;
+    case 2:     updateFluxes2ndOrder();     break;
     default :   sysError("Spatial order not implemented.");
-  }
-}
-
-void
-SinglePhaseFlow::RHS_1st_order(double * rhs)
-{
-  double rho_inlet = rho_func(p[0], T_INLET); // better to use 1st-order extrapolation for p_inlet?
-  double e_inlet = e_func(p[0], T_INLET);
-
-  // Upwind donor cell method for void fraction and mass balance equations
-  mass_flux[0]    = (v[0] > 0) ? v[0] * rho_inlet           : v[0] * rho[0];
-  energy_flux[0]  = (v[0] > 0) ? v[0] * rho_inlet * e_inlet : v[0] * rho[0] * e[0];
-
-  mass_flux[n_Cell]    = (v[n_Cell] > 0) ? v[n_Cell] * rho[n_Cell-1] : v[n_Cell] * rho_func(P_OUTLET, T_OUTLET);
-  energy_flux[n_Cell]  = (v[n_Cell] > 0) ? v[n_Cell] * rho[n_Cell-1] * e[n_Cell-1]
-                         : v[n_Cell] * rho_func(P_OUTLET, T_OUTLET) * e_func(P_OUTLET, T_OUTLET);
-
-  for(unsigned int i = 1; i < n_Cell; i++)
-  {
-    mass_flux[i]    = (v[i] > 0) ? v[i] * rho[i-1]          : v[i] * rho[i];
-    energy_flux[i]  = (v[i] > 0) ? v[i] * rho[i-1] * e[i-1] : v[i] * rho[i] * e[i];
   }
 
   // Momentum equations RHS
@@ -227,19 +207,59 @@ SinglePhaseFlow::RHS_1st_order(double * rhs)
 }
 
 void
-SinglePhaseFlow::RHS_2nd_order(double * rhs)
-{
-  sysError("Not implemented.");
-}
-
-void
 SinglePhaseFlow::updateFluxes()
 {
+  double rho_inlet = rho_func(p[0], T_INLET); // better to use 1st-order extrapolation for p_inlet?
+  double e_inlet = e_func(p[0], T_INLET);
+
+  // Upwind donor cell method for void fraction and mass balance equations
+  mass_flux[0]    = (v[0] > 0) ? v[0] * rho_inlet           : v[0] * rho[0];
+  energy_flux[0]  = (v[0] > 0) ? v[0] * rho_inlet * e_inlet : v[0] * rho[0] * e[0];
+
+  mass_flux[n_Cell]    = (v[n_Cell] > 0) ? v[n_Cell] * rho[n_Cell-1] : v[n_Cell] * rho_func(P_OUTLET, T_OUTLET);
+  energy_flux[n_Cell]  = (v[n_Cell] > 0) ? v[n_Cell] * rho[n_Cell-1] * e[n_Cell-1]
+                         : v[n_Cell] * rho_func(P_OUTLET, T_OUTLET) * e_func(P_OUTLET, T_OUTLET);
+
+  for(unsigned int i = 1; i < n_Cell; i++)
+  {
+    mass_flux[i]    = (v[i] > 0) ? v[i] * rho[i-1]          : v[i] * rho[i];
+    energy_flux[i]  = (v[i] > 0) ? v[i] * rho[i-1] * e[i-1] : v[i] * rho[i] * e[i];
+  }
 }
 
 void
 SinglePhaseFlow::updateFluxes2ndOrder()
 {
+  double rho_inlet = rho_func(p[0], T_INLET); // better to use 1st-order extrapolation for p_inlet?
+  double e_inlet = e_func(p[0], T_INLET);
+
+  double p_inlet_GHOST = 2 * p[0] - p[1];
+  double T_inlet_GHOST = 2 * T_INLET - T[0];
+  double p_outlet_GHOST = 2 * P_OUTLET - p[n_Cell-1];
+  double T_outlet_GHOST = (v[n_Cell] > 0) ? 2 * T[n_Cell-1] - T[n_Cell-2] : 2 * T_OUTLET - T[n_Cell-1];
+
+  UTILS::linearReconstruction(p_inlet_GHOST, p_outlet_GHOST, p, p_w, p_e);
+  UTILS::linearReconstruction(T_inlet_GHOST, T_outlet_GHOST, T, T_w, T_e);
+
+  for (unsigned int i = 0; i < n_Cell; i++)
+  {
+    rho_w[i] = rho_func(p_w[i], T_w[i]);  rho_e[i] = rho_func(p_e[i], T_e[i]);
+    e_w[i]   = e_func(p_w[i], T_w[i]);    e_e[i]   = e_func(p_e[i], T_e[i]);
+  }
+
+  // Upwind donor cell method for void fraction and mass balance equations
+  mass_flux[0]    = (v[0] > 0) ? v[0] * rho_inlet           : v[0] * rho_w[0];
+  energy_flux[0]  = (v[0] > 0) ? v[0] * rho_inlet * e_inlet : v[0] * rho_w[0] * e_w[0];
+
+  mass_flux[n_Cell]    = (v[n_Cell] > 0) ? v[n_Cell] * rho_e[n_Cell-1] : v[n_Cell] * rho_func(P_OUTLET, T_OUTLET);
+  energy_flux[n_Cell]  = (v[n_Cell] > 0) ? v[n_Cell] * rho_e[n_Cell-1] * e_e[n_Cell-1]
+                         : v[n_Cell] * rho_func(P_OUTLET, T_OUTLET) * e_func(P_OUTLET, T_OUTLET);
+
+  for(unsigned int i = 1; i < n_Cell; i++)
+  {
+    mass_flux[i]    = (v[i] > 0) ? v[i] * rho_e[i-1]            : v[i] * rho_w[i];
+    energy_flux[i]  = (v[i] > 0) ? v[i] * rho_e[i-1] * e_e[i-1] : v[i] * rho_w[i] * e_w[i];
+  }
 }
 
 void
