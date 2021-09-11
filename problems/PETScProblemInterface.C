@@ -1,32 +1,25 @@
 #include <iostream>
 #include "PETScProblemInterface.h"
 #include "utils.h"
+#include "ParameterList.h"
+
 #include "HeatConduction1D.h"
 #include "EulerEquation1D.h"
 #include "FiveEqnTwoP_StagGrid.h"
 #include "SinglePhaseFlow.h"
 
 void
-ApplicationCtx::initializePETScApp(const char* input_file_name)
+ApplicationCtx::initializePETScApp(InputParameterList& globalParamList)
 {
-  paramList = new InputParameterList("PETScProblemParamList", input_file_name);
-  paramList->readRequiredInputParameter<std::string>("problem");
-  paramList->readRequiredInputParameter<int>("n_steps");
-  paramList->readRequiredInputParameter<double>("dt");
-  paramList->readRequiredInputParameter<TimeScheme>("ts");
-  paramList->readOptionalInputParameter<int>("output_interval", 1);
-  paramList->readOptionalInputParameter<bool>("text_output", false);
-  paramList->AddParameter<std::string>("input_file_name", UTILS::trim_file_name(input_file_name));
-
-  std::string problem_name = paramList->getParameterValue<std::string>("problem");
+  std::string problem_name = globalParamList.getParameterValue<std::string>("problem");
   if (problem_name.compare("HeatConduction1D") == 0)
-    myPETScProblem = new HeatConduction1D(*paramList);
+    myPETScProblem = new HeatConduction1D(globalParamList);
   else if (problem_name.compare("EulerEquation1D") == 0)
-    myPETScProblem = new EulerEquation1D(*paramList);
+    myPETScProblem = new EulerEquation1D(globalParamList);
   else if (problem_name.compare("FiveEqnTwoP_StagGrid") == 0)
-    myPETScProblem = new FiveEqnTwoP_StagGrid(*paramList);
+    myPETScProblem = new FiveEqnTwoP_StagGrid(globalParamList);
   else if (problem_name.compare("SinglePhaseFlow") == 0)
-    myPETScProblem = new SinglePhaseFlow(*paramList);
+    myPETScProblem = new SinglePhaseFlow(globalParamList);
   else
     sysError("ERROR: UNKNOWN problem: " + problem_name);
 
@@ -171,7 +164,6 @@ ApplicationCtx::FreePETScWorkSpace()
   if (hasFDColoring)
     MatFDColoringDestroy(&fdcoloring);
 
-  delete paramList;
   delete myPETScProblem;
 }
 

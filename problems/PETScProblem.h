@@ -2,7 +2,7 @@
 #define PETSC_PROBLEM_H
 
 #include <petsc.h>
-#include "PETScProblemInterface.h"
+#include "ParameterList.h"
 
 class PETScProblem
 {

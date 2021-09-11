@@ -1,22 +1,17 @@
 #include "utils.h"
 #include "ParameterList.h"
 
-InputParameterList::InputParameterList(std::string name, std::string filename) :
-  ParameterList(name)
+InputParameterList::InputParameterList(std::string name, GetPot &file) :
+  ParameterList(name),
+  ifile(file)
 {
-  ptr_ifile = new GetPot(filename.c_str());
-}
-
-InputParameterList::~InputParameterList()
-{
-  delete ptr_ifile;
 }
 
 template <>
 void InputParameterList::readRequiredInputParameter<int>(std::string para_name)
 {
   if (hasInput(para_name))
-    AddParameter<int>(para_name, (*ptr_ifile)(para_name.c_str(), int(1)));
+    AddParameter<int>(para_name, ifile(para_name.c_str(), int(1)));
   else
     sysError("Inputfile does not have parameter: " + para_name);
 }
@@ -25,7 +20,7 @@ template <>
 void InputParameterList::readRequiredInputParameter<double>(std::string para_name)
 {
   if (hasInput(para_name))
-    AddParameter<double>(para_name, (*ptr_ifile)(para_name.c_str(), double(1.0)));
+    AddParameter<double>(para_name, ifile(para_name.c_str(), double(1.0)));
   else
     sysError("Inputfile does not have parameter: " + para_name);
 }
@@ -34,7 +29,7 @@ template <>
 void InputParameterList::readRequiredInputParameter<std::string>(std::string para_name)
 {
   if (hasInput(para_name))
-    AddParameter<std::string>(para_name, (*ptr_ifile)(para_name.c_str(), "string"));
+    AddParameter<std::string>(para_name, ifile(para_name.c_str(), "string"));
   else
     sysError("Inputfile does not have parameter: " + para_name);
 }
@@ -44,7 +39,7 @@ void InputParameterList::readRequiredInputParameter<TimeScheme>(std::string para
 {
   if (hasInput(para_name))
   {
-    std::string ts_str = (*ptr_ifile)(para_name.c_str(), "string");
+    std::string ts_str = ifile(para_name.c_str(), "string");
     AddParameter<TimeScheme>(para_name, UTILS::StringToEnum(ts_str));
   }
   else
@@ -56,7 +51,7 @@ void InputParameterList::readRequiredInputParameter<bool>(std::string para_name)
 {
   if (hasInput(para_name))
   {
-    std::string str = (*ptr_ifile)(para_name.c_str(), "string");
+    std::string str = ifile(para_name.c_str(), "string");
     AddParameter<bool>(para_name, UTILS::StringToBool(str));
   }
   else
@@ -68,7 +63,7 @@ void InputParameterList::readOptionalInputParameter<bool>(std::string para_name,
 {
   if (hasInput(para_name))
   {
-    std::string str = (*ptr_ifile)(para_name.c_str(), "string");
+    std::string str = ifile(para_name.c_str(), "string");
     AddParameter<bool>(para_name, UTILS::StringToBool(str));
   }
   else

@@ -101,22 +101,20 @@ protected:
 class InputParameterList : public ParameterList
 {
 public:
-  InputParameterList(std::string name, std::string filename);
-  virtual ~InputParameterList();
+  InputParameterList(std::string name, GetPot &file);
+  virtual ~InputParameterList() {}
 
-  // help function
-  void print() { ptr_ifile->print(); }
-  bool hasInput(std::string para_name) { return ptr_ifile->hasVariable(para_name); }
+  bool hasInput(std::string para_name) { return ifile.hasVariable(para_name); }
 
   template <typename T>
   void readRequiredInputParameter(std::string para_name);
 
   template <typename T>
   void readOptionalInputParameter(std::string para_name, T default_val)
-  { AddParameter<T>(para_name, (*ptr_ifile)(para_name.c_str(), default_val)); }
+  { AddParameter<T>(para_name, ifile(para_name.c_str(), default_val)); }
 
 protected:
-  GetPot * ptr_ifile;
+  GetPot &ifile;
 };
 
 #endif /*PARAMETER_LIST_H*/

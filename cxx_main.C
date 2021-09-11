@@ -2,19 +2,20 @@
 #include <petscsnes.h>
 
 #include "PETScProblemInterface.h"
-#include "ParameterList.h"
+#include "InputParser.h"
 #include <GetPot>
 
 int main(int argc, char **argv)
 {
-  // Require an input file
+  /*
+   * Input file parser
+   */
   if (argc < 2)
-  {
-    std::cerr << "Invalid input command line." << std::endl;
-    std::cerr << "Please use: './PETScSolver <input_file_name> [PETSc options]" << std::endl;
-    std::cerr << "<required> [optional]" << std::endl;
-    exit(1);
-  }
+    sysError("Invalid input command line.\n"
+             "Please use: './PETScSolver <input_file_name> [PETSc options]'\n"
+             "<required> [optional]");
+  InputParser input_parser(argv[1]);
+  InputParameterList& globalParamList = input_parser.getGlobalParamList();
 
   // PETSc application starts with PetscInitialize
   PetscInitialize(&argc, &argv, (char *)0, PETSC_NULL);
@@ -23,7 +24,7 @@ int main(int argc, char **argv)
    * Initialize PETSc App
    */
   ApplicationCtx AppCtx;
-  AppCtx.initializePETScApp(argv[1]);
+  AppCtx.initializePETScApp(globalParamList);
 
   /*
    *  Setup PETSc work space
@@ -38,8 +39,8 @@ int main(int argc, char **argv)
   /*
    *  Solving
    */
-  TimeScheme ts = AppCtx.paramList->getParameterValue<TimeScheme>("ts");
-  int N_Steps = AppCtx.paramList->getParameterValue<int>("n_steps");
+  TimeScheme ts = globalParamList.getParameterValue<TimeScheme>("ts");
+  int N_Steps = globalParamList.getParameterValue<int>("n_steps");
   for (unsigned int step = 1; step <= N_Steps; step++)
   {
     // 1. Before PETSc Solving
