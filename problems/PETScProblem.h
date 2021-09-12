@@ -3,27 +3,25 @@
 
 #include <petsc.h>
 #include "ParameterList.h"
+#include "ProblemSystem.h"
 
 class PETScProblem
 {
 public:
-  PETScProblem(InputParameterList & pList);
+  PETScProblem(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem);
   virtual ~PETScProblem();
 
-  virtual unsigned int getNDOF() { return n_DOFs; }
-  virtual TimeScheme getTimeScheme() { return _time_scheme; }
-  virtual double getCurrentTime() { return _t; }
-  virtual double getDt() { return _dt; }
+  virtual void setDOFoffset(long int offset) final { _DOF_offset = offset; }
+  virtual unsigned int getDOFoffset() const final { return _DOF_offset; }
+  virtual unsigned int getNDOF() const final { return _n_DOFs; }
 
-  virtual void onTimestepEnd();
-
+  virtual void onTimestepEnd() = 0;
   virtual void SetupInitialCondition(double * u) = 0;
   virtual void updateSolution(double *u) = 0;
 
   virtual void transientResidual(double * res) = 0;
   virtual void RHS(double * rhs) = 0;
 
-  virtual void writeOutput(unsigned int step);
   virtual void writeVTKOutput(unsigned int step) = 0;
   virtual void writeTextOutput(unsigned int step);
 
@@ -31,16 +29,15 @@ public:
   virtual void computeJacobianMatrix(Mat & P_Mat);
 
 protected:
-  InputParameterList & paramList;
+  InputParameterList & _globalParamList;
+  InputParameterList & _inputParamList;
+  ProblemSystem * _problemSystem;
+
   std::string _input_file_name;
   TimeScheme _time_scheme;
-  double _t;
   double _dt;
-  int _n_steps;
-  unsigned int _step;
-  int _output_interval;
-  bool _text_output;
 
-  unsigned int n_DOFs;
+  unsigned int _DOF_offset;
+  unsigned int _n_DOFs;
 };
 #endif /*PETSC_PROBLEM_H*/

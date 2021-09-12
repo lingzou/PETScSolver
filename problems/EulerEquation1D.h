@@ -7,7 +7,7 @@
 class EulerEquation1D : public PETScProblem
 {
 public:
-  EulerEquation1D(InputParameterList & pList);
+  EulerEquation1D(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem);
   virtual ~EulerEquation1D();
 
   virtual void SetupInitialCondition(double * u) final;

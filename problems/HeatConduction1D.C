@@ -4,8 +4,8 @@
 
 #include "HeatConduction1D.h"
 
-HeatConduction1D::HeatConduction1D(InputParameterList & pList) :
-  PETScProblem(pList)
+HeatConduction1D::HeatConduction1D(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem) :
+  PETScProblem(globalParamList, inputParamList, problemSystem)
 {
   // Using Finite Difference Method for heat conduction problem
   // 1/alpha * dT/dt = Laplacian(T) + q/k
@@ -17,23 +17,23 @@ HeatConduction1D::HeatConduction1D(InputParameterList & pList) :
   // This problem also has time-dependent analytical solutions:
   // T(x, t) = (1-exp(-alpha*pi*pi*t))*sin(pi*x)
 
-  paramList.readRequiredInputParameter<int>("n_cells");
+  _inputParamList.readRequiredInputParameter<int>("n_cells");
 
   length = 1.0;
-  n_Cell = paramList.getParameterValue<int>("n_cells");
+  n_Cell = _inputParamList.getParameterValue<int>("n_cells");
   k = 1.0;
   alpha = 1.0;
 
   n_Node = n_Cell + 1;
-  n_DOFs = n_Node;
+  _n_DOFs = n_Node;
 
   dx = length / n_Cell;
   dx2 = dx * dx;
 
-  x.resize(n_DOFs);
-  T.resize(n_DOFs);
-  T_old.resize(n_DOFs);
-  T_oldold.resize(n_DOFs);
+  x.resize(_n_DOFs);
+  T.resize(_n_DOFs);
+  T_old.resize(_n_DOFs);
+  T_oldold.resize(_n_DOFs);
 
   // locations of nodes
   for(unsigned int i = 0; i < x.size(); i++)
@@ -45,7 +45,7 @@ HeatConduction1D::~HeatConduction1D() {}
 void
 HeatConduction1D::SetupInitialCondition(double * u)
 {
-  for(unsigned int i = 0; i < n_DOFs; i++)
+  for(unsigned int i = 0; i < _n_DOFs; i++)
   { u[i] = 0.0; T[i] = 0.0; }
 
   T_oldold = T;     T_old = T;
@@ -62,20 +62,21 @@ HeatConduction1D::transientResidual(double * res)
 {
   // hard-coded BC; T_left = 0; T_right = 0
   res[0] = T[0] - 0;
-  res[n_Node-1] = T[n_DOFs-1] - 0;
+  res[n_Node-1] = T[_n_DOFs-1] - 0;
 
   // The remaining nodes
-  if ((_time_scheme == BDF2) && (_step > 1))
+  unsigned int time_step = _problemSystem->getCurrentTimeStep();
+  if ((_time_scheme == BDF2) && (time_step > 1))
   {
     // It is typical to use BDF1 for step 1 to startup BDF2
     // however, it is also associated with large error
     // see H. Nishikawa, "On large start-up error of BDF2", Journal of Computational Physics, Vol. 392, 2019, Pages 456-461
-    for (unsigned int i = 1; i < n_DOFs-1; i++)
+    for (unsigned int i = 1; i < _n_DOFs-1; i++)
       res[i] = (1.5 * T[i] - 2.0 * T_old[i] + 0.5 * T_oldold[i]) / _dt / alpha;
   }
   else
   {
-    for (unsigned int i = 1; i < n_DOFs-1; i++)
+    for (unsigned int i = 1; i < _n_DOFs-1; i++)
       res[i] = (T[i] - T_old[i]) / _dt / alpha;
   }
 }
@@ -85,7 +86,7 @@ HeatConduction1D::RHS(double * rhs)
 {
   // no spatial terms for the first and last node (applied Direchlet BC)
 
-  for (unsigned int i = 1; i < n_DOFs-1; i++)
+  for (unsigned int i = 1; i < _n_DOFs-1; i++)
   {
     double qx = k * PI * PI * sin(PI * x[i]);
     // RHS = Laplacian(T) + q/k
@@ -96,7 +97,6 @@ HeatConduction1D::RHS(double * rhs)
 void
 HeatConduction1D::onTimestepEnd()
 {
-  PETScProblem::onTimestepEnd();
   // Save old solutions
   T_oldold = T_old; T_old = T;
 }
@@ -127,8 +127,9 @@ HeatConduction1D::writeVTKOutput(unsigned int step)
   // Exact solutin
   fprintf(ptr_File, "SCALARS T_exact Float32 1\n");
   fprintf(ptr_File, "LOOKUP_TABLE T_exact\n");
+  double t = _problemSystem->getCurrentTime();
   for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%f\n", (1.0 - exp(-alpha * PI * PI * _t)) * sin(PI * x[i]));
+    fprintf(ptr_File, "%f\n", (1.0 - exp(-alpha * PI * PI * t)) * sin(PI * x[i]));
 
   // cell data
   fprintf(ptr_File, "CELL_DATA %u\n", n_Cell);
@@ -144,17 +145,17 @@ HeatConduction1D::writeVTKOutput(unsigned int step)
 void
 HeatConduction1D::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
 {
-  MatCreateSeqAIJ(PETSC_COMM_SELF, n_DOFs, n_DOFs, 3, NULL, &P_Mat);
+  MatCreateSeqAIJ(PETSC_COMM_SELF, _n_DOFs, _n_DOFs, 3, NULL, &P_Mat);
 
   PetscInt     row, col;
   PetscScalar  v = 1.0;
 
   row = 0; col = 0;
   MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
-  row = n_DOFs-1; col = n_DOFs-1;
+  row = _n_DOFs-1; col = _n_DOFs-1;
   MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
 
-  for (row = 1; row < n_DOFs-1; row++)
+  for (row = 1; row < _n_DOFs-1; row++)
     for (col = row-1; col <= row+1; col++)
       MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
 
@@ -174,12 +175,12 @@ HeatConduction1D::computeJacobianMatrix(Mat & P_Mat)
 
   row = 0; col = 0;
   MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
-  row = n_DOFs-1; col = n_DOFs-1;
+  row = _n_DOFs-1; col = _n_DOFs-1;
   MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
 
   PetscInt cols[3];
   PetscReal jac[3];
-  for (row = 1; row < n_DOFs-1; row++)
+  for (row = 1; row < _n_DOFs-1; row++)
   {
     cols[0] = row - 1; cols[1] = row; cols[2] = row + 1;
     jac[0] = -1.0 / dx2;

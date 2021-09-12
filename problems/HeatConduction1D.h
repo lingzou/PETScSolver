@@ -9,7 +9,7 @@ static const double PI = asin(1) * 2;
 class HeatConduction1D : public PETScProblem
 {
 public:
-  HeatConduction1D(InputParameterList & pList);
+  HeatConduction1D(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem);
   virtual ~HeatConduction1D();
 
   virtual void SetupInitialCondition(double * u) final;

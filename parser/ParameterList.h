@@ -104,6 +104,7 @@ public:
   InputParameterList(std::string name, GetPot &file);
   virtual ~InputParameterList() {}
 
+  void setGetPotPrefix(std::string section) { prefix = section; }
   bool hasInput(std::string para_name) { return ifile.hasVariable(para_name); }
 
   template <typename T>
@@ -115,6 +116,7 @@ public:
 
 protected:
   GetPot &ifile;
+  std::string prefix;
 };
 
 #endif /*PARAMETER_LIST_H*/

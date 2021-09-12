@@ -11,17 +11,20 @@ public:
   virtual ~InputParser();
 
   InputParameterList& getGlobalParamList() { return *global_ParamList; }
+  std::map<std::string, InputParameterList *>& getProblemSystemParamList() { return problemParamList_map; }
 
   // helper function
-  void print() { ptr_ifile->print(); }
+  void print() { ifile->print(); }
 
 protected:
   void buildGlobalParamList();
+  void prepareProblemParamList();
 
   std::string ifile_name;
-  GetPot * ptr_ifile;
+  GetPot * ifile;
 
   InputParameterList * global_ParamList;
+  std::map<std::string, InputParameterList *> problemParamList_map;
 };
 
 #endif /*INPUT_PARSER_H*/

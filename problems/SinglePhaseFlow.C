@@ -25,39 +25,39 @@
 
 // This problem has hard-coded boundary conditions: inlet velocity and T, outlet P.
 
-SinglePhaseFlow::SinglePhaseFlow(InputParameterList & pList) :
-  PETScProblem(pList)
+SinglePhaseFlow::SinglePhaseFlow(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem) :
+  PETScProblem(globalParamList, inputParamList, problemSystem)
 {
-  paramList.readRequiredInputParameter<int>("order");
-  paramList.readRequiredInputParameter<int>("n_cells");
-  paramList.readRequiredInputParameter<double>("length");
+  _inputParamList.readRequiredInputParameter<int>("order");
+  _inputParamList.readRequiredInputParameter<int>("n_cells");
+  _inputParamList.readRequiredInputParameter<double>("length");
 
-  paramList.readRequiredInputParameter<double>("P_INIT");
-  paramList.readRequiredInputParameter<double>("V_INIT");
-  paramList.readRequiredInputParameter<double>("T_INIT");
+  _inputParamList.readRequiredInputParameter<double>("P_INIT");
+  _inputParamList.readRequiredInputParameter<double>("V_INIT");
+  _inputParamList.readRequiredInputParameter<double>("T_INIT");
 
-  paramList.readRequiredInputParameter<double>("V_INLET");
-  paramList.readRequiredInputParameter<double>("T_INLET");
-  paramList.readRequiredInputParameter<double>("P_OUTLET");
-  paramList.readRequiredInputParameter<double>("T_OUTLET");
+  _inputParamList.readRequiredInputParameter<double>("V_INLET");
+  _inputParamList.readRequiredInputParameter<double>("T_INLET");
+  _inputParamList.readRequiredInputParameter<double>("P_OUTLET");
+  _inputParamList.readRequiredInputParameter<double>("T_OUTLET");
 
   // initial conditions
-  P_INIT     =  paramList.getParameterValue<double>("P_INIT");
-  V_INIT     =  paramList.getParameterValue<double>("V_INIT");
-  T_INIT     =  paramList.getParameterValue<double>("T_INIT");
+  P_INIT     =  _inputParamList.getParameterValue<double>("P_INIT");
+  V_INIT     =  _inputParamList.getParameterValue<double>("V_INIT");
+  T_INIT     =  _inputParamList.getParameterValue<double>("T_INIT");
   // boundary conditions
-  V_INLET    =  paramList.getParameterValue<double>("V_INLET");
-  T_INLET    =  paramList.getParameterValue<double>("T_INLET");
-  P_OUTLET   =  paramList.getParameterValue<double>("P_OUTLET");
-  T_OUTLET   =  paramList.getParameterValue<double>("T_OUTLET");  /* safeguard for reverse flow */
+  V_INLET    =  _inputParamList.getParameterValue<double>("V_INLET");
+  T_INLET    =  _inputParamList.getParameterValue<double>("T_INLET");
+  P_OUTLET   =  _inputParamList.getParameterValue<double>("P_OUTLET");
+  T_OUTLET   =  _inputParamList.getParameterValue<double>("T_OUTLET");  /* safeguard for reverse flow */
 
-  _order = paramList.getParameterValue<int>("order");
-  n_Cell = paramList.getParameterValue<int>("n_cells");
-  length = paramList.getParameterValue<double>("length");
+  _order = _inputParamList.getParameterValue<int>("order");
+  n_Cell = _inputParamList.getParameterValue<int>("n_cells");
+  length = _inputParamList.getParameterValue<double>("length");
 
 
   n_Node = n_Cell + 1;
-  n_DOFs = n_Cell * 3 + 1;
+  _n_DOFs = n_Cell * 3 + 1;
 
   dx = length / n_Cell;
 
@@ -136,7 +136,8 @@ void
 SinglePhaseFlow::transientResidual(double * res)
 {
   unsigned int idx = 0;
-  if ((_time_scheme == BDF2) && (_step > 1))
+  unsigned int time_step = _problemSystem->getCurrentTimeStep();
+  if ((_time_scheme == BDF2) && (time_step > 1))
   {
     for(unsigned int i = 0; i < n_Cell + 1; i++)
     {
@@ -265,7 +266,6 @@ SinglePhaseFlow::updateFluxes2ndOrder()
 void
 SinglePhaseFlow::onTimestepEnd()
 {
-  PETScProblem::onTimestepEnd();
   // save old solutions
   p_oo = p_old; v_oo = v_old; T_oo = T_old; rho_oo = rho_old; e_oo = e_old;
   p_old = p; v_old = v; T_old = T; rho_old = rho; e_old = e;
@@ -326,7 +326,7 @@ SinglePhaseFlow::writeTextOutput(unsigned int step)
   ptr_File = fopen(file_name.c_str(), "w");
 
   // cell data
-  fprintf(ptr_File, "Time = %20.6e\n", _t);
+  fprintf(ptr_File, "Time = %20.6e\n", _problemSystem->getCurrentTime());
   fprintf(ptr_File, "#Cell data\n");
   fprintf(ptr_File, "%20s%20s%20s%20s%20s\n", "x", "p", "T", "rho", "v_cell");
   for (unsigned int i = 0; i < n_Cell; i++)
@@ -344,7 +344,7 @@ SinglePhaseFlow::writeTextOutput(unsigned int step)
 void
 SinglePhaseFlow::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
 {
-  MatCreateSeqAIJ(PETSC_COMM_SELF, n_DOFs, n_DOFs, 25, NULL, &P_Mat);
+  MatCreateSeqAIJ(PETSC_COMM_SELF, _n_DOFs, _n_DOFs, 25, NULL, &P_Mat);
 
   int n_Var = 3;
   PetscReal v = 1.0;
@@ -355,7 +355,7 @@ SinglePhaseFlow::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
       PetscInt i_dof = i * n_Var + var;
       for (int j_dof = (i - 2) * n_Var; j_dof < (i + 3) * n_Var; j_dof++)
       {
-        if ((i_dof >= 0) && (i_dof < n_DOFs) && (j_dof >= 0) && (j_dof < n_DOFs))
+        if ((i_dof >= 0) && (i_dof < _n_DOFs) && (j_dof >= 0) && (j_dof < _n_DOFs))
           MatSetValues(P_Mat, 1, &i_dof, 1, &j_dof, &v, INSERT_VALUES);
       }
     }

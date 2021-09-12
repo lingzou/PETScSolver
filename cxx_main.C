@@ -15,7 +15,6 @@ int main(int argc, char **argv)
              "Please use: './PETScSolver <input_file_name> [PETSc options]'\n"
              "<required> [optional]");
   InputParser input_parser(argv[1]);
-  InputParameterList& globalParamList = input_parser.getGlobalParamList();
 
   // PETSc application starts with PetscInitialize
   PetscInitialize(&argc, &argv, (char *)0, PETSC_NULL);
@@ -24,7 +23,7 @@ int main(int argc, char **argv)
    * Initialize PETSc App
    */
   ApplicationCtx AppCtx;
-  AppCtx.initializePETScApp(globalParamList);
+  AppCtx.initializePETScApp(input_parser);
 
   /*
    *  Setup PETSc work space
@@ -39,6 +38,7 @@ int main(int argc, char **argv)
   /*
    *  Solving
    */
+  InputParameterList& globalParamList = input_parser.getGlobalParamList();
   TimeScheme ts = globalParamList.getParameterValue<TimeScheme>("ts");
   int N_Steps = globalParamList.getParameterValue<int>("n_steps");
   for (unsigned int step = 1; step <= N_Steps; step++)
@@ -49,22 +49,22 @@ int main(int argc, char **argv)
     {
       PetscReal * res_RHS_old;
       VecGetArray(AppCtx.res_RHS_old, &res_RHS_old);
-      AppCtx.myPETScProblem->RHS(res_RHS_old);
+      AppCtx.myProblemSystem->RHS(res_RHS_old);
       VecRestoreArray(AppCtx.res_RHS_old, &res_RHS_old);
     }
 
     // 2. PETSc solving: solve the system by iterating the solution vector
-    PetscPrintf(PETSC_COMM_WORLD, "Time step = %d, dt = %g\n", step, AppCtx.myPETScProblem->getDt());
+    PetscPrintf(PETSC_COMM_WORLD, "Time step = %d, dt = %g\n", step, AppCtx.myProblemSystem->getDt());
     SNESSolve(AppCtx.snes, NULL, AppCtx.u);
 
     // 3. After PETSc solving: March time forward; write solutions; update old solutions etc.
-    AppCtx.myPETScProblem->onTimestepEnd();
+    AppCtx.myProblemSystem->onTimestepEnd();
 
     // 3.1. (If applicable) save the NEW RHS to OLD RHS for the next time step CN
     if (ts == CN)   VecCopy(AppCtx.res_RHS, AppCtx.res_RHS_old);
 
     // 3.2. Print some additional info.
-    double current_t = AppCtx.myPETScProblem->getCurrentTime();
+    double current_t = AppCtx.myProblemSystem->getCurrentTime();
     PetscPrintf(PETSC_COMM_WORLD, "End of Time step = %d, current time = %g\n\n", step, current_t);
   }
 

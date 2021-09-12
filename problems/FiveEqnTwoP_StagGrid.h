@@ -7,7 +7,7 @@
 class FiveEqnTwoP_StagGrid : public PETScProblem
 {
 public:
-  FiveEqnTwoP_StagGrid(InputParameterList & pList);
+  FiveEqnTwoP_StagGrid(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem);
   ~FiveEqnTwoP_StagGrid();
 
   virtual void SetupInitialCondition(double * u) final;
@@ -23,11 +23,8 @@ public:
 
   void RHS_1st_order(double * rhs);
   void RHS_2nd_order(double * rhs);
-protected:
-  void updateFluxes();
-  void updateFluxes2ndOrder();
-  void linearReconstruction(double, double, std::vector<double> &, std::vector<double> &, std::vector<double> &);
 
+protected:
   double rho_l_func(double p) { return 1000.0 + 1.0e-7 * (p - 1.0e5); }
   double rho_g_func(double p) { return    0.5 + 1.0e-6 * (p - 1.0e5); }
 

@@ -6,24 +6,24 @@
 #include "EulerEquation1D.h"
 #include "utils.h"
 
-EulerEquation1D::EulerEquation1D(InputParameterList & pList) :
-  PETScProblem(pList)
+EulerEquation1D::EulerEquation1D(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem) :
+  PETScProblem(globalParamList, inputParamList, problemSystem)
 {
-  paramList.readRequiredInputParameter<int>("n_cells");
-  paramList.readRequiredInputParameter<int>("order");
-  paramList.readRequiredInputParameter<int>("p_case");
+  _inputParamList.readRequiredInputParameter<int>("n_cells");
+  _inputParamList.readRequiredInputParameter<int>("order");
+  _inputParamList.readRequiredInputParameter<int>("p_case");
 
-  _order = paramList.getParameterValue<int>("order");
+  _order = _inputParamList.getParameterValue<int>("order");
   _gamma = 1.4;
 
   length = 1.0;
-  n_Cell = paramList.getParameterValue<int>("n_cells");
+  n_Cell = _inputParamList.getParameterValue<int>("n_cells");
   n_Node = n_Cell + 1;
-  n_DOFs = n_Cell * 3;
+  _n_DOFs = n_Cell * 3;
 
   dx = length / n_Cell;
 
-  int p_case = paramList.getParameterValue<int>("p_case");
+  int p_case = _inputParamList.getParameterValue<int>("p_case");
   if (p_case == 1)  // Sod problem
   {
     RHO_L = 1.0;      M_L = 0.0;    E_L = 2.5;
@@ -90,7 +90,8 @@ void
 EulerEquation1D::transientResidual(double * res)
 {
   unsigned int idx = 0;
-  if ((_time_scheme == BDF2) && (_step > 1))
+  unsigned int time_step = _problemSystem->getCurrentTimeStep();
+  if ((_time_scheme == BDF2) && (time_step > 1))
   {
     // It is typical to use BDF1 for step 1 to startup BDF2
     // however, it is also associated with large error
@@ -204,7 +205,6 @@ EulerEquation1D::updateFluxes2ndOrder()
 void
 EulerEquation1D::onTimestepEnd()
 {
-  PETScProblem::onTimestepEnd();
   // save old solutions
   rho_oo  = rho_old;  m_oo  = m_old;  E_oo  = E_old;
   rho_old = rho;      m_old = m;      E_old = E;
@@ -272,7 +272,7 @@ EulerEquation1D::writeVTKOutput(unsigned int step)
 void
 EulerEquation1D::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
 {
-  MatCreateSeqAIJ(PETSC_COMM_SELF, n_DOFs, n_DOFs, 15, NULL, &P_Mat);
+  MatCreateSeqAIJ(PETSC_COMM_SELF, _n_DOFs, _n_DOFs, 15, NULL, &P_Mat);
 
   int n_Var = 3;
   PetscReal v = 1.0;
@@ -286,7 +286,7 @@ EulerEquation1D::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
         {
           // This loops on variables on neighboring cells
           col = j * n_Var + j_var;  // might be smaller than zero
-          if ((col >= 0) && (col < n_DOFs))
+          if ((col >= 0) && (col < _n_DOFs))
             MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
         }
     }

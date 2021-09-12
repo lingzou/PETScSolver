@@ -9,22 +9,14 @@
 #include "SinglePhaseFlow.h"
 
 void
-ApplicationCtx::initializePETScApp(InputParameterList& globalParamList)
+ApplicationCtx::initializePETScApp(InputParser& input_parser)
 {
-  std::string problem_name = globalParamList.getParameterValue<std::string>("problem");
-  if (problem_name.compare("HeatConduction1D") == 0)
-    myPETScProblem = new HeatConduction1D(globalParamList);
-  else if (problem_name.compare("EulerEquation1D") == 0)
-    myPETScProblem = new EulerEquation1D(globalParamList);
-  else if (problem_name.compare("FiveEqnTwoP_StagGrid") == 0)
-    myPETScProblem = new FiveEqnTwoP_StagGrid(globalParamList);
-  else if (problem_name.compare("SinglePhaseFlow") == 0)
-    myPETScProblem = new SinglePhaseFlow(globalParamList);
-  else
-    sysError("ERROR: UNKNOWN problem: " + problem_name);
+  InputParameterList& globalParamList = input_parser.getGlobalParamList();
+  std::map<std::string, InputParameterList *>& problemParamList_map = input_parser.getProblemSystemParamList();
+  myProblemSystem = new ProblemSystem(globalParamList, problemParamList_map);
 
   // Get total number of DOF
-  N_DOFs = myPETScProblem->getNDOF();
+  N_DOFs = myProblemSystem->getNDOF();
 }
 
 void
@@ -75,7 +67,7 @@ ApplicationCtx::setupMatrices()
     // MatCreateSNESMF(snes, &J_MatrixFree); Why Jacobian-free not working here?
 
     // Let the problem setup Jacobian matrix sparsity
-    myPETScProblem->FillJacobianMatrixNonZeroPattern(P_Mat);
+    myProblemSystem->FillJacobianMatrixNonZeroPattern(P_Mat);
 
     // See PETSc example:
     // https://www.mcs.anl.gov/petsc/petsc-current/src/snes/examples/tutorials/ex1.c.html
@@ -88,7 +80,7 @@ ApplicationCtx::setupMatrices()
     MatCreateSNESMF(snes, &J_MatrixFree);
 
     // Let the problem setup Jacobian matrix sparsity
-    myPETScProblem->FillJacobianMatrixNonZeroPattern(P_Mat);
+    myProblemSystem->FillJacobianMatrixNonZeroPattern(P_Mat);
 
     // See PETSc examples:
     // https://www.mcs.anl.gov/petsc/petsc-current/src/snes/examples/tutorials/ex14.c.html
@@ -130,14 +122,14 @@ ApplicationCtx::setupInitialConditions()
 {
   PetscScalar *uu;
   VecGetArray(u, &uu);
-  myPETScProblem->SetupInitialCondition(uu);
+  myProblemSystem->SetupInitialCondition(uu);
   VecRestoreArray(u, &uu);
 
   VecCopy(u, u_old);
   VecCopy(u, u_oldold);
 
   // Write output for t = 0
-  myPETScProblem->writeOutput(0);
+  myProblemSystem->writeOutput(0);
 }
 
 void
@@ -164,14 +156,14 @@ ApplicationCtx::FreePETScWorkSpace()
   if (hasFDColoring)
     MatFDColoringDestroy(&fdcoloring);
 
-  delete myPETScProblem;
+  delete myProblemSystem;
 }
 
 PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
 {
   ApplicationCtx * appCtx = (ApplicationCtx *) AppCtx;
-  PETScProblem * myProblem = appCtx->myPETScProblem;
-  TimeScheme ts = myProblem->getTimeScheme();
+  ProblemSystem * myProblemSystem = appCtx->myProblemSystem;
+  TimeScheme ts = myProblemSystem->getTimeScheme();
 
   // get vectors
   PetscScalar *uu, *res_tran, *res_RHS;
@@ -180,9 +172,9 @@ PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
   VecGetArray(appCtx->res_RHS, &res_RHS);
 
   // use the most updated solution vector to update solution, to compute RHS and transient residuals
-  myProblem->updateSolution(uu);
-  myProblem->RHS(res_RHS);
-  myProblem->transientResidual(res_tran);
+  myProblemSystem->updateSolution(uu);
+  myProblemSystem->RHS(res_RHS);
+  myProblemSystem->transientResidual(res_tran);
 
   // restore vectors
   VecRestoreArray(u, &uu);
@@ -214,8 +206,8 @@ PetscErrorCode SNESFormFunction(SNES snes, Vec u, Vec f, void * AppCtx)
 PetscErrorCode FormJacobian(SNES snes, Vec u, Mat jac, Mat B, void * AppCtx)
 {
   ApplicationCtx * appCtx = (ApplicationCtx *) AppCtx;
-  PETScProblem * myProblem = appCtx->myPETScProblem;
-  myProblem->computeJacobianMatrix(B);
+  ProblemSystem * myProblemSystem = appCtx->myProblemSystem;
+  myProblemSystem->computeJacobianMatrix(B);
 
   return 0;
 }

@@ -20,12 +20,12 @@
         4         9
 */
 
-FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid(InputParameterList & pList) :
-  PETScProblem(pList)
+FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem) :
+  PETScProblem(globalParamList, inputParamList, problemSystem)
 {
-  paramList.readRequiredInputParameter<int>("order");
-  paramList.readRequiredInputParameter<double>("H_inv");
-  paramList.readRequiredInputParameter<int>("n_cells");
+  _inputParamList.readRequiredInputParameter<int>("order");
+  _inputParamList.readRequiredInputParameter<double>("H_inv");
+  _inputParamList.readRequiredInputParameter<int>("n_cells");
 
   ALPHA_INIT =  0.2;
   V_L_INIT   = 10.0;
@@ -40,13 +40,13 @@ FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid(InputParameterList & pList) :
   C_L = std::sqrt(1.0e7);
   C_G = std::sqrt(1.0e6);
 
-  _order = paramList.getParameterValue<int>("order");
-  H_inv  = paramList.getParameterValue<double>("H_inv");
-  n_Cell = paramList.getParameterValue<int>("n_cells");
+  _order = _inputParamList.getParameterValue<int>("order");
+  H_inv  = _inputParamList.getParameterValue<double>("H_inv");
+  n_Cell = _inputParamList.getParameterValue<int>("n_cells");
 
   length = 12.0;
   n_Node = n_Cell + 1;
-  n_DOFs = n_Cell * 5 + 2;
+  _n_DOFs = n_Cell * 5 + 2;
 
   dx = length / n_Cell;
 
@@ -162,7 +162,8 @@ void
 FiveEqnTwoP_StagGrid::transientResidual(double * res)
 {
   unsigned int idx = 0;
-  if ((_time_scheme == BDF2) && (_step > 1))
+  unsigned int time_step = _problemSystem->getCurrentTimeStep();
+  if ((_time_scheme == BDF2) && (time_step > 1))
   {
     for(unsigned int i = 0; i < n_Cell + 1; i++)
     {
@@ -422,29 +423,11 @@ FiveEqnTwoP_StagGrid::RHS_2nd_order(double * rhs)
 }
 
 void
-FiveEqnTwoP_StagGrid::updateFluxes()
-{
-}
-
-void
-FiveEqnTwoP_StagGrid::updateFluxes2ndOrder()
-{
-}
-
-void
 FiveEqnTwoP_StagGrid::onTimestepEnd()
 {
-  PETScProblem::onTimestepEnd();
-
   // save old solutions
   alpha_oo  = alpha_old;  p_l_oo  = p_l_old;   p_g_oo  = p_g_old;   v_l_oo  = v_l_old;   v_g_oo  = v_g_old;   rho_l_oo  = rho_l_old;   rho_g_oo  = rho_g_old;
   alpha_old = alpha;      p_l_old = p_l;       p_g_old = p_g;       v_l_old = v_l;       v_g_old = v_g;       rho_l_old = rho_l;       rho_g_old = rho_g;
-}
-
-void
-FiveEqnTwoP_StagGrid::linearReconstruction(double l_ghost, double r_ghost,
-  std::vector<double> &u, std::vector<double> &u_w, std::vector<double> &u_e)
-{
 }
 
 void
@@ -544,7 +527,7 @@ FiveEqnTwoP_StagGrid::writeTextOutput(unsigned int step)
   ptr_File = fopen(file_name.c_str(), "w");
 
   // cell data
-  fprintf(ptr_File, "Time = %20.6e\n", _t);
+  fprintf(ptr_File, "Time = %20.6e\n", _problemSystem->getCurrentTime());
   fprintf(ptr_File, "#Cell data\n");
   fprintf(ptr_File, "%20s%20s%20s%20s%20s%20s%20s%20s\n", "x", "alpha", "p_l", "p_g", "rho_l", "rho_g", "mu", "p_hat");
   for (unsigned int i = 0; i < n_Cell; i++)
@@ -562,7 +545,7 @@ FiveEqnTwoP_StagGrid::writeTextOutput(unsigned int step)
 void
 FiveEqnTwoP_StagGrid::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
 {
-  MatCreateSeqAIJ(PETSC_COMM_SELF, n_DOFs, n_DOFs, 25, NULL, &P_Mat);
+  MatCreateSeqAIJ(PETSC_COMM_SELF, _n_DOFs, _n_DOFs, 25, NULL, &P_Mat);
 
   int n_Var = 5;
   PetscReal v = 1.0;
@@ -573,7 +556,7 @@ FiveEqnTwoP_StagGrid::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
       PetscInt i_dof = i * n_Var + var;
       for (int j_dof = (i - 2) * n_Var; j_dof < (i + 3) * n_Var; j_dof++)
       {
-        if ((i_dof >= 0) && (i_dof < n_DOFs) && (j_dof >= 0) && (j_dof < n_DOFs))
+        if ((i_dof >= 0) && (i_dof < _n_DOFs) && (j_dof >= 0) && (j_dof < _n_DOFs))
           MatSetValues(P_Mat, 1, &i_dof, 1, &j_dof, &v, INSERT_VALUES);
       }
     }

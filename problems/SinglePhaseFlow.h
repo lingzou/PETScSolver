@@ -7,7 +7,7 @@
 class SinglePhaseFlow : public PETScProblem
 {
 public:
-  SinglePhaseFlow(InputParameterList & pList);
+  SinglePhaseFlow(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem);
   ~SinglePhaseFlow();
 
   virtual void SetupInitialCondition(double * u) final;
