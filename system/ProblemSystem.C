@@ -6,6 +6,7 @@
 #include "EulerEquation1D.h"
 #include "FiveEqnTwoP_StagGrid.h"
 #include "SinglePhaseFlow.h"
+#include "SinglePhaseChannel.h"
 
 ProblemSystem::ProblemSystem(InputParameterList & globalParameterList, std::map<std::string, InputParameterList *>& problemParamList_map) :
   _globalParamList(globalParameterList),
@@ -33,6 +34,8 @@ ProblemSystem::ProblemSystem(InputParameterList & globalParameterList, std::map<
       problem_system[it->first] = new FiveEqnTwoP_StagGrid(_globalParamList, *(it->second), this);
     else if (problem_name.compare("SinglePhaseFlow") == 0)
       problem_system[it->first] = new SinglePhaseFlow(_globalParamList, *(it->second), this);
+    else if (problem_name.compare("SinglePhaseChannel") == 0)
+      problem_system[it->first] = new SinglePhaseChannel(_globalParamList, *(it->second), this);
     else
       sysError("ERROR: UNKNOWN problem: " + problem_name);
   }
