@@ -156,7 +156,7 @@ SinglePhaseFlow::transientResidual(double * res)
       res[idx++] = rho_edge[i] * (v[i] - v_old[i]) / _dt;
       if (i < n_Cell)
       {
-        res[idx++] = (rho[i] - rho_old[i]) * dx / _dt;
+        res[idx++] = (rho[i] - rho_old[i]) / _dt;
         res[idx++] = (rho[i] * e[i] - rho_old[i] * e_old[i]) / _dt;
       }
     }
@@ -182,8 +182,8 @@ SinglePhaseFlow::RHS(double * rhs)
   for(int i = 1; i < n_Cell + 1; i++) // loop on the remaining edges
   {
     // east and west velocities
-    double v_east   = (i == n_Cell) ? v[n_Cell] : v[i+1];
-    double v_west = (i == 1) ? V_INLET : v[i-1];
+    double v_east = (i == n_Cell) ? v[n_Cell] : v[i+1];
+    double v_west = v[i-1];
     double dv_dx = (v[i] > 0) ? (v[i] - v_west) / dx : (v_east - v[i]) / dx;
 
     // dp_dx term
