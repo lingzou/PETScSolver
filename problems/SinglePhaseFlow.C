@@ -19,7 +19,7 @@
 
      cell 0       1         2                            n-1
    |---------|---------|---------|---------|---------|---------|
-   0(v) 1(p) 3(v) 4(p)                                         3n(p)
+   0(v) 1(p) 3(v) 4(p)                                         3n+1(v)
         2(T)      5(T)
 */
 
@@ -296,7 +296,7 @@ SinglePhaseFlow::writeVTKOutput(unsigned int step)
     fprintf(ptr_File, "%d\n", i);
 
   // v
-  fprintf(ptr_File, "SCALARS v_l Float32 1\n");
+  fprintf(ptr_File, "SCALARS v Float32 1\n");
   fprintf(ptr_File, "LOOKUP_TABLE v\n");
   for (unsigned int i = 0; i < n_Node; i++)
     fprintf(ptr_File, "%f\n", v[i]);
@@ -304,13 +304,13 @@ SinglePhaseFlow::writeVTKOutput(unsigned int step)
   // cell data
   fprintf(ptr_File, "CELL_DATA %u\n", n_Cell);
   // p
-  fprintf(ptr_File, "SCALARS alpha Float32 1\n");
+  fprintf(ptr_File, "SCALARS p Float32 1\n");
   fprintf(ptr_File, "LOOKUP_TABLE p\n");
   for (unsigned int i = 0; i < n_Cell; i++)
     fprintf(ptr_File, "%f\n", p[i]);
 
   // T
-  fprintf(ptr_File, "SCALARS p_l Float32 1\n");
+  fprintf(ptr_File, "SCALARS T Float32 1\n");
   fprintf(ptr_File, "LOOKUP_TABLE T\n");
   for (unsigned int i = 0; i < n_Cell; i++)
     fprintf(ptr_File, "%f\n", T[i]);
@@ -344,7 +344,7 @@ SinglePhaseFlow::writeTextOutput(unsigned int step)
 void
 SinglePhaseFlow::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
 {
-  MatCreateSeqAIJ(PETSC_COMM_SELF, _n_DOFs, _n_DOFs, 25, NULL, &P_Mat);
+  MatCreateSeqAIJ(PETSC_COMM_SELF, _n_DOFs, _n_DOFs, 15, NULL, &P_Mat);
 
   int n_Var = 3;
   PetscReal v = 1.0;
