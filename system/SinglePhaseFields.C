@@ -1,4 +1,5 @@
 #include <cmath>
+#include "utils.h"
 #include "SinglePhaseFields.h"
 
 EdgeBase*
@@ -16,6 +17,18 @@ SPCell::initialize(double p, double T)
   _rho_o = _rho; _rho_oo = _rho;
   _e = e_func(p, T);
   _e_o = _e; _e_oo = _e;
+}
+
+void
+SPCell::linearReconstruction(double p_W, double p_E, double T_W, double T_E)
+{
+  UTILS::linearReconstruction(p_W, p_E, _p, _p_w, _p_e);
+  UTILS::linearReconstruction(T_W, T_E, _T, _T_w, _T_e);
+
+  _rho_w = rho_func(_p_w, _T_w);
+  _rho_e = rho_func(_p_e, _T_e);
+  _e_w = e_func(_p_w, _T_w);
+  _e_e = e_func(_p_e, _T_e);
 }
 
 void
@@ -88,6 +101,16 @@ vBndryEdge::computeFluxes()
 }
 
 void
+vBndryEdge::computeFluxes2nd()
+{
+  double p_ghost = (WEST_CELL == NULL) ? EAST_CELL->p_w() : WEST_CELL->p_e();
+  double rho_ghost = rho_func(p_ghost, _T_bc);
+  double e_ghost = e_func(p_ghost, _T_bc);
+  _mass_flux = rho_ghost * _v;
+  _energy_flux = rho_ghost * e_ghost * _v;
+}
+
+void
 pBndryEdge::computeFluxes()
 {
   double rho_west = (WEST_CELL == NULL) ? rho_func(_p_bc, _T_bc) : WEST_CELL->rho();
@@ -99,11 +122,30 @@ pBndryEdge::computeFluxes()
   _energy_flux = (_v > 0) ? _v * rho_west * e_west : _v * rho_east * e_east;
 }
 
+void
+pBndryEdge::computeFluxes2nd()
+{
+  double rho_west = (WEST_CELL == NULL) ? rho_func(_p_bc, _T_bc) : WEST_CELL->rho_e();
+  double rho_east = (EAST_CELL == NULL) ? rho_func(_p_bc, _T_bc) : EAST_CELL->rho_w();
+  double e_west = (WEST_CELL == NULL) ? e_func(_p_bc, _T_bc) : WEST_CELL->e_e();
+  double e_east = (EAST_CELL == NULL) ? e_func(_p_bc, _T_bc) : EAST_CELL->e_w();
+
+  _mass_flux = (_v > 0) ? _v * rho_west : _v * rho_east;
+  _energy_flux = (_v > 0) ? _v * rho_west * e_west : _v * rho_east * e_east;
+}
+
 double
 pBndryEdge::computeTranRes(double dt)
 {
   double rho_edge = (WEST_CELL == NULL) ? EAST_CELL->rho() : WEST_CELL->rho();
   return rho_edge * (_v - _v_o) / dt;
+}
+
+double
+pBndryEdge::computeTranResBDF2(double dt)
+{
+  double rho_edge = (WEST_CELL == NULL) ? EAST_CELL->rho() : WEST_CELL->rho();
+  return rho_edge * (1.5 * _v - 2.0 * _v_o + 0.5 * _v_oo) / dt;
 }
 
 double
@@ -136,11 +178,25 @@ IntEdge::computeFluxes()
   _energy_flux = (_v > 0) ? _v * WEST_CELL->rho() * WEST_CELL->e() : _v * EAST_CELL->rho() * EAST_CELL->e();
 }
 
+void
+IntEdge::computeFluxes2nd()
+{
+  _mass_flux = (_v > 0) ? _v * WEST_CELL->rho_e() : _v * EAST_CELL->rho_w();
+  _energy_flux = (_v > 0) ? _v * WEST_CELL->rho_e() * WEST_CELL->e_e() : _v * EAST_CELL->rho_w() * EAST_CELL->e_w();
+}
+
 double
 IntEdge::computeTranRes(double dt)
 {
   double rho_edge = 0.5 * (WEST_CELL->rho() + EAST_CELL->rho());
   return rho_edge * (_v - _v_o) / dt;
+}
+
+double
+IntEdge::computeTranResBDF2(double dt)
+{
+  double rho_edge = 0.5 * (WEST_CELL->rho() + EAST_CELL->rho());
+  return rho_edge * (1.5 * _v - 2.0 * _v_o + 0.5 * _v_oo) / dt;
 }
 
 double

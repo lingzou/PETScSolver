@@ -24,6 +24,7 @@ namespace UTILS
 
   std::string trim_file_name(std::string file_name_with_path);
   void linearReconstruction(double, double, std::vector<double> &, std::vector<double> &, std::vector<double> &);
+  void linearReconstruction(double u_W, double u_E, double u_P, double &u_west, double &u_east);
 }
 
 #endif /*UTILS_H*/

@@ -82,11 +82,8 @@ SinglePhaseChannel::SinglePhaseChannel(InputParameterList & globalParamList, Inp
     _edges[i]->setNghbrCells(_cells[i-1], _cells[i]);
 
   // debug:
-  for(int i = 0; i < n_Cell; i++)
-    _cells[i]->printConnection();
-
-  for(int i = 0; i < n_Cell + 1; i++)
-    _edges[i]->printConnection();
+  // for(auto& itr : _cells)   itr->printConnection();
+  // for(auto& itr : _edges)   itr->printConnection();
 }
 
 SinglePhaseChannel::~SinglePhaseChannel()
@@ -129,7 +126,14 @@ SinglePhaseChannel::transientResidual(double * res)
   unsigned int time_step = _problemSystem->getCurrentTimeStep();
   if ((_time_scheme == BDF2) && (time_step > 1))
   {
-    sysError("Not implemented.");
+    for(int i = 0; i < n_Cell; i++)
+    {
+      res[3*i+1] = _cells[i]->massTranResBDF2(_dt);
+      res[3*i+2] = _cells[i]->energyTranResBDF2(_dt);
+    }
+
+    for(int i = 0; i < n_Cell + 1; i++)
+      res[3*i] = _edges[i]->computeTranResBDF2(_dt);
   }
   else
   {
@@ -153,6 +157,18 @@ SinglePhaseChannel::RHS(double * rhs)
       for(auto& itr : _edges)   itr->computeFluxes();
       break;
     case 2:
+    {
+      for(int i = 0; i < n_Cell; i++)
+      {
+        double p_W = (i == 0)        ? 2 * _cells[0]->p() - _cells[1]->p()                  : _cells[i-1]->p();
+        double p_E = (i == n_Cell-1) ? 2 * _cells[n_Cell-1]->p() - _cells[n_Cell - 2]->p()  : _cells[i+1]->p();
+        double T_W = (i == 0)        ? 2 * _cells[0]->T() - _cells[1]->T()                  : _cells[i-1]->T();
+        double T_E = (i == n_Cell-1) ? 2 * _cells[n_Cell-1]->T() - _cells[n_Cell - 2]->T()  : _cells[i+1]->T();
+        _cells[i]->linearReconstruction(p_W, p_E, T_W, T_E);
+      }
+      for(auto& itr : _edges)   itr->computeFluxes2nd();
+    }
+      break;
     default :   sysError("Spatial order not implemented.");
   }
 

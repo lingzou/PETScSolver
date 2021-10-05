@@ -235,9 +235,10 @@ SinglePhaseFlow::updateFluxes2ndOrder()
   double e_inlet = e_func(p[0], T_INLET);
 
   double p_inlet_GHOST = 2 * p[0] - p[1];
-  double T_inlet_GHOST = 2 * T_INLET - T[0];
-  double p_outlet_GHOST = 2 * P_OUTLET - p[n_Cell-1];
+  double T_inlet_GHOST = 2 * T_INLET - T[0]; //double T_inlet_GHOST = 2 * T[0] - T[1];
+  double p_outlet_GHOST = 2 * P_OUTLET - p[n_Cell-1]; //double p_outlet_GHOST = 2 * p[n_Cell-1] - p[n_Cell - 2];
   double T_outlet_GHOST = (v[n_Cell] > 0) ? 2 * T[n_Cell-1] - T[n_Cell-2] : 2 * T_OUTLET - T[n_Cell-1];
+  //double T_outlet_GHOST = 2 * T[n_Cell-1] - T[n_Cell - 2];
 
   UTILS::linearReconstruction(p_inlet_GHOST, p_outlet_GHOST, p, p_w, p_e);
   UTILS::linearReconstruction(T_inlet_GHOST, T_outlet_GHOST, T, T_w, T_e);

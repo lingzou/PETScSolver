@@ -70,3 +70,18 @@ UTILS::linearReconstruction(double l_ghost, double r_ghost,
     u_e[i] = u_P + 0.25 * wf * (u_E - u_W);
   }
 }
+
+void
+UTILS::linearReconstruction(double u_W, double u_E, double u_P, double &u_west, double &u_east)
+{
+  double wf = 0.0;
+  if ((u_E - u_P)*(u_P - u_W) > 0.0)    // u_P is in between u_W and u_E, i.e., not a local extremum
+    if (std::fabs(u_E - u_W) > 1.e-10)  // The difference is large enough, so reconstruction is meaningful
+    {
+      double f = (u_P - u_W) / (u_E - u_W);
+      wf = 2.0 * f * (1.0 - f) / ((1.0 - f) * (1.0 - f) + f * f);   // Eqn. (10) of Ref. [1]
+    }
+  // Linear reconstructed values
+  u_west = u_P - 0.25 * wf * (u_E - u_W);   // Eqn. (5) of Ref. [1]
+  u_east = u_P + 0.25 * wf * (u_E - u_W);
+}
