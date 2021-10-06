@@ -18,7 +18,7 @@ public:
   virtual void onTimestepEnd();
   virtual void writeVTKOutput(unsigned int step) final;
 
-  virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) final;
+  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) final;
 protected:
   void updateFluxes();
   void updateFluxes2ndOrder();

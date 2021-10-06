@@ -143,28 +143,13 @@ HeatConduction1D::writeVTKOutput(unsigned int step)
 }
 
 void
-HeatConduction1D::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
+HeatConduction1D::FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp)
 {
-  MatCreateSeqAIJ(PETSC_COMM_SELF, _n_DOFs, _n_DOFs, 3, NULL, &P_Mat);
-
-  PetscInt     row, col;
-  PetscScalar  v = 1.0;
-
-  row = 0; col = 0;
-  MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
-  row = _n_DOFs-1; col = _n_DOFs-1;
-  MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
-
-  for (row = 1; row < _n_DOFs-1; row++)
-    for (col = row-1; col <= row+1; col++)
-      MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
-
-  MatAssemblyBegin(P_Mat, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(P_Mat, MAT_FINAL_ASSEMBLY);
-
-  /*
-  MatView(P_Mat, PETSC_VIEWER_STDOUT_SELF);
-  MatView(P_Mat, PETSC_VIEWER_DRAW_WORLD); */
+  mnzp->addEntry(0, 0);
+  mnzp->addEntry(_n_DOFs-1, _n_DOFs-1);
+  for (unsigned row = 1; row < _n_DOFs-1; row++)
+    for (unsigned col = row-1; col <= row+1; col++)
+      mnzp->addEntry(row + _DOF_offset, col + _DOF_offset);
 }
 
 void

@@ -20,7 +20,7 @@ public:
   virtual void writeVTKOutput(unsigned int step) final;
   virtual void onTimestepEnd();
 
-  virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) final;
+  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) final;
   virtual void computeJacobianMatrix(Mat & P_Mat) final;
 
 protected:

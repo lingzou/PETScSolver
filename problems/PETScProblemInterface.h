@@ -1,6 +1,8 @@
 #ifndef PETSC_PROBLEM_INTERFACE_H
 #define PETSC_PROBLEM_INTERFACE_H
 
+//#include <petscmat.h>
+#include <set>
 #include "InputParser.h"
 #include "ProblemSystem.h"
 
@@ -8,6 +10,19 @@ PetscErrorCode SNESFormFunction(SNES, Vec, Vec, void*);
 PetscErrorCode SNESMonitor(SNES, PetscInt, PetscReal, void*);
 PetscErrorCode KSPMonitor(KSP, PetscInt, PetscReal, void*);
 PetscErrorCode FormJacobian(SNES, Vec, Mat, Mat, void*);
+
+class ProblemSystem;
+
+class MatrixNonZeroPattern
+{
+public:
+  MatrixNonZeroPattern(unsigned int size) { _non_zero_entries.resize(size); }
+  virtual ~MatrixNonZeroPattern() {}
+  virtual void addEntry(unsigned int row, unsigned int col) { _non_zero_entries[col].insert(row); }
+  std::vector<std::set<unsigned int>> &getNonZeroPattern() { return _non_zero_entries; }
+protected:
+  std::vector<std::set<unsigned int>> _non_zero_entries;
+};
 
 struct ApplicationCtx
 {

@@ -270,31 +270,20 @@ EulerEquation1D::writeVTKOutput(unsigned int step)
 }
 
 void
-EulerEquation1D::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
+EulerEquation1D::FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp)
 {
-  MatCreateSeqAIJ(PETSC_COMM_SELF, _n_DOFs, _n_DOFs, 15, NULL, &P_Mat);
-
   int n_Var = 3;
-  PetscReal v = 1.0;
-  PetscInt row, col;
   for (int i = 0; i < n_Cell; i++)                 // loop on cells
     for (int i_var = 0; i_var < n_Var; i_var++)    // loop on the 3 variables on each cells
     {
-      row = i * n_Var + i_var;                     // This loops on rows
+      int row = i * n_Var + i_var;                     // This loops on rows
       for (int j = i-2; j <= i+2; j++)             // loop on its -2 to 2 neighbors; maybe out of bound
         for (int j_var = 0; j_var < n_Var; j_var++)
         {
           // This loops on variables on neighboring cells
-          col = j * n_Var + j_var;  // might be smaller than zero
+          int col = j * n_Var + j_var;  // might be smaller than zero
           if ((col >= 0) && (col < _n_DOFs))
-            MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
+            mnzp->addEntry(row + _DOF_offset, col + _DOF_offset);
         }
     }
-
-  MatAssemblyBegin(P_Mat, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(P_Mat, MAT_FINAL_ASSEMBLY);
-  /*
-  MatView(P_Mat, PETSC_VIEWER_STDOUT_SELF);
-  MatView(P_Mat, PETSC_VIEWER_DRAW_WORLD);
-  */
 }

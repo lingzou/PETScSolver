@@ -3,9 +3,10 @@
 
 #include <petsc.h>
 #include "ParameterList.h"
-//#include "PETScProblem.h"
+#include "PETScProblemInterface.h"
 
 class PETScProblem;
+class MatrixNonZeroPattern;
 
 class ProblemSystem
 {

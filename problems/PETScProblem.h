@@ -25,7 +25,7 @@ public:
   virtual void writeVTKOutput(unsigned int step) = 0;
   virtual void writeTextOutput(unsigned int step);
 
-  virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) = 0;
+  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) = 0;
   virtual void computeJacobianMatrix(Mat & P_Mat);
 
 protected:

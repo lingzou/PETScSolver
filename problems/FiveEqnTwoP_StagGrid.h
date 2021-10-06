@@ -19,7 +19,7 @@ public:
   virtual void writeVTKOutput(unsigned int step) final;
   virtual void writeTextOutput(unsigned int step) final;
 
-  virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) final;
+  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) final;
 
   void RHS_1st_order(double * rhs);
   void RHS_2nd_order(double * rhs);

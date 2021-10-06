@@ -19,7 +19,7 @@ public:
   virtual void writeVTKOutput(unsigned int step) final;
   virtual void writeTextOutput(unsigned int step) final;
 
-  virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat) final;
+  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) final;
 
 protected:
   void updateFluxes();

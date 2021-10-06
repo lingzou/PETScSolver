@@ -260,29 +260,19 @@ SinglePhaseChannel::writeTextOutput(unsigned int step)
 }
 
 void
-SinglePhaseChannel::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
+SinglePhaseChannel::FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp)
 {
-  MatCreateSeqAIJ(PETSC_COMM_SELF, _n_DOFs, _n_DOFs, 15, NULL, &P_Mat);
-
   int n_Var = 3;
-  PetscReal v = 1.0;
   for (int i = 0; i < n_Cell + 1; i++)
   {
     for (int var = 0; var < n_Var; var++)
     {
-      PetscInt i_dof = i * n_Var + var;
+      int i_dof = i * n_Var + var;
       for (int j_dof = (i - 2) * n_Var; j_dof < (i + 3) * n_Var; j_dof++)
       {
         if ((i_dof >= 0) && (i_dof < _n_DOFs) && (j_dof >= 0) && (j_dof < _n_DOFs))
-          MatSetValues(P_Mat, 1, &i_dof, 1, &j_dof, &v, INSERT_VALUES);
+          mnzp->addEntry(i_dof + _DOF_offset, j_dof + _DOF_offset);
       }
     }
   }
-
-  MatAssemblyBegin(P_Mat, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(P_Mat, MAT_FINAL_ASSEMBLY);
-  /*
-  MatView(P_Mat, PETSC_VIEWER_STDOUT_SELF);
-  MatView(P_Mat, PETSC_VIEWER_DRAW_WORLD);
-  */
 }
