@@ -88,8 +88,8 @@ SinglePhaseChannel::SinglePhaseChannel(InputParameterList & globalParamList, Inp
 
 SinglePhaseChannel::~SinglePhaseChannel()
 {
-  for (unsigned int i = 0; i < n_Cell + 1; i++)   delete _edges[i];
-  for (unsigned int i = 0; i < n_Cell; i++)       delete _cells[i];
+  for(auto& itr : _edges)   delete itr;
+  for(auto& itr : _cells)   delete itr;
 }
 
 void

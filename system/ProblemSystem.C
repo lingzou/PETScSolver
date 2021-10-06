@@ -21,38 +21,35 @@ ProblemSystem::ProblemSystem(InputParameterList & globalParameterList, std::map<
   _text_output(_globalParamList.getParameterValue<bool>("text_output")),
   _n_DOFs(0)
 {
-  std::map<std::string, InputParameterList *>::iterator it;
-  for(it = _problemParamList_map.begin(); it != _problemParamList_map.end(); ++it)
+  for (auto& it : _problemParamList_map)
   {
-    std::string problem_name = it->second->getParameterValue<std::string>("type");
+    std::string problem_name = it.second->getParameterValue<std::string>("type");
 
     if (problem_name.compare("HeatConduction1D") == 0)
-      problem_system[it->first] = new HeatConduction1D(_globalParamList, *(it->second), this);
+      problem_system[it.first] = new HeatConduction1D(_globalParamList, *(it.second), this);
     else if (problem_name.compare("EulerEquation1D") == 0)
-      problem_system[it->first] = new EulerEquation1D(_globalParamList, *(it->second), this);
+      problem_system[it.first] = new EulerEquation1D(_globalParamList, *(it.second), this);
     else if (problem_name.compare("FiveEqnTwoP_StagGrid") == 0)
-      problem_system[it->first] = new FiveEqnTwoP_StagGrid(_globalParamList, *(it->second), this);
+      problem_system[it.first] = new FiveEqnTwoP_StagGrid(_globalParamList, *(it.second), this);
     else if (problem_name.compare("SinglePhaseFlow") == 0)
-      problem_system[it->first] = new SinglePhaseFlow(_globalParamList, *(it->second), this);
+      problem_system[it.first] = new SinglePhaseFlow(_globalParamList, *(it.second), this);
     else if (problem_name.compare("SinglePhaseChannel") == 0)
-      problem_system[it->first] = new SinglePhaseChannel(_globalParamList, *(it->second), this);
+      problem_system[it.first] = new SinglePhaseChannel(_globalParamList, *(it.second), this);
     else
       sysError("ERROR: UNKNOWN problem: " + problem_name);
   }
 
   // Survey each subProblems to compute total n_DOFs
-  std::map <std::string, PETScProblem*>::iterator it_problem;
-  for(it_problem = problem_system.begin(); it_problem != problem_system.end(); ++it_problem)
+  for (auto& it : problem_system)
   {
-    it_problem->second->setDOFoffset(_n_DOFs);
-    _n_DOFs += it_problem->second->getNDOF();
+    it.second->setDOFoffset(_n_DOFs);
+    _n_DOFs += it.second->getNDOF();
   }
 }
 
 ProblemSystem::~ProblemSystem()
 {
-  std::map <std::string, PETScProblem*>::iterator it;
-  for(it = problem_system.begin(); it != problem_system.end(); ++it)  delete it->second;
+  for (auto& it : problem_system)  delete it.second;
 }
 
 void
@@ -65,9 +62,7 @@ ProblemSystem::onTimestepEnd()
   if ((_step % _output_interval == 0) || (_step == _n_steps))     writeOutput(_step);
 
   // Let subProblems act
-  std::map <std::string, PETScProblem*>::iterator it;
-  for(it = problem_system.begin(); it != problem_system.end(); ++it)
-    it->second->onTimestepEnd();
+  for (auto& it : problem_system)   it.second->onTimestepEnd();
 
   // March step forward
   _step ++;
@@ -76,48 +71,44 @@ ProblemSystem::onTimestepEnd()
 void
 ProblemSystem::SetupInitialCondition(double * u)
 {
-  std::map <std::string, PETScProblem*>::iterator it;
-  for(it = problem_system.begin(); it != problem_system.end(); ++it)
+  for (auto& it : problem_system)
   {
-    unsigned int offset = it->second->getDOFoffset();
+    unsigned int offset = it.second->getDOFoffset();
     double * u_local = &u[offset];
-    it->second->SetupInitialCondition(u_local);
+    it.second->SetupInitialCondition(u_local);
   }
 }
 
 void
 ProblemSystem::updateSolution(double *u)
 {
-  std::map <std::string, PETScProblem*>::iterator it;
-  for(it = problem_system.begin(); it != problem_system.end(); ++it)
+  for (auto& it : problem_system)
   {
-    unsigned int offset = it->second->getDOFoffset();
+    unsigned int offset = it.second->getDOFoffset();
     double * u_local = &u[offset];
-    it->second->updateSolution(u_local);
+    it.second->updateSolution(u_local);
   }
 }
 
 void
 ProblemSystem::transientResidual(double * res)
 {
-  std::map <std::string, PETScProblem*>::iterator it;
-  for(it = problem_system.begin(); it != problem_system.end(); ++it)
+  for (auto& it : problem_system)
   {
-    unsigned int offset = it->second->getDOFoffset();
+    unsigned int offset = it.second->getDOFoffset();
     double * res_local = &res[offset];
-    it->second->transientResidual(res_local);
+    it.second->transientResidual(res_local);
   }
 }
 
 void
 ProblemSystem::RHS(double * rhs)
 {
-  std::map <std::string, PETScProblem*>::iterator it;
-  for(it = problem_system.begin(); it != problem_system.end(); ++it)
+  for (auto& it : problem_system)
   {
-    unsigned int offset = it->second->getDOFoffset();
+    unsigned int offset = it.second->getDOFoffset();
     double * rhs_local = &rhs[offset];
-    it->second->RHS(rhs_local);
+    it.second->RHS(rhs_local);
   }
 }
 
@@ -125,27 +116,24 @@ void
 ProblemSystem::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
 {
   // FIXME
-  std::map <std::string, PETScProblem*>::iterator it;
-  for(it = problem_system.begin(); it != problem_system.end(); ++it)
-    it->second->FillJacobianMatrixNonZeroPattern(P_Mat);
+  for (auto& it : problem_system)
+    it.second->FillJacobianMatrixNonZeroPattern(P_Mat);
 }
 
 void
 ProblemSystem::computeJacobianMatrix(Mat & P_Mat)
 {
   // FIXME
-  std::map <std::string, PETScProblem*>::iterator it;
-  for(it = problem_system.begin(); it != problem_system.end(); ++it)
-    it->second->computeJacobianMatrix(P_Mat);
+  for (auto& it : problem_system)
+    it.second->computeJacobianMatrix(P_Mat);
 }
 
 void
 ProblemSystem::writeOutput(unsigned int step)
 {
-  std::map <std::string, PETScProblem*>::iterator it;
-  for(it = problem_system.begin(); it != problem_system.end(); ++it)
+  for (auto& it : problem_system)
   {
-    it->second->writeVTKOutput(step);
-    if (_text_output) it->second->writeTextOutput(step);
+    it.second->writeVTKOutput(step);
+    if (_text_output) it.second->writeTextOutput(step);
   }
 }
