@@ -18,7 +18,8 @@ class MatrixNonZeroPattern
 public:
   MatrixNonZeroPattern(unsigned int size) { _non_zero_entries.resize(size); }
   virtual ~MatrixNonZeroPattern() {}
-  virtual void addEntry(unsigned int row, unsigned int col) { _non_zero_entries[col].insert(row); }
+  virtual void addEntry(unsigned row, unsigned col) { _non_zero_entries[col].insert(row); }
+  virtual void addRow(unsigned row, std::vector<unsigned> cols) { for (auto& col : cols) addEntry(row, col); }
   std::vector<std::set<unsigned int>> &getNonZeroPattern() { return _non_zero_entries; }
 protected:
   std::vector<std::set<unsigned int>> _non_zero_entries;

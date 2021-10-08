@@ -18,9 +18,9 @@
 /* Staggered-grid mesh arrangement
 
      cell 0       1         2                            n-1
-   |---------|---------|---------|---------|---------|---------|
-   0(v) 1(p) 3(v) 4(p)                                         3n+1(v)
-        2(T)      5(T)
+   *---------|---------|---------|---------|---------|---------*
+  (BC)  0(p) 2(v) 3(p) ...                                    (BC)
+        1(T)      4(T)
 */
 
 // This problem has hard-coded boundary conditions: inlet velocity and T, outlet P.
@@ -36,54 +36,39 @@ SinglePhaseChannel::SinglePhaseChannel(InputParameterList & globalParamList, Inp
   _inputParamList.readRequiredInputParameter<double>("V_INIT");
   _inputParamList.readRequiredInputParameter<double>("T_INIT");
 
-  _inputParamList.readRequiredInputParameter<double>("V_INLET");
-  _inputParamList.readRequiredInputParameter<double>("T_INLET");
-  _inputParamList.readRequiredInputParameter<double>("P_OUTLET");
-  _inputParamList.readRequiredInputParameter<double>("T_OUTLET");
-
   // initial conditions
   P_INIT     =  _inputParamList.getParameterValue<double>("P_INIT");
   V_INIT     =  _inputParamList.getParameterValue<double>("V_INIT");
   T_INIT     =  _inputParamList.getParameterValue<double>("T_INIT");
-  // boundary conditions
-  V_INLET    =  _inputParamList.getParameterValue<double>("V_INLET");
-  T_INLET    =  _inputParamList.getParameterValue<double>("T_INLET");
-  P_OUTLET   =  _inputParamList.getParameterValue<double>("P_OUTLET");
-  T_OUTLET   =  _inputParamList.getParameterValue<double>("T_OUTLET");  /* safeguard for reverse flow */
 
   _order = _inputParamList.getParameterValue<int>("order");
   n_Cell = _inputParamList.getParameterValue<int>("n_cells");
   length = _inputParamList.getParameterValue<double>("length");
 
-
   n_Node = n_Cell + 1;
-  _n_DOFs = n_Cell * 3 + 1;
+  _n_DOFs = n_Cell * 3-1;
 
   dx = length / n_Cell;
 
-  // Create cells
-  for (unsigned int i = 0; i < n_Cell; i++)
-    _cells.push_back(new SPCell("CELL_"+std::to_string(i)));
-
-  // Create edges
-  _edges.push_back(new vBndryEdge("Inlet", V_INLET, T_INLET));
-  for (unsigned int i = 1; i < n_Cell; i++)
-    _edges.push_back(new IntEdge("EDGE_"+std::to_string(i)));
-  _edges.push_back(new pBndryEdge("Outlet", P_OUTLET, T_OUTLET));
+  // Create cells/edges
+  for (unsigned i = 0; i < n_Cell; i++)       _cells.push_back(new SPCell("CELL_"+std::to_string(i)));
+  for (unsigned i = 0; i < n_Cell - 1; i++)   _edges.push_back(new IntEdge("EDGE_"+std::to_string(i)));
 
   // Setup neighboring edges for cells
-  for (unsigned int i = 0; i < n_Cell; i++)
-    _cells[i]->setNghbrEdges(_edges[i], _edges[i+1]);
+  _cells[0]->setNghbrEdges(NULL, _edges[0]);
+  for (unsigned i = 1; i < n_Cell - 1; i++)   _cells[i]->setNghbrEdges(_edges[i-1], _edges[i]);
+  _cells[n_Cell-1]->setNghbrEdges(_edges[n_Cell-2], NULL);
 
-  // Setup neighboring cells/edges for edges (has to be done after cells setup edges)
-  _edges[0]->setNghbrCells(NULL, _cells[0]);
-  _edges[n_Cell]->setNghbrCells(_cells[n_Cell-1], NULL);
-  for (unsigned int i = 1; i < n_Cell; i++)
-    _edges[i]->setNghbrCells(_cells[i-1], _cells[i]);
+  // Setup neighboring cells for edges
+  for (unsigned i = 0; i < n_Cell-1; i++)     _edges[i]->setNghbrCells(_cells[i], _cells[i+1]);
+}
 
-  // debug:
-  // for(auto& itr : _cells)   itr->printConnection();
-  // for(auto& itr : _edges)   itr->printConnection();
+void
+SinglePhaseChannel::setDOFoffset(unsigned int offset)
+{
+  _DOF_offset = offset;
+  for(int i = 0; i < n_Cell; i++)     _cells[i]->setDOF(_DOF_offset + 3*i, _DOF_offset + 3*i + 1);
+  for(int i = 0; i < n_Cell-1; i++)   _edges[i]->setDOF(_DOF_offset + 3*i + 2);
 }
 
 SinglePhaseChannel::~SinglePhaseChannel()
@@ -93,92 +78,108 @@ SinglePhaseChannel::~SinglePhaseChannel()
 }
 
 void
+SinglePhaseChannel::acceptConnections(EdgeBase* edge, std::string type)
+{
+  if (type == "begin")      { edge_begin = edge; _cells[0]->setNghbrEdges(edge_begin, _edges[0]); }
+  else if (type == "end")   { edge_end   = edge; _cells[n_Cell-1]->setNghbrEdges(_edges[n_Cell-2], edge_end); }
+  else                      sysError("Incorrect keyword.");
+}
+
+void
+SinglePhaseChannel::setupExtendedConnections()
+{
+  for(auto& itr : _edges)   itr->setExtendedNghbrs();
+  for(auto& itr : _cells)   itr->setExtendedNghbrs();
+
+  // debug
+  // for(auto& itr : _cells)   itr->printConnection();
+  // for(auto& itr : _edges)   itr->printConnection();
+}
+
+void
 SinglePhaseChannel::SetupInitialCondition(double * u)
 {
   for(int i = 0; i < n_Cell; i++)
   {
     _cells[i]->initialize(P_INIT, T_INIT);
-    u[3*i+1] = P_INIT;
-    u[3*i+2] = T_INIT;
+    u[3*i] = P_INIT;
+    u[3*i+1] = T_INIT;
   }
 
-  for(int i = 0; i < n_Cell + 1; i++)
+  for(int i = 0; i < n_Cell-1; i++)
   {
     _edges[i]->initialize(V_INIT);
-    u[3*i] = V_INIT;
+    u[3*i+2] = V_INIT;
   }
 }
 
 void
 SinglePhaseChannel::updateSolution(double * u)
 {
-  for(int i = 0; i < n_Cell; i++)
-    _cells[i]->updateSolution(u[3*i+1], u[3*i+2]);
-
-  for(int i = 0; i < n_Cell + 1; i++)
-    _edges[i]->updateSolution(u[3*i]);
+  for(int i = 0; i < n_Cell; i++)     _cells[i]->updateSolution(u[3*i], u[3*i+1]);
+  for(int i = 0; i < n_Cell-1; i++)   _edges[i]->updateSolution(u[3*i+2]);
 }
 
 void
 SinglePhaseChannel::transientResidual(double * res)
 {
-  unsigned int idx = 0;
   unsigned int time_step = _problemSystem->getCurrentTimeStep();
   if ((_time_scheme == BDF2) && (time_step > 1))
   {
     for(int i = 0; i < n_Cell; i++)
     {
-      res[3*i+1] = _cells[i]->massTranResBDF2(_dt);
-      res[3*i+2] = _cells[i]->energyTranResBDF2(_dt);
+      res[3*i] = _cells[i]->massTranResBDF2(_dt);
+      res[3*i+1] = _cells[i]->energyTranResBDF2(_dt);
     }
-
-    for(int i = 0; i < n_Cell + 1; i++)
-      res[3*i] = _edges[i]->computeTranResBDF2(_dt);
+    for(int i = 0; i < n_Cell-1; i++)
+      res[3*i+2] = _edges[i]->computeTranResBDF2(_dt);
   }
   else
   {
     for(int i = 0; i < n_Cell; i++)
     {
-      res[3*i+1] = _cells[i]->massTranRes(_dt);
-      res[3*i+2] = _cells[i]->energyTranRes(_dt);
+      res[3*i] = _cells[i]->massTranRes(_dt);
+      res[3*i+1] = _cells[i]->energyTranRes(_dt);
     }
+    for(int i = 0; i < n_Cell-1; i++)
+      res[3*i+2] = _edges[i]->computeTranRes(_dt);
+  }
+}
 
-    for(int i = 0; i < n_Cell + 1; i++)
-      res[3*i] = _edges[i]->computeTranRes(_dt);
+void
+SinglePhaseChannel::linearReconstruction()
+{
+  if (_order == 2)
+    for(int i = 0; i < n_Cell; i++)
+    {
+      double p_W = (i == 0)        ? 2 * _cells[0]->p() - _cells[1]->p()                  : _cells[i-1]->p();
+      double p_E = (i == n_Cell-1) ? 2 * _cells[n_Cell-1]->p() - _cells[n_Cell - 2]->p()  : _cells[i+1]->p();
+      double T_W = (i == 0)        ? 2 * _cells[0]->T() - _cells[1]->T()                  : _cells[i-1]->T();
+      double T_E = (i == n_Cell-1) ? 2 * _cells[n_Cell-1]->T() - _cells[n_Cell - 2]->T()  : _cells[i+1]->T();
+      _cells[i]->linearReconstruction(p_W, p_E, T_W, T_E);
+    }
+}
+void
+SinglePhaseChannel::updateEdgeCellHelperVar()
+{
+  switch (_order)
+  {
+    case 1:     for(auto& itr : _edges)   itr->computeFluxes();       break;
+    case 2:     for(auto& itr : _edges)   itr->computeFluxes2nd();    break;
+    default :   sysError("Spatial order not implemented.");
   }
 }
 
 void
 SinglePhaseChannel::RHS(double * rhs)
 {
-  switch (_order)
-  {
-    case 1:
-      for(auto& itr : _edges)   itr->computeFluxes();
-      break;
-    case 2:
-    {
-      for(int i = 0; i < n_Cell; i++)
-      {
-        double p_W = (i == 0)        ? 2 * _cells[0]->p() - _cells[1]->p()                  : _cells[i-1]->p();
-        double p_E = (i == n_Cell-1) ? 2 * _cells[n_Cell-1]->p() - _cells[n_Cell - 2]->p()  : _cells[i+1]->p();
-        double T_W = (i == 0)        ? 2 * _cells[0]->T() - _cells[1]->T()                  : _cells[i-1]->T();
-        double T_E = (i == n_Cell-1) ? 2 * _cells[n_Cell-1]->T() - _cells[n_Cell - 2]->T()  : _cells[i+1]->T();
-        _cells[i]->linearReconstruction(p_W, p_E, T_W, T_E);
-      }
-      for(auto& itr : _edges)   itr->computeFluxes2nd();
-    }
-      break;
-    default :   sysError("Spatial order not implemented.");
-  }
-
   for (unsigned int i = 0; i < n_Cell; i++)
   {
-    rhs[3*i+1] = _cells[i]->computeMassRHS(dx);
-    rhs[3*i+2] = _cells[i]->computeEnergyRHS(dx);
+    rhs[3*i] = _cells[i]->computeMassRHS(dx);
+    rhs[3*i+1] = _cells[i]->computeEnergyRHS(dx);
   }
-  for (unsigned int i = 0; i < n_Cell + 1; i++)
-    rhs[3*i] = _edges[i]->computeRHS(dx);
+  for (unsigned int i = 0; i < n_Cell-1; i++)
+    rhs[3*i+2] = _edges[i]->computeRHS(dx);
 }
 
 void
@@ -216,8 +217,10 @@ SinglePhaseChannel::writeVTKOutput(unsigned int step)
   // v
   fprintf(ptr_File, "SCALARS v Float32 1\n");
   fprintf(ptr_File, "LOOKUP_TABLE v\n");
-  for (unsigned int i = 0; i < n_Node; i++)
+  fprintf(ptr_File, "%f\n", edge_begin->v());
+  for (unsigned int i = 0; i < n_Cell-1; i++)
     fprintf(ptr_File, "%f\n", _edges[i]->v());
+  fprintf(ptr_File, "%f\n", edge_end->v());
 
   // cell data
   fprintf(ptr_File, "CELL_DATA %u\n", n_Cell);
@@ -246,15 +249,17 @@ SinglePhaseChannel::writeTextOutput(unsigned int step)
   // cell data
   fprintf(ptr_File, "Time = %20.6e\n", _problemSystem->getCurrentTime());
   fprintf(ptr_File, "#Cell data\n");
-  fprintf(ptr_File, "%20s%20s%20s%20s%20s\n", "x", "p", "T", "rho", "v_cell");
+  fprintf(ptr_File, "%20s%20s%20s%20s\n", "x", "p", "T", "rho");
   for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%20.6e%20.6e%20.6e%20.6e%20.6e\n", (i+0.5)*dx, _cells[i]->p(), _cells[i]->T(), _cells[i]->rho(), 0.5 * (_edges[i]->v() + _edges[i+1]->v()));
+    fprintf(ptr_File, "%20.6e%20.6e%20.6e%20.6e\n", (i+0.5)*dx, _cells[i]->p(), _cells[i]->T(), _cells[i]->rho());
 
   // edge data
   fprintf(ptr_File, "#Edge data\n");
   fprintf(ptr_File, "%20s%20s\n", "x", "v");
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%20.6e%20.6e\n", i*dx, _edges[i]->v());
+  fprintf(ptr_File, "%20.6e%20.6e\n", 0.0, edge_begin->v());
+  for (unsigned int i = 0; i < n_Cell - 1; i++)
+    fprintf(ptr_File, "%20.6e%20.6e\n", (i+1)*dx, _edges[i]->v());
+  fprintf(ptr_File, "%20.6e%20.6e\n", length, edge_end->v());
 
   fclose(ptr_File);
 }
@@ -262,17 +267,6 @@ SinglePhaseChannel::writeTextOutput(unsigned int step)
 void
 SinglePhaseChannel::FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp)
 {
-  int n_Var = 3;
-  for (int i = 0; i < n_Cell + 1; i++)
-  {
-    for (int var = 0; var < n_Var; var++)
-    {
-      int i_dof = i * n_Var + var;
-      for (int j_dof = (i - 2) * n_Var; j_dof < (i + 3) * n_Var; j_dof++)
-      {
-        if ((i_dof >= 0) && (i_dof < _n_DOFs) && (j_dof >= 0) && (j_dof < _n_DOFs))
-          mnzp->addEntry(i_dof + _DOF_offset, j_dof + _DOF_offset);
-      }
-    }
-  }
+  for(auto& cell : _cells)   { mnzp->addRow(cell->pDOF(), cell->getConnectedDOFs()); mnzp->addRow(cell->TDOF(), cell->getConnectedDOFs());}
+  for(auto& edge : _edges)   { mnzp->addRow(edge->vDOF(), edge->getConnectedDOFs()); }
 }

@@ -8,7 +8,7 @@ class EdgeBase;
 class SPCell
 {
 public:
-  SPCell(std::string name) : _name(name) {}
+  SPCell(std::string name) : _name(name), WEST_CELL(NULL), EAST_CELL(NULL), WEST_EDGE(NULL), EAST_EDGE(NULL) {}
   virtual ~SPCell() {}
   virtual std::string name() { return _name; }
 
@@ -31,8 +31,13 @@ public:
   // Connection related functions
   virtual EdgeBase * getOtherSideEdge(EdgeBase* edge);
   virtual void setNghbrEdges(EdgeBase * west, EdgeBase * east) { WEST_EDGE = west; EAST_EDGE = east; }
+  virtual void setExtendedNghbrs();
 
   // Residual related functions
+  virtual void setDOF(unsigned pDOF, unsigned TDOF) { _pDOF = pDOF; _TDOF = TDOF; }
+  virtual unsigned pDOF() const { return _pDOF; }
+  virtual unsigned TDOF() const { return _TDOF; }
+  virtual std::vector<unsigned> getConnectedDOFs();
   virtual void initialize(double p, double T);
   virtual void updateSolution(double p, double T);
   virtual double massTranRes(double dt) { return (_rho - _rho_o) / dt; }
@@ -53,6 +58,8 @@ protected:
 protected:
   std::string _name;
 
+  unsigned _pDOF, _TDOF;
+
   double _p,    _T,     _rho,     _e;
   double _p_o,  _T_o,   _rho_o,   _e_o;
   double _p_oo, _T_oo,  _rho_oo,  _e_oo;
@@ -62,6 +69,7 @@ protected:
   double _rho_w, _rho_e, _e_w, _e_e;
 
   EdgeBase *WEST_EDGE, *EAST_EDGE;
+  SPCell *WEST_CELL, *EAST_CELL;
 };
 
 class EdgeBase
@@ -78,8 +86,13 @@ public:
 
   // Connection related functions
   virtual void setNghbrCells(SPCell * west, SPCell * east);
+  virtual void setExtendedNghbrs();
+  virtual SPCell * getOtherSideCell(SPCell* cell);
 
   // Residual related functions
+  virtual void setDOF(unsigned vDOF) { _vDOF = vDOF; }
+  virtual unsigned vDOF() const { return _vDOF; }
+  virtual std::vector<unsigned> getConnectedDOFs();
   virtual void initialize(double v)     { _v = v; _v_o = v; _v_oo = v; }
   virtual void updateSolution(double v) { _v = v; }
   virtual void saveOldSlns()            { _v_oo = _v_o; _v_o = _v; }
@@ -98,6 +111,8 @@ protected:
 
 protected:
   std::string _name;
+
+  unsigned _vDOF;
 
   double _rho_edge;
   double _v, _v_o, _v_oo;

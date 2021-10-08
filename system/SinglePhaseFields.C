@@ -9,6 +9,13 @@ SPCell::getOtherSideEdge(EdgeBase* edge)
 }
 
 void
+SPCell::setExtendedNghbrs()
+{
+  if (WEST_EDGE != NULL) WEST_CELL = WEST_EDGE->getOtherSideCell(this);
+  if (EAST_EDGE != NULL) EAST_CELL = EAST_EDGE->getOtherSideCell(this);
+}
+
+void
 SPCell::initialize(double p, double T)
 {
   _p = p;   _p_o = p;   _p_oo = p;
@@ -60,7 +67,23 @@ void
 SPCell::printConnection()
 {
   std::cout << _name << std::endl;
-  std::cout << "  " << WEST_EDGE->name() << ", " << EAST_EDGE->name() << std::endl;
+  std::cout << "  "  << ((WEST_CELL == NULL) ? "NULL" : WEST_CELL->name()) << " -> ";
+  std::cout          << ((WEST_EDGE == NULL) ? "NULL" : WEST_EDGE->name()) << " -> ";
+  std::cout << _name << " -> ";
+  std::cout          << ((EAST_EDGE == NULL) ? "NULL" : EAST_EDGE->name()) << " -> ";
+  std::cout          << ((EAST_CELL == NULL) ? "NULL" : EAST_CELL->name()) << std::endl;
+}
+
+std::vector<unsigned>
+SPCell::getConnectedDOFs()
+{
+  std::vector<unsigned> dofs;
+  dofs.push_back(_pDOF);  dofs.push_back(_TDOF);
+  if (WEST_CELL != NULL) { dofs.push_back(WEST_CELL->pDOF()); dofs.push_back(WEST_CELL->TDOF());}
+  if (WEST_EDGE != NULL) { dofs.push_back(WEST_EDGE->vDOF()); }
+  if (EAST_CELL != NULL) { dofs.push_back(EAST_CELL->pDOF()); dofs.push_back(EAST_CELL->TDOF());}
+  if (EAST_EDGE != NULL) { dofs.push_back(EAST_EDGE->vDOF()); }
+  return dofs;
 }
 
 void
@@ -75,6 +98,17 @@ EdgeBase::setNghbrCells(SPCell * west, SPCell * east)
 {
   WEST_CELL = west;
   EAST_CELL = east;
+}
+
+SPCell*
+EdgeBase::getOtherSideCell(SPCell* cell)
+{
+  return (cell == WEST_CELL) ? EAST_CELL : WEST_CELL;
+}
+
+void
+EdgeBase::setExtendedNghbrs()
+{
   if (WEST_CELL != NULL) WEST_EDGE = WEST_CELL->getOtherSideEdge(this);
   if (EAST_CELL != NULL) EAST_EDGE = EAST_CELL->getOtherSideEdge(this);
 }
@@ -88,6 +122,18 @@ EdgeBase::printConnection()
   std::cout << _name << " -> ";
   std::cout          << ((EAST_CELL == NULL) ? "NULL" : EAST_CELL->name()) << " -> ";
   std::cout          << ((EAST_EDGE == NULL) ? "NULL" : EAST_EDGE->name()) << std::endl;
+}
+
+std::vector<unsigned>
+EdgeBase::getConnectedDOFs()
+{
+  std::vector<unsigned> dofs;
+  dofs.push_back(_vDOF);
+  if (WEST_CELL != NULL) { dofs.push_back(WEST_CELL->pDOF()); dofs.push_back(WEST_CELL->TDOF());}
+  if (WEST_EDGE != NULL) { dofs.push_back(WEST_EDGE->vDOF()); }
+  if (EAST_CELL != NULL) { dofs.push_back(EAST_CELL->pDOF()); dofs.push_back(EAST_CELL->TDOF());}
+  if (EAST_EDGE != NULL) { dofs.push_back(EAST_EDGE->vDOF()); }
+  return dofs;
 }
 
 void

@@ -11,7 +11,7 @@ public:
   PETScProblem(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem);
   virtual ~PETScProblem();
 
-  virtual void setDOFoffset(long int offset) final { _DOF_offset = offset; }
+  virtual void setDOFoffset(unsigned int offset) { _DOF_offset = offset; }
   virtual unsigned int getDOFoffset() const final { return _DOF_offset; }
   virtual unsigned int getNDOF() const final { return _n_DOFs; }
 
@@ -27,6 +27,11 @@ public:
 
   virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) = 0;
   virtual void computeJacobianMatrix(Mat & P_Mat);
+
+  virtual void setupConnections() {}
+  virtual void setupExtendedConnections() {}
+  virtual void linearReconstruction() {}
+  virtual void updateEdgeCellHelperVar() {}
 
 protected:
   InputParameterList & _globalParamList;

@@ -33,6 +33,8 @@ public:
   virtual void FillJacobianMatrixNonZeroPattern(Mat & P_Mat);
   virtual void computeJacobianMatrix(Mat & P_Mat);
 
+  virtual PETScProblem* getProblem(std::string prob_name);
+
 protected:
   std::map <std::string, PETScProblem*> problem_system;
 
