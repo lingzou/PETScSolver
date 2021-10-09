@@ -12,16 +12,16 @@ public:
   HeatConduction1D(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem);
   virtual ~HeatConduction1D();
 
-  virtual void SetupInitialCondition(double * u) final;
-  virtual void updateSolution(double *u) final;
+  virtual void SetupInitialCondition(double * u) override final;
+  virtual void updateSolution(double *u) override final;
 
-  virtual void transientResidual(double * res) final;
-  virtual void RHS(double * rhs) final;
-  virtual void writeVTKOutput(unsigned int step) final;
-  virtual void onTimestepEnd();
+  virtual void transientResidual(double * res) override final;
+  virtual void RHS(double * rhs) override final;
+  virtual void writeVTKOutput(unsigned int step) override final;
+  virtual void onTimestepEnd() override final;
 
-  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) final;
-  virtual void computeJacobianMatrix(Mat & P_Mat) final;
+  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) override final;
+  virtual void computeJacobianMatrix(Mat & P_Mat) override final;
 
 protected:
   double length;

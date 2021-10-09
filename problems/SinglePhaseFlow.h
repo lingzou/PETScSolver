@@ -10,16 +10,16 @@ public:
   SinglePhaseFlow(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem);
   ~SinglePhaseFlow();
 
-  virtual void SetupInitialCondition(double * u) final;
-  virtual void updateSolution(double *u) final;
+  virtual void SetupInitialCondition(double * u) override final;
+  virtual void updateSolution(double *u) override final;
 
-  virtual void transientResidual(double * res) final;
-  virtual void RHS(double * rhs) final;
-  virtual void onTimestepEnd();
-  virtual void writeVTKOutput(unsigned int step) final;
-  virtual void writeTextOutput(unsigned int step) final;
+  virtual void transientResidual(double * res) override final;
+  virtual void RHS(double * rhs) override final;
+  virtual void onTimestepEnd() override final;
+  virtual void writeVTKOutput(unsigned int step) override final;
+  virtual void writeTextOutput(unsigned int step) override final;
 
-  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) final;
+  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) override final;
 
 protected:
   void updateFluxes();

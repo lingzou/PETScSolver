@@ -11,26 +11,26 @@ public:
   SinglePhaseChannel(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem);
   virtual ~SinglePhaseChannel();
 
-  virtual void SetupInitialCondition(double * u) final;
-  virtual void updateSolution(double *u) final;
-  virtual void setDOFoffset(unsigned int offset) override;
+  virtual void SetupInitialCondition(double * u) override final;
+  virtual void updateSolution(double *u) override final;
+  virtual void setDOFoffset(unsigned offset) override final;
 
-  virtual void transientResidual(double * res) final;
-  virtual void RHS(double * rhs) final;
-  virtual void onTimestepEnd() override;
-  virtual void writeVTKOutput(unsigned int step) override;
-  virtual void writeTextOutput(unsigned int step) override;
+  virtual void transientResidual(double * res) override final;
+  virtual void RHS(double * rhs) override final;
+  virtual void onTimestepEnd() override final;
+  virtual void writeVTKOutput(unsigned int step) override final;
+  virtual void writeTextOutput(unsigned int step) override final;
 
-  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) final;
+  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) override final;
 
   // connection
-  virtual double getDx() { return dx; }
-  virtual SPCell* getFirstCell() { return _cells.front(); }
-  virtual SPCell* getLastCell()  { return _cells.back();  }
+  virtual double getDx() const { return dx; }
+  virtual SPCell* getFirstCell() const { return _cells.front(); }
+  virtual SPCell* getLastCell()  const { return _cells.back();  }
   virtual void acceptConnections(EdgeBase*, std::string);
-  virtual void setupExtendedConnections() override;
-  virtual void linearReconstruction() override;
-  virtual void updateEdgeCellHelperVar() override;
+  virtual void setupExtendedConnections() override final;
+  virtual void linearReconstruction() override final;
+  virtual void updateEdgeCellHelperVar() override final;
 protected:
   double P_INIT, V_INIT, T_INIT;
 

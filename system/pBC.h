@@ -10,21 +10,21 @@ public:
   pBC(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem);
   virtual ~pBC();
 
-  virtual void setDOFoffset(unsigned int offset) override;
-  virtual void setupConnections() final;
-  virtual void setupExtendedConnections() override { _edge->setExtendedNghbrs(); _edge->printConnection(); }
+  virtual void setDOFoffset(unsigned int offset) override final;
+  virtual void setupConnections() override final;
+  virtual void setupExtendedConnections() override final { _edge->setExtendedNghbrs(); _edge->printConnection(); }
 
-  virtual void SetupInitialCondition(double * u) final;
-  virtual void updateSolution(double *u) final;
+  virtual void SetupInitialCondition(double * u) override final;
+  virtual void updateSolution(double *u) override final;
 
-  virtual void transientResidual(double * res) final;
-  virtual void RHS(double * rhs) final;
-  virtual void onTimestepEnd() override;
-  virtual void writeVTKOutput(unsigned int) override {}
-  virtual void writeTextOutput(unsigned int) override {}
+  virtual void transientResidual(double * res) override final;
+  virtual void RHS(double * rhs) override final;
+  virtual void onTimestepEnd() override final;
+  virtual void writeVTKOutput(unsigned int) override final {}
+  virtual void writeTextOutput(unsigned int) override final {}
 
-  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) final;
-  virtual void updateEdgeCellHelperVar() override;
+  virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) override final;
+  virtual void updateEdgeCellHelperVar() override final;
 
 protected:
   double P_OUTLET, T_OUTLET, V_INIT;
