@@ -36,7 +36,7 @@ HeatConduction1D::HeatConduction1D(InputParameterList & globalParamList, InputPa
   T_oldold.resize(_n_DOFs);
 
   // locations of nodes
-  for(unsigned int i = 0; i < x.size(); i++)
+  for(unsigned i = 0; i < x.size(); i++)
     x[i] = dx * i;
 }
 
@@ -45,7 +45,7 @@ HeatConduction1D::~HeatConduction1D() {}
 void
 HeatConduction1D::SetupInitialCondition(double * u)
 {
-  for(unsigned int i = 0; i < _n_DOFs; i++)
+  for(unsigned i = 0; i < _n_DOFs; i++)
   { u[i] = 0.0; T[i] = 0.0; }
 
   T_oldold = T;     T_old = T;
@@ -54,7 +54,7 @@ HeatConduction1D::SetupInitialCondition(double * u)
 void
 HeatConduction1D::updateSolution(double * u)
 {
-  for(unsigned int i = 0; i < T.size(); i++)  T[i] = u[i];
+  for(unsigned i = 0; i < T.size(); i++)  T[i] = u[i];
 }
 
 void
@@ -65,18 +65,18 @@ HeatConduction1D::transientResidual(double * res)
   res[n_Node-1] = T[_n_DOFs-1] - 0;
 
   // The remaining nodes
-  unsigned int time_step = _problemSystem->getCurrentTimeStep();
+  unsigned time_step = _problemSystem->getCurrentTimeStep();
   if ((_time_scheme == BDF2) && (time_step > 1))
   {
     // It is typical to use BDF1 for step 1 to startup BDF2
     // however, it is also associated with large error
     // see H. Nishikawa, "On large start-up error of BDF2", Journal of Computational Physics, Vol. 392, 2019, Pages 456-461
-    for (unsigned int i = 1; i < _n_DOFs-1; i++)
+    for (unsigned i = 1; i < _n_DOFs-1; i++)
       res[i] = (1.5 * T[i] - 2.0 * T_old[i] + 0.5 * T_oldold[i]) / _dt / alpha;
   }
   else
   {
-    for (unsigned int i = 1; i < _n_DOFs-1; i++)
+    for (unsigned i = 1; i < _n_DOFs-1; i++)
       res[i] = (T[i] - T_old[i]) / _dt / alpha;
   }
 }
@@ -86,7 +86,7 @@ HeatConduction1D::RHS(double * rhs)
 {
   // no spatial terms for the first and last node (applied Direchlet BC)
 
-  for (unsigned int i = 1; i < _n_DOFs-1; i++)
+  for (unsigned i = 1; i < _n_DOFs-1; i++)
   {
     double qx = k * PI * PI * sin(PI * x[i]);
     // RHS = Laplacian(T) + q/k
@@ -102,44 +102,51 @@ HeatConduction1D::onTimestepEnd()
 }
 
 void
-HeatConduction1D::writeVTKOutput(unsigned int step)
+HeatConduction1D::writeVTKOutput(FILE * file)
 {
-  FILE * ptr_File;
-  std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".vtk";
-  ptr_File = fopen(file_name.c_str(), "w");
+  fprintf(file, "    <Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", n_Node, n_Cell);
+  fprintf(file, "      <Points>\n");
+  fprintf(file, "        <DataArray type = \"Float32\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "          %f 0 0\n", i * dx);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </Points>\n");
 
-  fprintf(ptr_File, "# vtk DataFile Version 4.0\n");
-  fprintf(ptr_File, "my data\n");
-  fprintf(ptr_File, "ASCII\n");
-  fprintf(ptr_File, "DATASET STRUCTURED_GRID\n");
-  fprintf(ptr_File, "DIMENSIONS %u 1 1\n", n_Node);
-  fprintf(ptr_File, "POINTS %u Float32\n", n_Node);
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%f 0 0\n", x[i]);
+  fprintf(file, "      <Cells>\n");
+  fprintf(file, "        <DataArray type = \"Int32\" Name=\"connectivity\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d %d\n", i, i+1);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type = \"Int32\" Name=\"offsets\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d\n", 2*(i+1));
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type = \"UInt8\" Name=\"types\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d\n", 3);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </Cells>\n");
 
-  // point data
-  fprintf(ptr_File, "POINT_DATA %u\n", n_Node);
-  // Temperature point data
-  fprintf(ptr_File, "SCALARS temperature Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE temperature\n");
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%f\n", T[i]);
-  // Exact solutin
-  fprintf(ptr_File, "SCALARS T_exact Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE T_exact\n");
+  fprintf(file, "      <CellData>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "mu");
   double t = _problemSystem->getCurrentTime();
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%f\n", (1.0 - exp(-alpha * PI * PI * t)) * sin(PI * x[i]));
+  for (unsigned i = 0; i < n_Cell; i++) // A fake cell data
+    fprintf(file, "          %20.6f\n", T[i]*exp(x[i]));
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </CellData>\n");
 
-  // cell data
-  fprintf(ptr_File, "CELL_DATA %u\n", n_Cell);
-  // A fake cell data
-  fprintf(ptr_File, "SCALARS mu Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE mu\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", T[i]*exp(x[i]));
+  fprintf(file, "      <PointData>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "temperature");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "          %20.6f\n", T[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "T_exact");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "          %20.6f\n", (1.0 - exp(-alpha * PI * PI * t)) * sin(PI * x[i]));
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </PointData>\n");
 
-  fclose(ptr_File);
+  fprintf(file, "    </Piece>\n");
 }
 
 void

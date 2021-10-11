@@ -170,10 +170,26 @@ ProblemSystem::computeJacobianMatrix(Mat & P_Mat)
 void
 ProblemSystem::writeOutput(unsigned int step)
 {
-  for (auto& it : problem_system)
+  // vtk (vtu) output
+  FILE * vtk_File;
+  std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".vtu";
+  vtk_File = fopen(file_name.c_str(), "w");
+
+  fprintf(vtk_File, "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">\n");
+  fprintf(vtk_File, "  <UnstructuredGrid>\n");
+  for (auto& it : problem_system)     it.second->writeVTKOutput(vtk_File);
+  fprintf(vtk_File, "  </UnstructuredGrid>\n");
+  fprintf(vtk_File, "</VTKFile>\n");
+  fclose(vtk_File);
+
+  // txt output
+  if (_text_output)
   {
-    it.second->writeVTKOutput(step);
-    if (_text_output) it.second->writeTextOutput(step);
+    FILE * txt_File;
+    std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".dat";
+    txt_File = fopen(file_name.c_str(), "w");
+    for (auto& it : problem_system)   it.second->writeTextOutput(txt_File);
+    fclose(txt_File);
   }
 }
 

@@ -16,8 +16,8 @@ public:
   virtual void transientResidual(double * res) override final;
   virtual void RHS(double * rhs) override final;
   virtual void onTimestepEnd() override final;
-  virtual void writeVTKOutput(unsigned int step) override final;
-  virtual void writeTextOutput(unsigned int step) override final;
+  virtual void writeVTKOutput(FILE * file) override final;
+  virtual void writeTextOutput(FILE * file) override final;
 
   virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) override final;
 

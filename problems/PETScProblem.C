@@ -6,7 +6,7 @@ PETScProblem::PETScProblem(InputParameterList & globalParamList, InputParameterL
   _globalParamList(globalParamList),
   _inputParamList(inputParamList),
   _problemSystem(problemSystem),
-  _input_file_name(_globalParamList.getParameterValue<std::string>("input_file_name")),
+  //_input_file_name(_globalParamList.getParameterValue<std::string>("input_file_name")),
   _time_scheme(_globalParamList.getParameterValue<TimeScheme>("ts")),
   _dt(_globalParamList.getParameterValue<double>("dt")),
   _n_DOFs(0)
@@ -24,7 +24,7 @@ PETScProblem::computeJacobianMatrix(Mat & P_Mat)
 }
 
 void
-PETScProblem::writeTextOutput(unsigned int step)
+PETScProblem::writeTextOutput(FILE * /**/)
 {
   sysError("writeTextOutput() function has not been implemented.");
 }

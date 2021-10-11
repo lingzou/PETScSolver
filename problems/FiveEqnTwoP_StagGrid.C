@@ -86,7 +86,7 @@ FiveEqnTwoP_StagGrid::~FiveEqnTwoP_StagGrid()
 void
 FiveEqnTwoP_StagGrid::SetupInitialCondition(double * u)
 {
-  unsigned int index = 0;
+  unsigned index = 0;
   for(int i = 0; i < n_Cell + 1; i++)
   {
     v_l[i]     = V_L_INIT;
@@ -118,8 +118,8 @@ FiveEqnTwoP_StagGrid::SetupInitialCondition(double * u)
 void
 FiveEqnTwoP_StagGrid::updateSolution(double * u)
 {
-  unsigned int idx = 0;
-  for(unsigned int i = 0; i < n_Cell + 1; i++)
+  unsigned idx = 0;
+  for(unsigned i = 0; i < n_Cell + 1; i++)
   {
     v_l[i] = u[idx++];  v_g[i] = u[idx++];
     if (i < n_Cell)
@@ -142,7 +142,7 @@ FiveEqnTwoP_StagGrid::updateSolution(double * u)
   rho_g_edge[0] = rho_g[0];
   alpha_edge[0] = ALPHA_INIT;
   p_hat_edge[0] = p_hat[0];
-  for(unsigned int i = 1; i < n_Cell; i++)
+  for(unsigned i = 1; i < n_Cell; i++)
   {
     rho_l_edge[i] = 0.5 * (rho_l[i-1] + rho_l[i]);
     rho_g_edge[i] = 0.5 * (rho_g[i-1] + rho_g[i]);
@@ -154,18 +154,18 @@ FiveEqnTwoP_StagGrid::updateSolution(double * u)
   alpha_edge[n_Cell] = alpha[n_Cell - 1]; // FIXME FIXME
   p_hat_edge[n_Cell] = p_hat[n_Cell - 1];
 
-  for(unsigned int i = 0; i < n_Cell + 1; i++)
+  for(unsigned i = 0; i < n_Cell + 1; i++)
     v_hat[i] = alpha_edge[i] * v_g[i] + (1.0 - alpha_edge[i]) * v_l[i];
 }
 
 void
 FiveEqnTwoP_StagGrid::transientResidual(double * res)
 {
-  unsigned int idx = 0;
-  unsigned int time_step = _problemSystem->getCurrentTimeStep();
+  unsigned idx = 0;
+  unsigned time_step = _problemSystem->getCurrentTimeStep();
   if ((_time_scheme == BDF2) && (time_step > 1))
   {
-    for(unsigned int i = 0; i < n_Cell + 1; i++)
+    for(unsigned i = 0; i < n_Cell + 1; i++)
     {
       res[idx++] = (1.0 - alpha_edge[i]) * rho_l_edge[i] * (1.5 * v_l[i] - 2.0 * v_l_old[i] + 0.5 * v_l_oo[i]) / _dt;
       res[idx++] = alpha_edge[i] * rho_g_edge[i] * (1.5 * v_g[i] - 2.0 * v_g_old[i] + 0.5 * v_g_oo[i]) / _dt;
@@ -179,7 +179,7 @@ FiveEqnTwoP_StagGrid::transientResidual(double * res)
   }
   else
   {
-    for(unsigned int i = 0; i < n_Cell + 1; i++)
+    for(unsigned i = 0; i < n_Cell + 1; i++)
     {
       res[idx++] = (1.0 - alpha_edge[i]) * rho_l_edge[i] * (v_l[i] - v_l_old[i]) / _dt;
       res[idx++] = alpha_edge[i] * rho_g_edge[i]         * (v_g[i] - v_g_old[i]) / _dt;
@@ -235,7 +235,7 @@ FiveEqnTwoP_StagGrid::RHS_1st_order(double * rhs)
   rho_l_flux[n_Cell] = (v_l[n_Cell] > 0) ? v_l[n_Cell] * (1. - alpha[n_Cell-1]) * rho_l[n_Cell-1] : v_l[n_Cell] * (1.0 - ALPHA_OUTLET) * rho_l_outlet_bc;
   rho_g_flux[n_Cell] = (v_g[n_Cell] > 0) ? v_g[n_Cell] * alpha[n_Cell-1] * rho_g[n_Cell-1] : v_g[n_Cell] * alpha_outlet_ghost * rho_g_outlet_bc;
 
-  for(unsigned int i = 1; i < n_Cell; i++)
+  for(unsigned i = 1; i < n_Cell; i++)
   {
     alpha_flux[i] = (v_hat[i] > 0) ? v_hat[i] * alpha[i-1] : v_hat[i] * alpha[i];
     rho_l_flux[i] = (v_l[i] > 0) ? v_l[i] * (1. - alpha[i-1]) * rho_l[i-1] : v_l[i] * (1. - alpha[i]) * rho_l[i];
@@ -337,7 +337,7 @@ FiveEqnTwoP_StagGrid::RHS_2nd_order(double * rhs)
   rho_l_flux[n_Cell] = (v_l[n_Cell] > 0) ? v_l[n_Cell] * (1. - alpha_e[n_Cell-1]) * rho_l_func(p_l_e[n_Cell-1]) : v_l[n_Cell] * (1.0 - ALPHA_OUTLET) * rho_l_outlet_bc;
   rho_g_flux[n_Cell] = (v_g[n_Cell] > 0) ? v_g[n_Cell] * alpha_e[n_Cell-1] * rho_g_func(p_g_e[n_Cell-1]) : v_g[n_Cell] * alpha_outlet_ghost * rho_g_outlet_bc;
 
-  for(unsigned int i = 1; i < n_Cell; i++)
+  for(unsigned i = 1; i < n_Cell; i++)
   {
     alpha_flux[i] = (v_hat[i] > 0) ? v_hat[i] * alpha_e[i-1] : v_hat[i] * alpha_w[i];
     rho_l_flux[i] = (v_l[i] > 0) ? v_l[i] * (1. - alpha_e[i-1]) * rho_l_func(p_l_e[i-1]) : v_l[i] * (1. - alpha_w[i]) * rho_l_func(p_l_w[i]);
@@ -431,115 +431,99 @@ FiveEqnTwoP_StagGrid::onTimestepEnd()
 }
 
 void
-FiveEqnTwoP_StagGrid::writeVTKOutput(unsigned int step)
+FiveEqnTwoP_StagGrid::writeVTKOutput(FILE * file)
 {
-  FILE * ptr_File;
-  std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".vtk";
-  ptr_File = fopen(file_name.c_str(), "w");
+  fprintf(file, "    <Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", n_Node, n_Cell);
+  fprintf(file, "      <Points>\n");
+  fprintf(file, "        <DataArray type = \"Float32\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "          %f 0 0\n", i * dx);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </Points>\n");
 
-  fprintf(ptr_File, "# vtk DataFile Version 4.0\n");
-  fprintf(ptr_File, "my data\n");
-  fprintf(ptr_File, "ASCII\n");
-  fprintf(ptr_File, "DATASET STRUCTURED_GRID\n");
-  fprintf(ptr_File, "DIMENSIONS %u 1 1\n", n_Node);
-  fprintf(ptr_File, "POINTS %u Float32\n", n_Node);
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%f 0 0\n", i * dx);
+  fprintf(file, "      <Cells>\n");
+  fprintf(file, "        <DataArray type = \"Int32\" Name=\"connectivity\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d %d\n", i, i+1);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type = \"Int32\" Name=\"offsets\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d\n", 2*(i+1));
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type = \"UInt8\" Name=\"types\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d\n", 3);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </Cells>\n");
 
-  // point data
-  fprintf(ptr_File, "POINT_DATA %u\n", n_Node);
-  // node id
-  fprintf(ptr_File, "SCALARS node_id Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE node_id\n");
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%d\n", i);
+  fprintf(file, "      <CellData>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "alpha");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", alpha[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "p_l");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", p_l[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "p_g");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", p_g[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "rho_l");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", rho_l[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "rho_g");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", rho_g[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "mu");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", mu[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "p_hat");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", p_hat[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </CellData>\n");
 
-  // v_l
-  fprintf(ptr_File, "SCALARS v_l Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE v_l\n");
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%f\n", v_l[i]);
+  fprintf(file, "      <PointData>\n");
+  fprintf(file, "        <DataArray type=\"Int32\" Name=\"%s\" format=\"ascii\">\n", "node_id");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "          %d\n", i);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "v_l");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "          %20.6f\n", v_l[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "v_g");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "          %20.6f\n", v_g[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "v_hat");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "          %20.6f\n", v_hat[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </PointData>\n");
 
-  // v_g
-  fprintf(ptr_File, "SCALARS v_g Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE v_g\n");
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%f\n", v_g[i]);
-
-  // v_hat
-  fprintf(ptr_File, "SCALARS v_hat Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE v_hat\n");
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%f\n", v_hat[i]);
-
-  // cell data
-  fprintf(ptr_File, "CELL_DATA %u\n", n_Cell);
-  // alpha
-  fprintf(ptr_File, "SCALARS alpha Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE alpha\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", alpha[i]);
-
-  // p_l
-  fprintf(ptr_File, "SCALARS p_l Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE p_l\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", p_l[i]);
-
-  // p_g
-  fprintf(ptr_File, "SCALARS p_g Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE p_g\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", p_g[i]);
-
-  // rho_l
-  fprintf(ptr_File, "SCALARS rho_l Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE rho_l\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", rho_l[i]);
-
-  // rho_g
-  fprintf(ptr_File, "SCALARS rho_g Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE rho_g\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", rho_g[i]);
-
-  // mu
-  fprintf(ptr_File, "SCALARS mu Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE mu\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", mu[i]);
-
-  // p_hat
-  fprintf(ptr_File, "SCALARS p_hat Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE p_hat\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", p_hat[i]);
-
-  fclose(ptr_File);
+  fprintf(file, "    </Piece>\n");
 }
 
 void
-FiveEqnTwoP_StagGrid::writeTextOutput(unsigned int step)
+FiveEqnTwoP_StagGrid::writeTextOutput(FILE * file)
 {
-  FILE * ptr_File;
-  std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".dat";
-  ptr_File = fopen(file_name.c_str(), "w");
-
   // cell data
-  fprintf(ptr_File, "Time = %20.6e\n", _problemSystem->getCurrentTime());
-  fprintf(ptr_File, "#Cell data\n");
-  fprintf(ptr_File, "%20s%20s%20s%20s%20s%20s%20s%20s\n", "x", "alpha", "p_l", "p_g", "rho_l", "rho_g", "mu", "p_hat");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%20.6e%20.6e%20.6e%20.6e%20.6e%20.6e%20.6e%20.6e\n", (i+0.5)*dx, alpha[i], p_l[i], p_g[i], rho_l[i], rho_g[i], mu[i], p_hat[i]);
+  fprintf(file, "Time = %20.6e\n", _problemSystem->getCurrentTime());
+  fprintf(file, "#Cell data\n");
+  fprintf(file, "%20s%20s%20s%20s%20s%20s%20s%20s\n", "x", "alpha", "p_l", "p_g", "rho_l", "rho_g", "mu", "p_hat");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "%20.6e%20.6e%20.6e%20.6e%20.6e%20.6e%20.6e%20.6e\n", (i+0.5)*dx, alpha[i], p_l[i], p_g[i], rho_l[i], rho_g[i], mu[i], p_hat[i]);
 
   // edge data
-  fprintf(ptr_File, "#Edge data\n");
-  fprintf(ptr_File, "%20s%20s%20s%20s\n", "x", "v_l", "v_g", "v_hat");
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%20.6e%20.6e%20.6e%20.6e\n", i*dx, v_l[i], v_g[i], v_hat[i]);
-
-  fclose(ptr_File);
+  fprintf(file, "#Edge data\n");
+  fprintf(file, "%20s%20s%20s%20s\n", "x", "v_l", "v_g", "v_hat");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "%20.6e%20.6e%20.6e%20.6e\n", i*dx, v_l[i], v_g[i], v_hat[i]);
 }
 
 void

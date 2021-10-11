@@ -22,8 +22,8 @@ public:
   virtual void transientResidual(double * res) = 0;
   virtual void RHS(double * rhs) = 0;
 
-  virtual void writeVTKOutput(unsigned int step) = 0;
-  virtual void writeTextOutput(unsigned int step);
+  virtual void writeVTKOutput(FILE *) = 0;
+  virtual void writeTextOutput(FILE *);
 
   virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) = 0;
   virtual void computeJacobianMatrix(Mat & P_Mat);
@@ -38,7 +38,7 @@ protected:
   InputParameterList & _inputParamList;
   ProblemSystem * _problemSystem;
 
-  std::string _input_file_name;
+  //std::string _input_file_name;
   TimeScheme _time_scheme;
   double _dt;
 

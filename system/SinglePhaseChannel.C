@@ -64,7 +64,7 @@ SinglePhaseChannel::SinglePhaseChannel(InputParameterList & globalParamList, Inp
 }
 
 void
-SinglePhaseChannel::setDOFoffset(unsigned int offset)
+SinglePhaseChannel::setDOFoffset(unsigned offset)
 {
   _DOF_offset = offset;
   for(int i = 0; i < n_Cell; i++)     _cells[i]->setDOF(_DOF_offset + 3*i, _DOF_offset + 3*i + 1);
@@ -123,7 +123,7 @@ SinglePhaseChannel::updateSolution(double * u)
 void
 SinglePhaseChannel::transientResidual(double * res)
 {
-  unsigned int time_step = _problemSystem->getCurrentTimeStep();
+  unsigned time_step = _problemSystem->getCurrentTimeStep();
   if ((_time_scheme == BDF2) && (time_step > 1))
   {
     for(int i = 0; i < n_Cell; i++)
@@ -173,12 +173,12 @@ SinglePhaseChannel::updateEdgeCellHelperVar()
 void
 SinglePhaseChannel::RHS(double * rhs)
 {
-  for (unsigned int i = 0; i < n_Cell; i++)
+  for (unsigned i = 0; i < n_Cell; i++)
   {
     rhs[3*i] = _cells[i]->computeMassRHS(dx);
     rhs[3*i+1] = _cells[i]->computeEnergyRHS(dx);
   }
-  for (unsigned int i = 0; i < n_Cell-1; i++)
+  for (unsigned i = 0; i < n_Cell-1; i++)
     rhs[3*i+2] = _edges[i]->computeRHS(dx);
 }
 
@@ -191,77 +191,75 @@ SinglePhaseChannel::onTimestepEnd()
 }
 
 void
-SinglePhaseChannel::writeVTKOutput(unsigned int step)
+SinglePhaseChannel::writeVTKOutput(FILE * file)
 {
-  FILE * ptr_File;
-  std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".vtk";
-  ptr_File = fopen(file_name.c_str(), "w");
+  fprintf(file, "    <Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", n_Node, n_Cell);
+  fprintf(file, "      <Points>\n");
+  fprintf(file, "        <DataArray type = \"Float32\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "          %f 0 0\n", i * dx);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </Points>\n");
 
-  fprintf(ptr_File, "# vtk DataFile Version 4.0\n");
-  fprintf(ptr_File, "my data\n");
-  fprintf(ptr_File, "ASCII\n");
-  fprintf(ptr_File, "DATASET STRUCTURED_GRID\n");
-  fprintf(ptr_File, "DIMENSIONS %u 1 1\n", n_Node);
-  fprintf(ptr_File, "POINTS %u Float32\n", n_Node);
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%f 0 0\n", i * dx);
+  fprintf(file, "      <Cells>\n");
+  fprintf(file, "        <DataArray type = \"Int32\" Name=\"connectivity\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d %d\n", i, i+1);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type = \"Int32\" Name=\"offsets\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d\n", 2*(i+1));
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type = \"UInt8\" Name=\"types\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d\n", 3);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </Cells>\n");
 
-  // point data
-  fprintf(ptr_File, "POINT_DATA %u\n", n_Node);
-  // node id
-  fprintf(ptr_File, "SCALARS node_id Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE node_id\n");
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%d\n", i);
+  fprintf(file, "      <CellData>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "p");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", _cells[i]->p());
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "T");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", _cells[i]->T());
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </CellData>\n");
 
-  // v
-  fprintf(ptr_File, "SCALARS v Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE v\n");
-  fprintf(ptr_File, "%f\n", edge_begin->v());
-  for (unsigned int i = 0; i < n_Cell-1; i++)
-    fprintf(ptr_File, "%f\n", _edges[i]->v());
-  fprintf(ptr_File, "%f\n", edge_end->v());
+  fprintf(file, "      <PointData>\n");
+  fprintf(file, "        <DataArray type=\"Int32\" Name=\"%s\" format=\"ascii\">\n", "node_id");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "          %d\n", i);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "v");
+  fprintf(file, "          %f\n", edge_begin->v());
+  for (unsigned i = 0; i < n_Cell-1; i++)
+    fprintf(file, "          %f\n", _edges[i]->v());
+  fprintf(file, "          %f\n", edge_end->v());
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </PointData>\n");
 
-  // cell data
-  fprintf(ptr_File, "CELL_DATA %u\n", n_Cell);
-  // p
-  fprintf(ptr_File, "SCALARS p Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE p\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", _cells[i]->p());
-
-  // T
-  fprintf(ptr_File, "SCALARS T Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE T\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", _cells[i]->T());
-
-  fclose(ptr_File);
+  fprintf(file, "    </Piece>\n");
 }
 
 void
-SinglePhaseChannel::writeTextOutput(unsigned int step)
+SinglePhaseChannel::writeTextOutput(FILE * file)
 {
-  FILE * ptr_File;
-  std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".dat";
-  ptr_File = fopen(file_name.c_str(), "w");
-
   // cell data
-  fprintf(ptr_File, "Time = %20.6e\n", _problemSystem->getCurrentTime());
-  fprintf(ptr_File, "#Cell data\n");
-  fprintf(ptr_File, "%20s%20s%20s%20s\n", "x", "p", "T", "rho");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%20.6e%20.6e%20.6e%20.6e\n", (i+0.5)*dx, _cells[i]->p(), _cells[i]->T(), _cells[i]->rho());
+  fprintf(file, "Time = %20.6e\n", _problemSystem->getCurrentTime());
+  fprintf(file, "#Cell data\n");
+  fprintf(file, "%20s%20s%20s%20s\n", "x", "p", "T", "rho");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "%20.6e%20.6e%20.6e%20.6e\n", (i+0.5)*dx, _cells[i]->p(), _cells[i]->T(), _cells[i]->rho());
 
   // edge data
-  fprintf(ptr_File, "#Edge data\n");
-  fprintf(ptr_File, "%20s%20s\n", "x", "v");
-  fprintf(ptr_File, "%20.6e%20.6e\n", 0.0, edge_begin->v());
-  for (unsigned int i = 0; i < n_Cell - 1; i++)
-    fprintf(ptr_File, "%20.6e%20.6e\n", (i+1)*dx, _edges[i]->v());
-  fprintf(ptr_File, "%20.6e%20.6e\n", length, edge_end->v());
-
-  fclose(ptr_File);
+  fprintf(file, "#Edge data\n");
+  fprintf(file, "%20s%20s\n", "x", "v");
+  fprintf(file, "%20.6e%20.6e\n", 0.0, edge_begin->v());
+  for (unsigned i = 0; i < n_Cell - 1; i++)
+    fprintf(file, "%20.6e%20.6e\n", (i+1)*dx, _edges[i]->v());
+  fprintf(file, "%20.6e%20.6e\n", length, edge_end->v());
 }
 
 void

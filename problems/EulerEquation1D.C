@@ -58,9 +58,9 @@ EulerEquation1D::~EulerEquation1D() {}
 void
 EulerEquation1D::SetupInitialCondition(double * u)
 {
-  unsigned int index = 0;
+  unsigned index = 0;
 
-  for(unsigned int i = 0; i < n_Cell; i++)
+  for(unsigned i = 0; i < n_Cell; i++)
   {
     rho[i] = (i < n_Cell/2) ? RHO_L : RHO_R;
     m[i]   = (i < n_Cell/2) ? M_L   : M_R;
@@ -78,8 +78,8 @@ EulerEquation1D::SetupInitialCondition(double * u)
 void
 EulerEquation1D::updateSolution(double * u)
 {
-  unsigned int idx = 0;
-  for(unsigned int i = 0; i < n_Cell; i++)
+  unsigned idx = 0;
+  for(unsigned i = 0; i < n_Cell; i++)
   {
     rho[i] = u[idx++];  m[i] = u[idx++];  E[i] = u[idx++];
     p[i] = p_IG(rho[i], m[i], E[i]);
@@ -89,14 +89,14 @@ EulerEquation1D::updateSolution(double * u)
 void
 EulerEquation1D::transientResidual(double * res)
 {
-  unsigned int idx = 0;
-  unsigned int time_step = _problemSystem->getCurrentTimeStep();
+  unsigned idx = 0;
+  unsigned time_step = _problemSystem->getCurrentTimeStep();
   if ((_time_scheme == BDF2) && (time_step > 1))
   {
     // It is typical to use BDF1 for step 1 to startup BDF2
     // however, it is also associated with large error
     // see H. Nishikawa, "On large start-up error of BDF2", Journal of Computational Physics, Vol. 392, 2019, Pages 456-461
-    for(unsigned int i = 0; i < n_Cell; i++)
+    for(unsigned i = 0; i < n_Cell; i++)
     {
       res[idx++] = (1.5 * rho[i] - 2.0 * rho_old[i] + 0.5 * rho_oo[i]) / _dt;
       res[idx++] = (1.5 * m[i]   - 2.0 * m_old[i]   + 0.5 * m_oo[i])   / _dt;
@@ -105,7 +105,7 @@ EulerEquation1D::transientResidual(double * res)
   }
   else
   {
-    for(unsigned int i = 0; i < n_Cell; i++)
+    for(unsigned i = 0; i < n_Cell; i++)
     {
       res[idx++] = (rho[i] - rho_old[i]) / _dt;
       res[idx++] = (m[i]   - m_old[i])   / _dt;
@@ -124,8 +124,8 @@ EulerEquation1D::RHS(double * rhs)
     defaut:   sysError("Spatial order not implemented.");
   }
 
-  unsigned int idx = 0;
-  for(unsigned int i = 0; i < n_Cell; i++)
+  unsigned idx = 0;
+  for(unsigned i = 0; i < n_Cell; i++)
   {
     rhs[idx++] = -(flux_rho[i+1] - flux_rho[i]) / dx;
     rhs[idx++] = -(flux_m[i+1] - flux_m[i]) / dx;
@@ -136,7 +136,7 @@ EulerEquation1D::RHS(double * rhs)
 void
 EulerEquation1D::updateFluxes()
 {
-  for(unsigned int i = 0; i <= n_Cell; i++)
+  for(unsigned i = 0; i <= n_Cell; i++)
   {
     // Find the local max abs(eigenvalue), i.e., Spectral radius
     double rho_left = (i == 0) ? RHO_L : rho[i-1];
@@ -176,7 +176,7 @@ EulerEquation1D::updateFluxes2ndOrder()
   UTILS::linearReconstruction(M_L, M_R, m, m_w, m_e); // should it be linearReconstruction(-M_L, -M_R, m, m_w, m_e) ?
   UTILS::linearReconstruction(E_L, E_R, E, E_w, E_e);
 
-  for(unsigned int i = 0; i <= n_Cell; i++)
+  for(unsigned i = 0; i <= n_Cell; i++)
   {
     // Find the local max abs(eigenvalue), i.e., Spectral radius
     double rho_left = (i == 0) ? RHO_L : rho_e[i-1];
@@ -211,62 +211,55 @@ EulerEquation1D::onTimestepEnd()
 }
 
 void
-EulerEquation1D::writeVTKOutput(unsigned int step)
+EulerEquation1D::writeVTKOutput(FILE * file)
 {
-  FILE * ptr_File;
-  std::string file_name = "output/" + _input_file_name + "_step_" + std::to_string(step) + ".vtk";
-  ptr_File = fopen(file_name.c_str(), "w");
+  fprintf(file, "    <Piece NumberOfPoints=\"%d\" NumberOfCells=\"%d\">\n", n_Node, n_Cell);
+  fprintf(file, "      <Points>\n");
+  fprintf(file, "        <DataArray type = \"Float32\" NumberOfComponents=\"3\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Node; i++)
+    fprintf(file, "          %f 0 0\n", i * dx);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </Points>\n");
 
-  fprintf(ptr_File, "# vtk DataFile Version 4.0\n");
-  fprintf(ptr_File, "my data\n");
-  fprintf(ptr_File, "ASCII\n");
-  fprintf(ptr_File, "DATASET STRUCTURED_GRID\n");
-  fprintf(ptr_File, "DIMENSIONS %u 1 1\n", n_Node);
-  fprintf(ptr_File, "POINTS %u Float32\n", n_Node);
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%f 0 0\n", i * dx);
+  fprintf(file, "      <Cells>\n");
+  fprintf(file, "        <DataArray type = \"Int32\" Name=\"connectivity\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d %d\n", i, i+1);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type = \"Int32\" Name=\"offsets\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d\n", 2*(i+1));
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type = \"UInt8\" Name=\"types\" format=\"ascii\">\n");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %d\n", 3);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </Cells>\n");
 
-  // point data
-  fprintf(ptr_File, "POINT_DATA %u\n", n_Node);
-  // node id
-  fprintf(ptr_File, "SCALARS node_id Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE node_id\n");
-  for (unsigned int i = 0; i < n_Node; i++)
-    fprintf(ptr_File, "%d\n", i);
+  fprintf(file, "      <CellData>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "rho");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", rho[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "m");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", m[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "E");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", E[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "p");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", p[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "        <DataArray type=\"Float32\" Name=\"%s\" format=\"ascii\">\n", "u");
+  for (unsigned i = 0; i < n_Cell; i++)
+    fprintf(file, "          %20.6f\n", m[i]/rho[i]);
+  fprintf(file, "        </DataArray>\n");
+  fprintf(file, "      </CellData>\n");
 
-  // cell data
-  fprintf(ptr_File, "CELL_DATA %u\n", n_Cell);
-  // rho
-  fprintf(ptr_File, "SCALARS rho Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE rho\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", rho[i]);
-
-  // m
-  fprintf(ptr_File, "SCALARS m Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE m\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", m[i]);
-
-  // E
-  fprintf(ptr_File, "SCALARS E Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE E\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", E[i]);
-
-  // p
-  fprintf(ptr_File, "SCALARS p Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE p\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", p[i]);
-
-  // velocity u = m/rho
-  fprintf(ptr_File, "SCALARS u Float32 1\n");
-  fprintf(ptr_File, "LOOKUP_TABLE u\n");
-  for (unsigned int i = 0; i < n_Cell; i++)
-    fprintf(ptr_File, "%f\n", m[i]/rho[i]);
-
-  fclose(ptr_File);
+  fprintf(file, "    </Piece>\n");
 }
 
 void

@@ -20,8 +20,8 @@ public:
   virtual void transientResidual(double * res) override final;
   virtual void RHS(double * rhs) override final;
   virtual void onTimestepEnd() override final;
-  virtual void writeVTKOutput(unsigned int) override final {}
-  virtual void writeTextOutput(unsigned int) override final {}
+  virtual void writeVTKOutput(FILE *) override final { /* do nothing */ }
+  virtual void writeTextOutput(FILE *) override final { /* do nothing */ }
 
   virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) override final;
   virtual void updateEdgeCellHelperVar() override final;
