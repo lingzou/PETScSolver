@@ -11,18 +11,18 @@ vBC::vBC(InputParameterList & globalParamList, InputParameterList & inputParamLi
   PETScProblem(globalParamList, inputParamList, problemSystem)
 {
   _inputParamList.readRequiredInputParameter<int>("order");
-  _inputParamList.readRequiredInputParameter<double>("V_INLET");
-  _inputParamList.readRequiredInputParameter<double>("T_INLET");
+  _inputParamList.readRequiredInputParameter<double>("V_BC");
+  _inputParamList.readRequiredInputParameter<double>("T_BC");
   _inputParamList.readRequiredInputParameter<std::string>("Connection");
   // boundary conditions
-  V_INLET = _inputParamList.getParameterValue<double>("V_INLET");
-  T_INLET = _inputParamList.getParameterValue<double>("T_INLET");
+  V_BC = _inputParamList.getParameterValue<double>("V_BC");
+  T_BC = _inputParamList.getParameterValue<double>("T_BC");
   _order = _inputParamList.getParameterValue<int>("order");
 
   _n_DOFs = 1;
 
   // Create edge
-  _edge = new vBndryEdge("vBC", V_INLET, T_INLET);
+  _edge = new vBndryEdge("vBC", V_BC, T_BC);
 }
 
 vBC::~vBC() { delete _edge; }
@@ -50,8 +50,8 @@ vBC::setupConnections()
 void
 vBC::SetupInitialCondition(double * u)
 {
-  _edge->initialize(V_INLET);
-  u[0] = V_INLET;
+  _edge->initialize(V_BC);
+  u[0] = V_BC;
 }
 
 void

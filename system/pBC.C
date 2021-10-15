@@ -11,20 +11,19 @@ pBC::pBC(InputParameterList & globalParamList, InputParameterList & inputParamLi
   PETScProblem(globalParamList, inputParamList, problemSystem)
 {
   _inputParamList.readRequiredInputParameter<int>("order");
-  _inputParamList.readRequiredInputParameter<double>("P_OUTLET");
-  _inputParamList.readRequiredInputParameter<double>("T_OUTLET");
+  _inputParamList.readRequiredInputParameter<double>("P_BC");
+  _inputParamList.readRequiredInputParameter<double>("T_BC");
   _inputParamList.readRequiredInputParameter<double>("V_INIT");
   _inputParamList.readRequiredInputParameter<std::string>("Connection");
   // boundary conditions
-  P_OUTLET   =  _inputParamList.getParameterValue<double>("P_OUTLET");
-  T_OUTLET   =  _inputParamList.getParameterValue<double>("T_OUTLET");
-  V_INIT     =  _inputParamList.getParameterValue<double>("V_INIT");
+  double p_BC   =  _inputParamList.getParameterValue<double>("P_BC");
+  double T_BC   =  _inputParamList.getParameterValue<double>("T_BC");
   _order = _inputParamList.getParameterValue<int>("order");
 
   _n_DOFs = 1;
 
   // Create edge
-  _edge = new pBndryEdge("Outlet", P_OUTLET, T_OUTLET);
+  _edge = new pBndryEdge("Outlet", p_BC, T_BC);
 }
 
 pBC::~pBC() { delete _edge; }
@@ -38,22 +37,22 @@ pBC::setupConnections()
   std::string connection = _inputParamList.getParameterValue<std::string>("Connection");
   std::string prob_name = connection.substr(0, connection.find(':'));
   std::string type = connection.substr(connection.find(':')+1, connection.size());
+  SinglePhaseChannel* spc = dynamic_cast<SinglePhaseChannel*>(_problemSystem->getProblem(prob_name));
+  _dx = spc->getDx();
 
-  if (type == "end")
-  {
-    SinglePhaseChannel* spc = dynamic_cast<SinglePhaseChannel*>(_problemSystem->getProblem(prob_name));
-    _edge->setNghbrCells(spc->getLastCell(), NULL);
-    _dx = spc->getDx();
-    spc->acceptConnections(_edge, "end");
-  }
-  else sysError("pBC can only connect the 'end' of flow channel.");
+  if (type == "begin")      _edge->setNghbrCells(NULL, spc->getFirstCell());
+  else if (type == "end")   _edge->setNghbrCells(spc->getLastCell(), NULL);
+  else                      sysError("pBC can only connect the 'end' of flow channel.");
+
+  spc->acceptConnections(_edge, type);
 }
 
 void
 pBC::SetupInitialCondition(double * u)
 {
-  _edge->initialize(V_INIT);
-  u[0] = V_INIT;
+  double v_initial = _inputParamList.getParameterValue<double>("V_INIT");
+  _edge->initialize(v_initial);
+  u[0] = v_initial;
 }
 
 void

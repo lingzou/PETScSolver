@@ -10,8 +10,8 @@
     type     = vBC
     Connection = channel-1:begin
     order    = 2
-    V_INLET  = 1
-    T_INLET  = 300
+    V_BC     = 1
+    T_BC     = 300
   [../]
   [./channel-1]
     type     = SinglePhaseChannel
@@ -26,8 +26,8 @@
     type     = pBC
     Connection = channel-1:end
     order    = 2
-    P_OUTLET = 1e5
-    T_OUTLET = 300
+    P_BC     = 1e5
+    T_BC     = 300
     V_INIT   = 0
   [../]
 []

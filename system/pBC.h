@@ -27,8 +27,6 @@ public:
   virtual void updateEdgeCellHelperVar() override final;
 
 protected:
-  double P_OUTLET, T_OUTLET, V_INIT;
-
   unsigned int _order;
   double _dx;
 

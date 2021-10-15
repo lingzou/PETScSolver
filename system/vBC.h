@@ -27,7 +27,7 @@ public:
   virtual void updateEdgeCellHelperVar() override final;
 
 protected:
-  double V_INLET, T_INLET;
+  double V_BC, T_BC;
 
   unsigned _order;
   double _dx;
