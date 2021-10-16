@@ -12,6 +12,7 @@ public:
 
   InputParameterList& getGlobalParamList() { return *global_ParamList; }
   std::map<std::string, InputParameterList *>& getProblemSystemParamList() { return problemParamList_map; }
+  std::map<std::string, InputParameterList *>& getFluidParamList() { return fluidParamList_map; }
 
   // helper function
   void print() { ifile->print(); }
@@ -25,6 +26,7 @@ protected:
 
   InputParameterList * global_ParamList;
   std::map<std::string, InputParameterList *> problemParamList_map;
+  std::map<std::string, InputParameterList *> fluidParamList_map;
 };
 
 #endif /*INPUT_PARSER_H*/

@@ -10,9 +10,10 @@
 #include "vBC.h"
 #include "pBC.h"
 
-ProblemSystem::ProblemSystem(InputParameterList & globalParameterList, std::map<std::string, InputParameterList *>& problemParamList_map) :
-  _globalParamList(globalParameterList),
-  _problemParamList_map(problemParamList_map),
+ProblemSystem::ProblemSystem(InputParser& input_parser) :
+  _globalParamList(input_parser.getGlobalParamList()),
+  _problemParamList_map(input_parser.getProblemSystemParamList()),
+  _fluidParamList_map(input_parser.getFluidParamList()),
   _input_file_name(_globalParamList.getParameterValue<std::string>("input_file_name")),
   _time_scheme(_globalParamList.getParameterValue<TimeScheme>("ts")),
   _t(0.0),
@@ -23,6 +24,15 @@ ProblemSystem::ProblemSystem(InputParameterList & globalParameterList, std::map<
   _text_output(_globalParamList.getParameterValue<bool>("text_output")),
   _n_DOFs(0)
 {
+  for (auto& it : _fluidParamList_map)
+  {
+    std::string fluid_name = it.second->getParameterValue<std::string>("type");
+    if (fluid_name == "linearFluid")
+      fluid_system[it.first] = new linearFluid(*(it.second));
+    else
+      sysError("ERROR: UNKNOWN fluid: " + fluid_name);
+  }
+
   for (auto& it : _problemParamList_map)
   {
     std::string problem_name = it.second->getParameterValue<std::string>("type");
@@ -58,7 +68,8 @@ ProblemSystem::ProblemSystem(InputParameterList & globalParameterList, std::map<
 
 ProblemSystem::~ProblemSystem()
 {
-  for (auto& it : problem_system)  delete it.second;
+  for (auto& it : problem_system)   delete it.second;
+  for (auto& it : fluid_system)     delete it.second;
 }
 
 void
@@ -82,9 +93,8 @@ ProblemSystem::SetupInitialCondition(double * u)
 {
   for (auto& it : problem_system)
   {
-    unsigned int offset = it.second->getDOFoffset();
-    double * u_local = &u[offset];
-    it.second->SetupInitialCondition(u_local);
+    unsigned offset = it.second->getDOFoffset();
+    it.second->SetupInitialCondition(u + offset);
   }
 }
 
@@ -93,9 +103,8 @@ ProblemSystem::updateSolution(double *u)
 {
   for (auto& it : problem_system)
   {
-    unsigned int offset = it.second->getDOFoffset();
-    double * u_local = &u[offset];
-    it.second->updateSolution(u_local);
+    unsigned offset = it.second->getDOFoffset();
+    it.second->updateSolution(u + offset);
   }
 
   for (auto& it : problem_system)   it.second->linearReconstruction();
@@ -107,9 +116,8 @@ ProblemSystem::transientResidual(double * res)
 {
   for (auto& it : problem_system)
   {
-    unsigned int offset = it.second->getDOFoffset();
-    double * res_local = &res[offset];
-    it.second->transientResidual(res_local);
+    unsigned offset = it.second->getDOFoffset();
+    it.second->transientResidual(res + offset);
   }
 }
 
@@ -118,9 +126,8 @@ ProblemSystem::RHS(double * rhs)
 {
   for (auto& it : problem_system)
   {
-    unsigned int offset = it.second->getDOFoffset();
-    double * rhs_local = &rhs[offset];
-    it.second->RHS(rhs_local);
+    unsigned offset = it.second->getDOFoffset();
+    it.second->RHS(rhs + offset);
   }
 }
 
@@ -130,20 +137,19 @@ ProblemSystem::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
   MatrixNonZeroPattern * mnzp = new MatrixNonZeroPattern(_n_DOFs);
 
   for (auto& it : problem_system)     it.second->FillJacobianMatrixNonZeroPattern(mnzp);
+  std::vector<std::set<unsigned int>> &nzp = mnzp->getNonZeroPattern();
 
   PetscInt *nnz;
   PetscMalloc(_n_DOFs * sizeof(PetscInt), &nnz);
-  std::vector<std::set<unsigned int>> &nzp = mnzp->getNonZeroPattern();
-  for(unsigned int i = 0; i < nzp.size(); i++)
-    nnz[i] = nzp[i].size();
+  for(unsigned i = 0; i < nzp.size(); i++)    nnz[i] = nzp[i].size();
 
   MatCreateSeqAIJ(PETSC_COMM_SELF, _n_DOFs, _n_DOFs, 0, nnz, &P_Mat);
 
   PetscReal one = 1.0;
-  for(unsigned int i = 0; i < nzp.size(); i++)
+  for(unsigned int i = 0; i < nzp.size(); i++)  // loop on rows
   {
     PetscInt row = i;
-    for (auto j : nzp[i])
+    for (auto j : nzp[i]) // for each row, loop on its columns
     {
       PetscInt col = j;
       MatSetValues(P_Mat, 1, &row, 1, &col, &one, INSERT_VALUES);
@@ -196,7 +202,14 @@ ProblemSystem::writeOutput(unsigned int step)
 PETScProblem*
 ProblemSystem::getProblem(std::string name)
 {
-  if (problem_system.find(name) != problem_system.end()) return problem_system[name];
-  else sysError("Problem " + name + " does not exist.");
-  return NULL;
+  if (problem_system.find(name) == problem_system.end())    sysError("Problem " + name + " does not exist.");
+  return problem_system[name];
+}
+
+SinglePhaseFluid*
+ProblemSystem::getDefaultFluid()
+{
+  if (fluid_system.empty())     sysError("There is no fluid properties in the system.");
+  if (fluid_system.size() > 1)  sysError("There is more than one fluid properties in the system.");
+  return fluid_system.begin()->second;
 }

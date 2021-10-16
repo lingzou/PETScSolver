@@ -2,13 +2,14 @@
 #define SINGLE_PHASE_FIELDS_H
 
 #include <iostream>
+#include "SinglePhaseFluid.h"
 
 class EdgeBase;
 
 class SPCell
 {
 public:
-  SPCell(std::string name) : _name(name), WEST_CELL(NULL), EAST_CELL(NULL), WEST_EDGE(NULL), EAST_EDGE(NULL) {}
+  SPCell(std::string name, SinglePhaseFluid* fluid) : _name(name), _fluid(fluid), WEST_CELL(NULL), EAST_CELL(NULL), WEST_EDGE(NULL), EAST_EDGE(NULL) {}
   virtual ~SPCell() {}
   virtual std::string name() { return _name; }
 
@@ -52,11 +53,8 @@ public:
   virtual void printConnection();
 
 protected:
-  double rho_func(double p, double T) { return 1.e3 + 4.e-7 * (p - 1.e5) - 0.46 * (T - 300.0); }
-  double e_func(double /*p*/, double T) { return 112.55e3 + 4.e3 * (T - 300.0); }
-
-protected:
   std::string _name;
+  SinglePhaseFluid* _fluid;
 
   unsigned _pDOF, _TDOF;
 
@@ -75,7 +73,7 @@ protected:
 class EdgeBase
 {
 public:
-  EdgeBase(std::string name) : _name(name), WEST_CELL(NULL), EAST_CELL(NULL), WEST_EDGE(NULL), EAST_EDGE(NULL) {}
+  EdgeBase(std::string name, SinglePhaseFluid* fluid) : _name(name), _fluid(fluid), WEST_CELL(NULL), EAST_CELL(NULL), WEST_EDGE(NULL), EAST_EDGE(NULL) {}
   virtual ~EdgeBase() {}
   virtual std::string name() final { return _name; }
 
@@ -106,11 +104,8 @@ public:
   virtual void printConnection() final;
 
 protected:
-  double rho_func(double p, double T) { return 1.e3 + 4.e-7 * (p - 1.e5) - 0.46 * (T - 300.0); }
-  double e_func(double /*p*/, double T) { return 112.55e3 + 4.e3 * (T - 300.0); }
-
-protected:
   std::string _name;
+  SinglePhaseFluid* _fluid;
 
   unsigned _vDOF;
 
@@ -125,7 +120,7 @@ protected:
 class vBndryEdge : public EdgeBase
 {
 public:
-  vBndryEdge(std::string name, double v_bc, double T_bc) : EdgeBase(name), _v_bc(v_bc), _T_bc(T_bc) {}
+  vBndryEdge(std::string name, SinglePhaseFluid* fluid, double v_bc, double T_bc) : EdgeBase(name, fluid), _v_bc(v_bc), _T_bc(T_bc) {}
   virtual ~vBndryEdge() {}
 
   virtual void computeFluxes() override final;
@@ -141,7 +136,7 @@ protected:
 class pBndryEdge : public EdgeBase
 {
 public:
-  pBndryEdge(std::string name, double p_bc, double T_bc) : EdgeBase(name), _p_bc(p_bc), _T_bc(T_bc) {}
+  pBndryEdge(std::string name, SinglePhaseFluid* fluid, double p_bc, double T_bc) : EdgeBase(name, fluid), _p_bc(p_bc), _T_bc(T_bc) {}
   virtual ~pBndryEdge() {}
 
   virtual void computeFluxes() override final;
@@ -157,7 +152,7 @@ protected:
 class IntEdge : public EdgeBase
 {
 public:
-  IntEdge(std::string name) : EdgeBase(name) {}
+  IntEdge(std::string name, SinglePhaseFluid* fluid) : EdgeBase(name, fluid) {}
   ~IntEdge() {}
   virtual void computeFluxes() override final;
   virtual void computeFluxes2nd() override final;

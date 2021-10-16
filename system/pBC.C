@@ -23,7 +23,8 @@ pBC::pBC(InputParameterList & globalParamList, InputParameterList & inputParamLi
   _n_DOFs = 1;
 
   // Create edge
-  _edge = new pBndryEdge("Outlet", p_BC, T_BC);
+  SinglePhaseFluid* fluid = _problemSystem->getDefaultFluid();
+  _edge = new pBndryEdge("Outlet", fluid, p_BC, T_BC);
 }
 
 pBC::~pBC() { delete _edge; }

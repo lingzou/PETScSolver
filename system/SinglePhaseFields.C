@@ -20,9 +20,9 @@ SPCell::initialize(double p, double T)
 {
   _p = p;   _p_o = p;   _p_oo = p;
   _T = T;   _T_o = T;   _T_oo = T;
-  _rho = rho_func(p, T);
+  _rho = _fluid->rho(p, T);
   _rho_o = _rho; _rho_oo = _rho;
-  _e = e_func(p, T);
+  _e = _fluid->e(p, T);
   _e_o = _e; _e_oo = _e;
 }
 
@@ -32,18 +32,18 @@ SPCell::linearReconstruction(double p_W, double p_E, double T_W, double T_E)
   UTILS::linearReconstruction(p_W, p_E, _p, _p_w, _p_e);
   UTILS::linearReconstruction(T_W, T_E, _T, _T_w, _T_e);
 
-  _rho_w = rho_func(_p_w, _T_w);
-  _rho_e = rho_func(_p_e, _T_e);
-  _e_w = e_func(_p_w, _T_w);
-  _e_e = e_func(_p_e, _T_e);
+  _rho_w = _fluid->rho(_p_w, _T_w);
+  _rho_e = _fluid->rho(_p_e, _T_e);
+  _e_w = _fluid->e(_p_w, _T_w);
+  _e_e = _fluid->e(_p_e, _T_e);
 }
 
 void
 SPCell::updateSolution(double p, double T)
 {
   _p = p; _T = T;
-  _rho = rho_func(p, T);
-  _e = e_func(p, T);
+  _rho = _fluid->rho(p, T);
+  _e = _fluid->e(p, T);
 }
 
 double
@@ -140,8 +140,8 @@ void
 vBndryEdge::computeFluxes()
 {
   double p_ghost = (WEST_CELL == NULL) ? EAST_CELL->p() : WEST_CELL->p();
-  double rho_ghost = rho_func(p_ghost, _T_bc);
-  double e_ghost = e_func(p_ghost, _T_bc);
+  double rho_ghost = _fluid->rho(p_ghost, _T_bc);
+  double e_ghost = _fluid->e(p_ghost, _T_bc);
   _mass_flux = rho_ghost * _v;
   _energy_flux = rho_ghost * e_ghost * _v;
 }
@@ -150,8 +150,8 @@ void
 vBndryEdge::computeFluxes2nd()
 {
   double p_ghost = (WEST_CELL == NULL) ? EAST_CELL->p_w() : WEST_CELL->p_e();
-  double rho_ghost = rho_func(p_ghost, _T_bc);
-  double e_ghost = e_func(p_ghost, _T_bc);
+  double rho_ghost = _fluid->rho(p_ghost, _T_bc);
+  double e_ghost = _fluid->e(p_ghost, _T_bc);
   _mass_flux = rho_ghost * _v;
   _energy_flux = rho_ghost * e_ghost * _v;
 }
@@ -159,10 +159,10 @@ vBndryEdge::computeFluxes2nd()
 void
 pBndryEdge::computeFluxes()
 {
-  double rho_west = (WEST_CELL == NULL) ? rho_func(_p_bc, _T_bc) : WEST_CELL->rho();
-  double rho_east = (EAST_CELL == NULL) ? rho_func(_p_bc, _T_bc) : EAST_CELL->rho();
-  double e_west = (WEST_CELL == NULL) ? e_func(_p_bc, _T_bc) : WEST_CELL->e();
-  double e_east = (EAST_CELL == NULL) ? e_func(_p_bc, _T_bc) : EAST_CELL->e();
+  double rho_west = (WEST_CELL == NULL) ? _fluid->rho(_p_bc, _T_bc) : WEST_CELL->rho();
+  double rho_east = (EAST_CELL == NULL) ? _fluid->rho(_p_bc, _T_bc) : EAST_CELL->rho();
+  double e_west = (WEST_CELL == NULL) ? _fluid->e(_p_bc, _T_bc) : WEST_CELL->e();
+  double e_east = (EAST_CELL == NULL) ? _fluid->e(_p_bc, _T_bc) : EAST_CELL->e();
 
   _mass_flux = (_v > 0) ? _v * rho_west : _v * rho_east;
   _energy_flux = (_v > 0) ? _v * rho_west * e_west : _v * rho_east * e_east;
@@ -171,10 +171,10 @@ pBndryEdge::computeFluxes()
 void
 pBndryEdge::computeFluxes2nd()
 {
-  double rho_west = (WEST_CELL == NULL) ? rho_func(_p_bc, _T_bc) : WEST_CELL->rho_e();
-  double rho_east = (EAST_CELL == NULL) ? rho_func(_p_bc, _T_bc) : EAST_CELL->rho_w();
-  double e_west = (WEST_CELL == NULL) ? e_func(_p_bc, _T_bc) : WEST_CELL->e_e();
-  double e_east = (EAST_CELL == NULL) ? e_func(_p_bc, _T_bc) : EAST_CELL->e_w();
+  double rho_west = (WEST_CELL == NULL) ? _fluid->rho(_p_bc, _T_bc) : WEST_CELL->rho_e();
+  double rho_east = (EAST_CELL == NULL) ? _fluid->rho(_p_bc, _T_bc) : EAST_CELL->rho_w();
+  double e_west = (WEST_CELL == NULL) ? _fluid->e(_p_bc, _T_bc) : WEST_CELL->e_e();
+  double e_east = (EAST_CELL == NULL) ? _fluid->e(_p_bc, _T_bc) : EAST_CELL->e_w();
 
   _mass_flux = (_v > 0) ? _v * rho_west : _v * rho_east;
   _energy_flux = (_v > 0) ? _v * rho_west * e_west : _v * rho_east * e_east;

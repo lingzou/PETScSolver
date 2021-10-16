@@ -4,6 +4,7 @@
 #include <petsc.h>
 #include "ParameterList.h"
 #include "PETScProblemInterface.h"
+#include "SinglePhaseFluid.h"
 
 class PETScProblem;
 class MatrixNonZeroPattern;
@@ -11,7 +12,7 @@ class MatrixNonZeroPattern;
 class ProblemSystem
 {
 public:
-  ProblemSystem(InputParameterList & globalParameterList, std::map<std::string, InputParameterList *>& problemParamList_map);
+  ProblemSystem(InputParser& input_parser);
   virtual ~ProblemSystem();
 
   virtual unsigned int getNDOF() { return _n_DOFs; }
@@ -34,12 +35,15 @@ public:
   virtual void computeJacobianMatrix(Mat & P_Mat);
 
   virtual PETScProblem* getProblem(std::string prob_name);
+  virtual SinglePhaseFluid* getDefaultFluid();
 
 protected:
   std::map <std::string, PETScProblem*> problem_system;
+  std::map <std::string, SinglePhaseFluid*> fluid_system;
 
   InputParameterList & _globalParamList;
   std::map<std::string, InputParameterList *>& _problemParamList_map;
+  std::map<std::string, InputParameterList *>& _fluidParamList_map;
 
   std::string _input_file_name;
   TimeScheme _time_scheme;

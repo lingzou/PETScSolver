@@ -22,7 +22,8 @@ vBC::vBC(InputParameterList & globalParamList, InputParameterList & inputParamLi
   _n_DOFs = 1;
 
   // Create edge
-  _edge = new vBndryEdge("vBC", V_BC, T_BC);
+  SinglePhaseFluid* fluid = _problemSystem->getDefaultFluid();
+  _edge = new vBndryEdge("vBC", fluid, V_BC, T_BC);
 }
 
 vBC::~vBC() { delete _edge; }

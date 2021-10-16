@@ -50,9 +50,10 @@ SinglePhaseChannel::SinglePhaseChannel(InputParameterList & globalParamList, Inp
 
   dx = length / n_Cell;
 
+  SinglePhaseFluid* fluid = _problemSystem->getDefaultFluid();
   // Create cells/edges
-  for (unsigned i = 0; i < n_Cell; i++)       _cells.push_back(new SPCell("CELL_"+std::to_string(i)));
-  for (unsigned i = 0; i < n_Cell - 1; i++)   _edges.push_back(new IntEdge("EDGE_"+std::to_string(i)));
+  for (unsigned i = 0; i < n_Cell; i++)       _cells.push_back(new SPCell("CELL_"+std::to_string(i), fluid));
+  for (unsigned i = 0; i < n_Cell - 1; i++)   _edges.push_back(new IntEdge("EDGE_"+std::to_string(i), fluid));
 
   // Setup neighboring edges for cells
   _cells[0]->setNghbrEdges(NULL, _edges[0]);

@@ -12,10 +12,8 @@ InputParser::~InputParser()
 {
   delete ifile;
   delete global_ParamList;
-
-  std::map<std::string, InputParameterList *>::iterator it;
-  for(it = problemParamList_map.begin(); it != problemParamList_map.end(); ++it)
-    delete it->second;
+  for (auto & it : problemParamList_map)    delete it.second;
+  for (auto & it : fluidParamList_map)      delete it.second;
 }
 
 void
@@ -48,6 +46,14 @@ InputParser::prepareProblemParamList()
       problemParamList_map[name] = new InputParameterList(name, *ifile);
       problemParamList_map[name]->setGetPotPrefix(input_sections[i]);
       problemParamList_map[name]->readRequiredInputParameter<std::string>("type");
+    }
+    else if ((name.compare(0, 7, "Fluids/") == 0) && (name.size() > 7) ) // Avoid processing the empty 'System/' section
+    {
+      name.erase(0, 7);   // remove prefix "Fluids/"
+      name.erase(name.size()-1, 1);  // remove "/" at the end
+      fluidParamList_map[name] = new InputParameterList(name, *ifile);
+      fluidParamList_map[name]->setGetPotPrefix(input_sections[i]);
+      fluidParamList_map[name]->readRequiredInputParameter<std::string>("type");
     }
   }
 }

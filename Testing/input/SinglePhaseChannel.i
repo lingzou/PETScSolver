@@ -5,6 +5,20 @@
   text_output = true
   output_interval = 5
 []
+
+[Fluids]
+  [./simpleWater]
+    type    = linearFluid
+    rho0    = 1000
+    p0      = 1e5
+    T0      = 300
+    e0      = 112.55e3
+    drho_dp = 4e-7
+    drho_dT = -0.46
+    cv      = 4e3
+  [../]
+[]
+
 [System]
   [./vBC]
     type     = vBC

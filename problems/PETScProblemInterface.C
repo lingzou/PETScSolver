@@ -11,9 +11,7 @@
 void
 ApplicationCtx::initializePETScApp(InputParser& input_parser)
 {
-  InputParameterList& globalParamList = input_parser.getGlobalParamList();
-  std::map<std::string, InputParameterList *>& problemParamList_map = input_parser.getProblemSystemParamList();
-  myProblemSystem = new ProblemSystem(globalParamList, problemParamList_map);
+  myProblemSystem = new ProblemSystem(input_parser);
 
   // Get total number of DOF
   N_DOFs = myProblemSystem->getNDOF();
