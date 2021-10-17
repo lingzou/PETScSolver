@@ -38,11 +38,9 @@ protected:
   InputParameterList & _inputParamList;
   ProblemSystem * _problemSystem;
 
-  //std::string _input_file_name;
   TimeScheme _time_scheme;
   double _dt;
 
-  unsigned int _DOF_offset;
-  unsigned int _n_DOFs;
+  unsigned _n_DOFs, _DOF_offset;
 };
 #endif /*PETSC_PROBLEM_H*/

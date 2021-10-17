@@ -22,7 +22,7 @@ public:
   linearFluid(InputParameterList & inputParamList);
   virtual ~linearFluid() {}
 
-  virtual double rho(double p, double T) override final { return _rho0 + (p - _p0) * _drho_dp + (T - _T0) * _drho_dT; }
+  virtual double rho(double p, double T)   override final { return _rho0 + (p - _p0) * _drho_dp + (T - _T0) * _drho_dT; }
   virtual double e(double /*p*/, double T) override final { return _e0 + _cv * T; }
 
 protected:

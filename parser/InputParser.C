@@ -3,57 +3,57 @@
 InputParser::InputParser(const char* input_file_name)
 {
   ifile_name = std::string(input_file_name);
-  ifile = new GetPot(input_file_name);
+  _ifile = new GetPot(input_file_name);
   buildGlobalParamList();
   prepareProblemParamList();
 }
 
 InputParser::~InputParser()
 {
-  delete ifile;
-  delete global_ParamList;
-  for (auto & it : problemParamList_map)    delete it.second;
-  for (auto & it : fluidParamList_map)      delete it.second;
+  delete _ifile;
+  delete _global_ParamList;
+  for (auto & it : _problemParamList_map)    delete it.second;
+  for (auto & it : _fluidParamList_map)      delete it.second;
 }
 
 void
 InputParser::buildGlobalParamList()
 {
-  global_ParamList = new InputParameterList("GlobalParamList", *ifile);
-  global_ParamList->setGetPotPrefix("Global/");
+  _global_ParamList = new InputParameterList("GlobalParamList", *_ifile);
+  _global_ParamList->setGetPotPrefix("Global/");
 
-  global_ParamList->readRequiredInputParameter<int>("n_steps");
-  global_ParamList->readRequiredInputParameter<double>("dt");
-  global_ParamList->readRequiredInputParameter<TimeScheme>("ts");
-  global_ParamList->readOptionalInputParameter<int>("output_interval", 1);
-  global_ParamList->readOptionalInputParameter<bool>("text_output", false);
-  global_ParamList->AddParameter<std::string>("input_file_name", UTILS::trim_file_name(ifile_name));
+  _global_ParamList->readRequiredInputParameter<int>("n_steps");
+  _global_ParamList->readRequiredInputParameter<double>("dt");
+  _global_ParamList->readRequiredInputParameter<TimeScheme>("ts");
+  _global_ParamList->readOptionalInputParameter<int>("output_interval", 1);
+  _global_ParamList->readOptionalInputParameter<bool>("text_output", false);
+  _global_ParamList->AddParameter<std::string>("input_file_name", UTILS::trim_file_name(ifile_name));
 }
 
 void
 InputParser::prepareProblemParamList()
 {
-  std::vector<std::string> input_sections = ifile->get_section_names();
+  std::vector<std::string> section_names = _ifile->get_section_names();
 
-  for(unsigned int i = 0; i < input_sections.size(); i++)
+  for(unsigned i = 0; i < section_names.size(); i++)
   {
-    std::string name = input_sections[i];
+    std::string name = section_names[i];
 
     if((name.compare(0, 7, "System/") == 0) && (name.size() > 7) ) // Avoid processing the empty 'System/' section
     {
       name.erase(0, 7);   // remove prefix "System/"
       name.erase(name.size()-1, 1);  // remove "/" at the end
-      problemParamList_map[name] = new InputParameterList(name, *ifile);
-      problemParamList_map[name]->setGetPotPrefix(input_sections[i]);
-      problemParamList_map[name]->readRequiredInputParameter<std::string>("type");
+      _problemParamList_map[name] = new InputParameterList(name, *_ifile);
+      _problemParamList_map[name]->setGetPotPrefix(section_names[i]);
+      _problemParamList_map[name]->readRequiredInputParameter<std::string>("type");
     }
     else if ((name.compare(0, 7, "Fluids/") == 0) && (name.size() > 7) ) // Avoid processing the empty 'System/' section
     {
       name.erase(0, 7);   // remove prefix "Fluids/"
       name.erase(name.size()-1, 1);  // remove "/" at the end
-      fluidParamList_map[name] = new InputParameterList(name, *ifile);
-      fluidParamList_map[name]->setGetPotPrefix(input_sections[i]);
-      fluidParamList_map[name]->readRequiredInputParameter<std::string>("type");
+      _fluidParamList_map[name] = new InputParameterList(name, *_ifile);
+      _fluidParamList_map[name]->setGetPotPrefix(section_names[i]);
+      _fluidParamList_map[name]->readRequiredInputParameter<std::string>("type");
     }
   }
 }

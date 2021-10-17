@@ -37,32 +37,24 @@ class ParameterList
 {
 public:
   ParameterList(std::string name) : _name(name) {}
-  virtual ~ParameterList()
-  {
-    for(it = parameter_map.begin(); it != parameter_map.end(); ++it)
-      delete it->second;
-  }
+  virtual ~ParameterList()  { for(auto & it : parameter_map)  delete it.second; }
 
   std::string name() { return _name; }
 
   template<typename T>
   void AddParameter(std::string para_name, T para_value)
   {
-    if(parameter_map.find(para_name) == parameter_map.end())  // not already existing, good to add
-      parameter_map[para_name] = new ParameterT<T>(para_value);
-    else
-      sysError("ERROR: parameter with name: '" + para_name + "', already exists in ParameterList: '" + _name + "'.");
+    if(parameter_map.find(para_name) != parameter_map.end())      sysError("ERROR: parameter with name: '" + para_name + "', already exists in ParameterList: '" + _name + "'.");
+    parameter_map[para_name] = new ParameterT<T>(para_value);
   }
 
   template<typename T>
   void setParameterValue(std::string para_name, T para_value)
   {
-    it = parameter_map.find(para_name);
-    if(it == parameter_map.end())
-      sysError("ERROR: parameter with name: '" + para_name + "', does not exist in ParameterList: '" + _name + "'.");
+    if(parameter_map.find(para_name) == parameter_map.end())      sysError("ERROR: parameter with name: '" + para_name + "', does not exist in ParameterList: '" + _name + "'.");
     else
     {
-      ParameterT<T> * param = dynamic_cast<ParameterT<T> * >(it->second);
+      ParameterT<T> * param = dynamic_cast<ParameterT<T> * >(parameter_map[para_name]);
       if(param == NULL)  // Check if the type is right
         sysError("ERROR: parameter with name: '" + para_name + "', has a different type in ParameterList: '" + _name + "'.");
       else
@@ -73,12 +65,10 @@ public:
   template<typename T>
   T getParameterValue(std::string para_name)
   {
-    it = parameter_map.find(para_name);
-    if(it == parameter_map.end())
-      sysError("ERROR: parameter with name: '" + para_name + "', does not exist in ParameterList: '" + _name + "'.");
+    if(parameter_map.find(para_name) == parameter_map.end())      sysError("ERROR: parameter with name: '" + para_name + "', does not exist in ParameterList: '" + _name + "'.");
     else
     {
-      ParameterT<T> * param = dynamic_cast<ParameterT<T> * >(it->second);
+      ParameterT<T> * param = dynamic_cast<ParameterT<T> * >(parameter_map[para_name]);
       if(param == NULL)  // Check if the type is right
         sysError("ERROR: parameter with name: '" + para_name + "', has a different type in ParameterList: '" + _name + "'.");
       else
@@ -95,7 +85,6 @@ public:
 protected:
   std::string _name;
   std::map<std::string, Parameter*> parameter_map;
-  std::map<std::string, Parameter*>::iterator it;
 };
 
 class InputParameterList : public ParameterList

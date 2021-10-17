@@ -10,23 +10,23 @@ public:
   InputParser(const char* input_file_name);
   virtual ~InputParser();
 
-  InputParameterList& getGlobalParamList() { return *global_ParamList; }
-  std::map<std::string, InputParameterList *>& getProblemSystemParamList() { return problemParamList_map; }
-  std::map<std::string, InputParameterList *>& getFluidParamList() { return fluidParamList_map; }
+  InputParameterList& getGlobalParamList() { return *_global_ParamList; }
+  std::map<std::string, InputParameterList *>& getProblemSystemParamList() { return _problemParamList_map; }
+  std::map<std::string, InputParameterList *>& getFluidParamList() { return _fluidParamList_map; }
 
   // helper function
-  void print() { ifile->print(); }
+  void print() { _ifile->print(); }
 
 protected:
   void buildGlobalParamList();
   void prepareProblemParamList();
 
   std::string ifile_name;
-  GetPot * ifile;
+  GetPot * _ifile;
 
-  InputParameterList * global_ParamList;
-  std::map<std::string, InputParameterList *> problemParamList_map;
-  std::map<std::string, InputParameterList *> fluidParamList_map;
+  InputParameterList * _global_ParamList;
+  std::map<std::string, InputParameterList *> _problemParamList_map;
+  std::map<std::string, InputParameterList *> _fluidParamList_map;
 };
 
 #endif /*INPUT_PARSER_H*/
