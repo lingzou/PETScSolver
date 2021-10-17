@@ -46,6 +46,16 @@ SPCell::updateSolution(double p, double T)
   _e = _fluid->e(p, T);
 }
 
+void
+SPCell::computeDP()
+{
+  double v_cell = 0.5 * (EAST_EDGE->v() + WEST_EDGE->v());
+
+  double _f = 0.01; double _dh = 0.01;
+  _dpdx_fric = 0.5 * _f / _dh * _rho * v_cell * std::fabs(v_cell);
+  _dpdx_gravity = 0; // FIXME rho*g
+}
+
 double
 SPCell::computeMassRHS(double dx)
 {
@@ -197,22 +207,21 @@ pBndryEdge::computeTranResBDF2(double dt)
 double
 pBndryEdge::computeRHS(double dx)
 {
-  double dp_dx = 0;
-  double dv_dx = 0;
+  double dp_dx = 0, dv_dx = 0, rho_edge = 0, fric = 0;
   if (WEST_CELL == NULL)
   {
     dp_dx = (EAST_CELL->p() - _p_bc) / dx * 2;
     dv_dx = (_v < 0) ? (EAST_EDGE->v() - _v) / dx : 0;
+    rho_edge = EAST_CELL->rho();
+    fric = EAST_CELL->dpdx_fric();
   }
   else
   {
     dp_dx = (_p_bc - WEST_CELL->p()) / dx * 2;
     dv_dx = (_v > 0) ? (_v - WEST_EDGE->v()) / dx : 0;
+    rho_edge = WEST_CELL->rho();
+    fric = WEST_CELL->dpdx_fric();
   }
-
-  double _f = 0.01; double _dh = 0.01;
-  double rho_edge = (WEST_CELL == NULL) ? EAST_CELL->rho() : WEST_CELL->rho();
-  double fric = 0.5 * _f / _dh * rho_edge * _v * std::fabs(_v);
 
   return -rho_edge * _v * dv_dx - dp_dx - fric;
 }
@@ -250,9 +259,8 @@ IntEdge::computeRHS(double dx)
 {
   double dp_dx = (EAST_CELL->p() - WEST_CELL->p()) / dx;
 
-  double _f = 0.01; double _dh = 0.01;
   double rho_edge = 0.5 * (WEST_CELL->rho() + EAST_CELL->rho());
-  double fric = 0.5 * _f / _dh * rho_edge * _v * std::fabs(_v);
+  double fric = 0.5 * (WEST_CELL->dpdx_fric() + EAST_CELL->dpdx_fric());
 
   double dv_dx = (_v > 0) ? (_v - WEST_EDGE->v()) / dx : (EAST_EDGE->v() - _v) / dx;
 

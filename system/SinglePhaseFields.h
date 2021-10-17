@@ -18,6 +18,8 @@ public:
   virtual double T()    const { return _T;    }
   virtual double rho()  const { return _rho;  }
   virtual double e()    const { return _e;    }
+  virtual double dpdx_fric()      const { return _dpdx_fric; }
+  virtual double dpdx_gravity()   const { return _dpdx_gravity; }
   //   2nd-order related
   virtual double p_w()    const { return _p_w;    }
   virtual double p_e()    const { return _p_e;    }
@@ -47,6 +49,7 @@ public:
   virtual double energyTranResBDF2(double dt) { return (1.5 * _rho * _e - 2.0 * _rho_o * _e_o + 0.5 * _rho_oo * _e_oo) / dt; }
   virtual double computeMassRHS(double dx);
   virtual double computeEnergyRHS(double dx);
+  virtual void computeDP();
   virtual void saveOldSlns();
 
   // Debug functions
@@ -65,6 +68,9 @@ protected:
   // second-order related
   double _p_w, _p_e, _T_w, _T_e;
   double _rho_w, _rho_e, _e_w, _e_e;
+
+  // helper variables
+  double _dpdx_fric, _dpdx_gravity;
 
   EdgeBase *WEST_EDGE, *EAST_EDGE;
   SPCell *WEST_CELL, *EAST_CELL;

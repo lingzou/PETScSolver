@@ -53,7 +53,7 @@ for i in range(0, len(lines)) :
         print ("Line %d: Numbers are different between the two files:" % (i+1))
         print ("Actual value = %e; Expected value = %e" % (val, exp_val))
     else :
-      if (abs((val - exp_val) / exp_val) > 1.0e-6) :
+      if (abs((val - exp_val) / exp_val) > 1.0e-8) :
         diff = True
         print ("Line %d: Numbers are different between the two files:" % (i+1))
         print ("Actual value = %f; Expected value = %f" % (val, exp_val))
@@ -67,7 +67,7 @@ for i in range(0, len(lines)) :
 
 
 if (not diff) :
-  print ("The two files are the same [with zero_tol = %e, and rel_tol = %e]" % (1.0e-8, 1.0e-6))
+  print ("The two files are the same [with zero_tol = %e, and rel_tol = %e]" % (1.0e-8, 1.0e-8))
   sys.exit(0)
 else :
   print ("The two files are different.")

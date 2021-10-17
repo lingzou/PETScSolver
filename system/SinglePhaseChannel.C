@@ -163,6 +163,8 @@ SinglePhaseChannel::linearReconstruction()
 void
 SinglePhaseChannel::updateEdgeCellHelperVar()
 {
+  for (auto & cell : _cells)    cell->computeDP();
+
   switch (_order)
   {
     case 1:     for(auto& itr : _edges)   itr->computeFluxes();       break;
