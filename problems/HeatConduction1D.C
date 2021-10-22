@@ -152,8 +152,8 @@ HeatConduction1D::writeVTKOutput(FILE * file)
 void
 HeatConduction1D::FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp)
 {
-  mnzp->addEntry(0, 0);
-  mnzp->addEntry(_n_DOFs-1, _n_DOFs-1);
+  mnzp->addEntry(0, 0); mnzp->addEntry(0, 1);// (0, 1) not needed because of Direchlet BC, otherwise needed
+  mnzp->addEntry(_n_DOFs-1, _n_DOFs-1); mnzp->addEntry(_n_DOFs-1, _n_DOFs-2);
   for (unsigned row = 1; row < _n_DOFs-1; row++)
     for (unsigned col = row-1; col <= row+1; col++)
       mnzp->addEntry(row + _DOF_offset, col + _DOF_offset);
@@ -163,21 +163,21 @@ void
 HeatConduction1D::computeJacobianMatrix(Mat & P_Mat)
 {
   PetscInt     row, col;
-  PetscScalar  v = 1.0;
+  PetscScalar  one = 1.0;
 
   row = 0; col = 0;
-  MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
+  MatSetValues(P_Mat, 1, &row, 1, &col, &one, INSERT_VALUES);
   row = _n_DOFs-1; col = _n_DOFs-1;
-  MatSetValues(P_Mat, 1, &row, 1, &col, &v, INSERT_VALUES);
+  MatSetValues(P_Mat, 1, &row, 1, &col, &one, INSERT_VALUES);
 
   PetscInt cols[3];
   PetscReal jac[3];
   for (row = 1; row < _n_DOFs-1; row++)
   {
     cols[0] = row - 1; cols[1] = row; cols[2] = row + 1;
-    jac[0] = -1.0 / dx2;
-    jac[1] = 1.0 / _dt / alpha + 2.0 / dx2;
-    jac[2] = -1.0 / dx2;
+    jac[0] = (_time_scheme == CN) ? -0.5 / dx2 : -1.0 / dx2;
+    jac[1] = (_time_scheme == CN) ? 1.0 / _dt / alpha + 1.0 / dx2 : 1.0 / _dt / alpha + 2.0 / dx2;
+    jac[2] = (_time_scheme == CN) ? -0.5 / dx2 : -1.0 / dx2;
 
     MatSetValues(P_Mat, 1, &row, 3, cols, jac, INSERT_VALUES);
   }

@@ -9,8 +9,9 @@
 #include "SinglePhaseFlow.h"
 
 void
-ApplicationCtx::initializePETScApp(InputParser& input_parser)
+ApplicationCtx::initializePETScApp(InputParser* input_parser)
 {
+  _input_parser = input_parser;
   myProblemSystem = new ProblemSystem(input_parser);
 
   // Get total number of DOF
@@ -24,6 +25,9 @@ ApplicationCtx::setupPETScWorkSpace()
   J_Mat = NULL;
   J_MatrixFree = NULL;
   P_Mat = NULL;
+
+  // Prepare NULL MatFDColoring
+  fdcoloring = NULL;
 
   // Prepare PETSc vectors
   VecCreate(PETSC_COMM_SELF, &u);
@@ -45,8 +49,8 @@ ApplicationCtx::setupPETScWorkSpace()
   setupMatrices();
 
   // Setup KSP
-  PetscReal ksp_rtol = 1.0e-3;  // Hard-coded value
-  PetscInt ksp_maxits = 30;     // Hard-coded value
+  PetscReal ksp_rtol = _input_parser->getGlobalParamList().getParameterValue<double>("linear_rtol");
+  PetscInt ksp_maxits = _input_parser->getGlobalParamList().getParameterValue<int>("linear_max_its");
   SNESGetKSP(snes, &ksp);
   KSPSetTolerances(ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, ksp_maxits);
 
@@ -57,22 +61,33 @@ ApplicationCtx::setupPETScWorkSpace()
 void
 ApplicationCtx::setupMatrices()
 {
-  bool exact_jacobian = false;     // True if want to use hand-calculated Jacobian
-  hasFDColoring = PETSC_TRUE;      // True if finite differencing Jacobian
-  if(exact_jacobian)
+  int solver_option = _input_parser->getGlobalParamList().getParameterValue<int>("solver_option");
+
+  if(solver_option == 0) // Newton's method + Hand-coded "(hopefully) exact" Jacobian
+  {
+    // Let the problem setup Jacobian matrix sparsity
+    myProblemSystem->FillJacobianMatrixNonZeroPattern(P_Mat);
+
+    // See PETSc example:
+    // https://petsc.org/release/src/snes/tutorials/ex1.c.html
+    // Use hand-calculated Jacobian as both the Jacobian and Preconditioning Jacobian
+    //SNESSetJacobian(snes, J_MatrixFree, P_Mat, FormJacobian, this);
+    SNESSetJacobian(snes, P_Mat, P_Mat, FormJacobian, this);
+  }
+  else if(solver_option == 1) // Matrix-free + Hand-coded Jacobian as the Preconditioning Jacobian
   {
     // Create Matrix-free context
-    // MatCreateSNESMF(snes, &J_MatrixFree); Why Jacobian-free not working here?
+    MatCreateSNESMF(snes, &J_MatrixFree);
 
     // Let the problem setup Jacobian matrix sparsity
     myProblemSystem->FillJacobianMatrixNonZeroPattern(P_Mat);
 
     // See PETSc example:
-    // https://www.mcs.anl.gov/petsc/petsc-current/src/snes/examples/tutorials/ex1.c.html
-    // Use hand-calculated Jacobian
-    SNESSetJacobian(snes, P_Mat, P_Mat, FormJacobian, this);
+    // https://petsc.org/release/src/ts/tutorials/ex15.c.html
+    // Use hand-calculated Jacobian as the Preconditioning Jacobian
+    SNESSetJacobian(snes, J_MatrixFree, P_Mat, FormJacobian, this);
   }
-  else if(hasFDColoring)
+  else if(solver_option == 2) // Matrix-free + Finite-differencing Preconditioning Jacobian (using coloring)
   {
     // Create Matrix-free context
     MatCreateSNESMF(snes, &J_MatrixFree);
@@ -81,8 +96,8 @@ ApplicationCtx::setupMatrices()
     myProblemSystem->FillJacobianMatrixNonZeroPattern(P_Mat);
 
     // See PETSc examples:
-    // https://www.mcs.anl.gov/petsc/petsc-current/src/snes/examples/tutorials/ex14.c.html
-    // https://www.mcs.anl.gov/petsc/petsc-current/src/mat/examples/tutorials/ex16.c.html
+    // https://petsc.org/release/src/snes/tutorials/ex14.c.html
+    // https://petsc.org/release/src/mat/tutorials/ex16.c.html
     ISColoring      iscoloring;
     MatColoring     mc;
     MatColoringCreate(P_Mat, &mc);
@@ -102,10 +117,10 @@ ApplicationCtx::setupMatrices()
                     SNESComputeJacobianDefaultColor,  // Use finite differencing and coloring
                     fdcoloring);    // fdcoloring
   }
-  else
+  else if (solver_option == 3) // Finite-differencing, no coloring, slowest
   {
     // See PETSc example:
-    // https://www.mcs.anl.gov/petsc/petsc-current/src/ts/examples/tutorials/ex10.c.html
+    // https://petsc.org/release/src/ts/tutorials/ex10.c.html
     MatCreateSeqAIJ(PETSC_COMM_SELF, N_DOFs, N_DOFs, PETSC_DEFAULT, PETSC_NULL, &J_Mat);
     SNESSetJacobian(snes,     // snes
                     J_Mat,    // Jacobian matrix
@@ -113,6 +128,7 @@ ApplicationCtx::setupMatrices()
                     SNESComputeJacobianDefault,
                     PETSC_NULL);
   }
+  else  sysError("Unknown Jacobian option.");
 }
 
 void
@@ -151,8 +167,7 @@ ApplicationCtx::FreePETScWorkSpace()
   SNESDestroy(&snes);
 
   // Destroy MatFDColoring
-  if (hasFDColoring)
-    MatFDColoringDestroy(&fdcoloring);
+  if (fdcoloring != NULL)   MatFDColoringDestroy(&fdcoloring);
 
   delete myProblemSystem;
 }
@@ -206,6 +221,12 @@ PetscErrorCode FormJacobian(SNES snes, Vec u, Mat jac, Mat B, void * AppCtx)
   ApplicationCtx * appCtx = (ApplicationCtx *) AppCtx;
   ProblemSystem * myProblemSystem = appCtx->myProblemSystem;
   myProblemSystem->computeJacobianMatrix(B);
+
+  if (jac != B)
+  {
+    MatAssemblyBegin(jac,MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);
+  }
 
   return 0;
 }

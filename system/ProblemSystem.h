@@ -12,7 +12,7 @@ class MatrixNonZeroPattern;
 class ProblemSystem
 {
 public:
-  ProblemSystem(InputParser& input_parser);
+  ProblemSystem(InputParser* input_parser);
   virtual ~ProblemSystem();
 
   virtual unsigned int getNDOF() { return _n_DOFs; }

@@ -75,11 +75,12 @@ TARGET_LINK_LIBRARIES(PETScSolver ${PETSC_LIBRARIES})
 ENABLE_TESTING()
 
 set (ALL_TESTS
-        HeatCond1D          SodShockTube          LaxRiemannProblem         WaterFaucet_5E2P_SG_BDF1_1st
+        HeatCond1D          HeatCond1D_MF         SodShockTube              LaxRiemannProblem         WaterFaucet_5E2P_SG_BDF1_1st
         SinglePhaseFlow     SinglePhaseFlow_2nd   SinglePhaseChannel        SinglePhaseChannel_2nd)
 # The following are for each test in the format of a LIST: (test_name, 1st_step_to_test, 2nd_step_to_test)
 #   (Name                           TestName;           step; step)
 set (HeatCond1D                     HeatCond1D;         20;   40)
+set (HeatCond1D_MF                  HeatCond1D_MF;      20;   40)
 set (SodShockTube                   SodShockTube;       20;   40)
 set (LaxRiemannProblem              LaxRiemannProblem;  80;   160)
 set (WaterFaucet_5E2P_SG_BDF1_1st   WaterFaucet_5E2P_SG_BDF1_1st;       20;   40)

@@ -18,16 +18,16 @@ class MatrixNonZeroPattern
 public:
   MatrixNonZeroPattern(unsigned int size) { _non_zero_entries.resize(size); }
   virtual ~MatrixNonZeroPattern() {}
-  virtual void addEntry(unsigned row, unsigned col) { _non_zero_entries[col].insert(row); }
+  virtual void addEntry(unsigned row, unsigned col) { _non_zero_entries[row].insert(col); }
   virtual void addRow(unsigned row, std::vector<unsigned> cols) { for (auto& col : cols) addEntry(row, col); }
-  std::vector<std::set<unsigned int>> &getNonZeroPattern() { return _non_zero_entries; }
+  std::vector<std::set<unsigned>> &getNonZeroPattern() { return _non_zero_entries; }
 protected:
-  std::vector<std::set<unsigned int>> _non_zero_entries;
+  std::vector<std::set<unsigned>> _non_zero_entries;
 };
 
 struct ApplicationCtx
 {
-  //PETScProblem *  myPETScProblem;
+  InputParser *   _input_parser;
   ProblemSystem * myProblemSystem;
   PetscInt        N_DOFs;     // Number of degrees of freedom
 
@@ -49,7 +49,7 @@ struct ApplicationCtx
   Vec             res_RHS;         /* residual from RHS */
   Vec             res_RHS_old;     /* residual from RHS (old time step)*/
 
-  void initializePETScApp(InputParser&);
+  void initializePETScApp(InputParser*);
   void setupPETScWorkSpace();
   void setupInitialConditions();
   void FreePETScWorkSpace();

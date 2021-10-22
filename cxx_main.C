@@ -23,7 +23,7 @@ int main(int argc, char **argv)
    * Initialize PETSc App
    */
   ApplicationCtx AppCtx;
-  AppCtx.initializePETScApp(input_parser);
+  AppCtx.initializePETScApp(&input_parser);
 
   /*
    *  Setup PETSc work space

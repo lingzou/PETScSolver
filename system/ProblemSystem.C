@@ -10,10 +10,10 @@
 #include "vBC.h"
 #include "pBC.h"
 
-ProblemSystem::ProblemSystem(InputParser& input_parser) :
-  _globalParamList(input_parser.getGlobalParamList()),
-  _problemParamList_map(input_parser.getProblemSystemParamList()),
-  _fluidParamList_map(input_parser.getFluidParamList()),
+ProblemSystem::ProblemSystem(InputParser* input_parser) :
+  _globalParamList(input_parser->getGlobalParamList()),
+  _problemParamList_map(input_parser->getProblemSystemParamList()),
+  _fluidParamList_map(input_parser->getFluidParamList()),
   _input_file_name(_globalParamList.getParameterValue<std::string>("input_file_name")),
   _time_scheme(_globalParamList.getParameterValue<TimeScheme>("ts")),
   _t(0.0),
@@ -145,14 +145,14 @@ ProblemSystem::FillJacobianMatrixNonZeroPattern(Mat & P_Mat)
 
   MatCreateSeqAIJ(PETSC_COMM_SELF, _n_DOFs, _n_DOFs, 0, nnz, &P_Mat);
 
-  PetscReal one = 1.0;
+  PetscReal zero = 0.0;
   for(unsigned int i = 0; i < nzp.size(); i++)  // loop on rows
   {
     PetscInt row = i;
     for (auto j : nzp[i]) // for each row, loop on its columns
     {
       PetscInt col = j;
-      MatSetValues(P_Mat, 1, &row, 1, &col, &one, INSERT_VALUES);
+      MatSetValues(P_Mat, 1, &row, 1, &col, &zero, INSERT_VALUES);
     }
   }
   MatAssemblyBegin(P_Mat, MAT_FINAL_ASSEMBLY);

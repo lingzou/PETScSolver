@@ -25,6 +25,10 @@ InputParser::buildGlobalParamList()
   _global_ParamList->readRequiredInputParameter<int>("n_steps");
   _global_ParamList->readRequiredInputParameter<double>("dt");
   _global_ParamList->readRequiredInputParameter<TimeScheme>("ts");
+  // solver option: 0) Newton + hand-coded jacobian; 1) Matrix-free + hand-coded jacobian; 2) MF + fd coloring J; 3) MF + fd no coloring J
+  _global_ParamList->readOptionalInputParameter<int>("solver_option", 2);
+  _global_ParamList->readOptionalInputParameter<double>("linear_rtol", 1.e-3);
+  _global_ParamList->readOptionalInputParameter<int>("linear_max_its", 30);
   _global_ParamList->readOptionalInputParameter<int>("output_interval", 1);
   _global_ParamList->readOptionalInputParameter<bool>("text_output", false);
   _global_ParamList->AddParameter<std::string>("input_file_name", UTILS::trim_file_name(ifile_name));
