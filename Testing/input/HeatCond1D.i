@@ -2,7 +2,7 @@
   ts       = CN
   dt       = 0.02
   n_steps  = 40
-  jacobian_option = 0
+  solver_option = 0
 []
 [System]
   [./problem]

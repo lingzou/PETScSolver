@@ -149,6 +149,7 @@ ApplicationCtx::setupInitialConditions()
 void
 ApplicationCtx::FreePETScWorkSpace()
 {
+  _input_parser->checkUnusedVariables();
   // Destroy PETSc vectors
   VecDestroy(&u);
   VecDestroy(&u_old);

@@ -189,6 +189,18 @@ public:
 
     // (*) output --------------------------------------------------------------
     inline int print() const;
+    inline void checkUnvisitedVariables()
+    {
+      for (unsigned i = 0; i < variables.size(); i++)
+      {
+        std::string var_name = variables[i].name;
+        if (std::find(_requested_variables.begin(), _requested_variables.end(), var_name) == _requested_variables.end())
+        {
+          std::cout << "WARNING WARNING WARNING WARNING WARNING WARNING" << std::endl;
+          std::cout << var_name << " has never been used." << std::endl;
+        }
+      }
+    }
 
 private:
     // (*) Type Declaration ----------------------------------------------------

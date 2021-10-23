@@ -16,6 +16,7 @@ public:
 
   // helper function
   void print() { _ifile->print(); }
+  void checkUnusedVariables() { _ifile->checkUnvisitedVariables(); }
 
 protected:
   void buildGlobalParamList();
