@@ -97,10 +97,14 @@ public:
   bool hasInput(std::string para_name) { return ifile.hasVariable(para_name); }
 
   template <typename T>
-  void readRequiredInputParameter(std::string para_name);
+  T getValueFromInput(std::string para_name);
 
   template <typename T>
-  void readOptionalInputParameter(std::string para_name, T default_val)
+  void addRequiredParamFromInput(std::string para_name)
+  { AddParameter<T>(para_name, getValueFromInput<T>(para_name)); }
+
+  template <typename T>
+  void addOptionalParamFromInput(std::string para_name, T default_val)
   { AddParameter<T>(para_name, ifile(para_name.c_str(), default_val)); }
 
 protected:

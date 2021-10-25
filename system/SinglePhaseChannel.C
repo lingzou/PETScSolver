@@ -28,22 +28,14 @@
 SinglePhaseChannel::SinglePhaseChannel(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem) :
   PETScProblem(globalParamList, inputParamList, problemSystem)
 {
-  _inputParamList.readRequiredInputParameter<int>("order");
-  _inputParamList.readRequiredInputParameter<int>("n_cells");
-  _inputParamList.readRequiredInputParameter<double>("length");
-
-  _inputParamList.readRequiredInputParameter<double>("P_INIT");
-  _inputParamList.readRequiredInputParameter<double>("V_INIT");
-  _inputParamList.readRequiredInputParameter<double>("T_INIT");
-
   // initial conditions
-  P_INIT     =  _inputParamList.getParameterValue<double>("P_INIT");
-  V_INIT     =  _inputParamList.getParameterValue<double>("V_INIT");
-  T_INIT     =  _inputParamList.getParameterValue<double>("T_INIT");
+  P_INIT     =  _inputParamList.getValueFromInput<double>("P_INIT");
+  V_INIT     =  _inputParamList.getValueFromInput<double>("V_INIT");
+  T_INIT     =  _inputParamList.getValueFromInput<double>("T_INIT");
 
-  _order = _inputParamList.getParameterValue<int>("order");
-  n_Cell = _inputParamList.getParameterValue<int>("n_cells");
-  length = _inputParamList.getParameterValue<double>("length");
+  _order = _inputParamList.getValueFromInput<int>("order");
+  n_Cell = _inputParamList.getValueFromInput<int>("n_cells");
+  length = _inputParamList.getValueFromInput<double>("length");
 
   n_Node = n_Cell + 1;
   _n_DOFs = n_Cell * 3-1;

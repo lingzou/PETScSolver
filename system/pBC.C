@@ -10,15 +10,10 @@
 pBC::pBC(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem) :
   PETScProblem(globalParamList, inputParamList, problemSystem)
 {
-  _inputParamList.readRequiredInputParameter<int>("order");
-  _inputParamList.readRequiredInputParameter<double>("P_BC");
-  _inputParamList.readRequiredInputParameter<double>("T_BC");
-  _inputParamList.readRequiredInputParameter<double>("V_INIT");
-  _inputParamList.readRequiredInputParameter<std::string>("Connection");
   // boundary conditions
-  double p_BC   =  _inputParamList.getParameterValue<double>("P_BC");
-  double T_BC   =  _inputParamList.getParameterValue<double>("T_BC");
-  _order = _inputParamList.getParameterValue<int>("order");
+  double p_BC   =  _inputParamList.getValueFromInput<double>("P_BC");
+  double T_BC   =  _inputParamList.getValueFromInput<double>("T_BC");
+  _order = _inputParamList.getValueFromInput<int>("order");
 
   _n_DOFs = 1;
 
@@ -35,7 +30,7 @@ pBC::setDOFoffset(unsigned int offset) { _DOF_offset = offset; _edge->setDOF(_DO
 void
 pBC::setupConnections()
 {
-  std::string connection = _inputParamList.getParameterValue<std::string>("Connection");
+  std::string connection = _inputParamList.getValueFromInput<std::string>("Connection");
   std::string prob_name = connection.substr(0, connection.find(':'));
   std::string type = connection.substr(connection.find(':')+1, connection.size());
   SinglePhaseChannel* spc = dynamic_cast<SinglePhaseChannel*>(_problemSystem->getProblem(prob_name));
@@ -51,7 +46,7 @@ pBC::setupConnections()
 void
 pBC::SetupInitialCondition(double * u)
 {
-  double v_initial = _inputParamList.getParameterValue<double>("V_INIT");
+  double v_initial = _inputParamList.getValueFromInput<double>("V_INIT");
   _edge->initialize(v_initial);
   u[0] = v_initial;
 }

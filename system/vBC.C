@@ -10,14 +10,10 @@
 vBC::vBC(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem) :
   PETScProblem(globalParamList, inputParamList, problemSystem)
 {
-  _inputParamList.readRequiredInputParameter<int>("order");
-  _inputParamList.readRequiredInputParameter<double>("V_BC");
-  _inputParamList.readRequiredInputParameter<double>("T_BC");
-  _inputParamList.readRequiredInputParameter<std::string>("Connection");
   // boundary conditions
-  V_BC = _inputParamList.getParameterValue<double>("V_BC");
-  T_BC = _inputParamList.getParameterValue<double>("T_BC");
-  _order = _inputParamList.getParameterValue<int>("order");
+  V_BC = _inputParamList.getValueFromInput<double>("V_BC");
+  T_BC = _inputParamList.getValueFromInput<double>("T_BC");
+  _order = _inputParamList.getValueFromInput<int>("order");
 
   _n_DOFs = 1;
 
@@ -34,7 +30,7 @@ vBC::setDOFoffset(unsigned int offset) { _DOF_offset = offset; _edge->setDOF(_DO
 void
 vBC::setupConnections()
 {
-  std::string connection = _inputParamList.getParameterValue<std::string>("Connection");
+  std::string connection = _inputParamList.getValueFromInput<std::string>("Connection");
   std::string prob_name = connection.substr(0, connection.find(':'));
   std::string type = connection.substr(connection.find(':')+1, connection.size());
 

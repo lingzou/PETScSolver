@@ -9,21 +9,17 @@
 EulerEquation1D::EulerEquation1D(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem) :
   PETScProblem(globalParamList, inputParamList, problemSystem)
 {
-  _inputParamList.readRequiredInputParameter<int>("n_cells");
-  _inputParamList.readRequiredInputParameter<int>("order");
-  _inputParamList.readRequiredInputParameter<int>("p_case");
-
-  _order = _inputParamList.getParameterValue<int>("order");
+  _order = _inputParamList.getValueFromInput<int>("order");
   _gamma = 1.4;
 
   length = 1.0;
-  n_Cell = _inputParamList.getParameterValue<int>("n_cells");
+  n_Cell = _inputParamList.getValueFromInput<int>("n_cells");
   n_Node = n_Cell + 1;
   _n_DOFs = n_Cell * 3;
 
   dx = length / n_Cell;
 
-  int p_case = _inputParamList.getParameterValue<int>("p_case");
+  int p_case = _inputParamList.getValueFromInput<int>("p_case");
   if (p_case == 1)  // Sod problem
   {
     RHO_L = 1.0;      M_L = 0.0;    E_L = 2.5;

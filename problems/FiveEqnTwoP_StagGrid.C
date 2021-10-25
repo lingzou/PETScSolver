@@ -23,10 +23,6 @@
 FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem) :
   PETScProblem(globalParamList, inputParamList, problemSystem)
 {
-  _inputParamList.readRequiredInputParameter<int>("order");
-  _inputParamList.readRequiredInputParameter<double>("H_inv");
-  _inputParamList.readRequiredInputParameter<int>("n_cells");
-
   ALPHA_INIT =  0.2;
   V_L_INIT   = 10.0;
   V_G_INIT   =  0.0;
@@ -40,9 +36,9 @@ FiveEqnTwoP_StagGrid::FiveEqnTwoP_StagGrid(InputParameterList & globalParamList,
   C_L = std::sqrt(1.0e7);
   C_G = std::sqrt(1.0e6);
 
-  _order = _inputParamList.getParameterValue<int>("order");
-  H_inv  = _inputParamList.getParameterValue<double>("H_inv");
-  n_Cell = _inputParamList.getParameterValue<int>("n_cells");
+  _order = _inputParamList.getValueFromInput<int>("order");
+  H_inv  = _inputParamList.getValueFromInput<double>("H_inv");
+  n_Cell = _inputParamList.getValueFromInput<int>("n_cells");
 
   length = 12.0;
   n_Node = n_Cell + 1;

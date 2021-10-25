@@ -17,10 +17,8 @@ HeatConduction1D::HeatConduction1D(InputParameterList & globalParamList, InputPa
   // This problem also has time-dependent analytical solutions:
   // T(x, t) = (1-exp(-alpha*pi*pi*t))*sin(pi*x)
 
-  _inputParamList.readRequiredInputParameter<int>("n_cells");
-
   length = 1.0;
-  n_Cell = _inputParamList.getParameterValue<int>("n_cells");
+  n_Cell = _inputParamList.getValueFromInput<int>("n_cells");
   k = 1.0;
   alpha = 1.0;
 

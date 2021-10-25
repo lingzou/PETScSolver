@@ -7,13 +7,13 @@ SinglePhaseFluid::SinglePhaseFluid(InputParameterList & inputParamList) :
 linearFluid::linearFluid(InputParameterList & inputParamList) :
   SinglePhaseFluid(inputParamList)
 {
-  _inputParamList.readRequiredInputParameter<double>("rho0");
-  _inputParamList.readRequiredInputParameter<double>("p0");
-  _inputParamList.readRequiredInputParameter<double>("T0");
-  _inputParamList.readRequiredInputParameter<double>("e0");
-  _inputParamList.readRequiredInputParameter<double>("drho_dp");
-  _inputParamList.readRequiredInputParameter<double>("drho_dT");
-  _inputParamList.readRequiredInputParameter<double>("cv");
+  _inputParamList.addRequiredParamFromInput<double>("rho0");
+  _inputParamList.addRequiredParamFromInput<double>("p0");
+  _inputParamList.addRequiredParamFromInput<double>("T0");
+  _inputParamList.addRequiredParamFromInput<double>("e0");
+  _inputParamList.addRequiredParamFromInput<double>("drho_dp");
+  _inputParamList.addRequiredParamFromInput<double>("drho_dT");
+  _inputParamList.addRequiredParamFromInput<double>("cv");
 
   _rho0 = _inputParamList.getParameterValue<double>("rho0");
   _p0 = _inputParamList.getParameterValue<double>("p0");
