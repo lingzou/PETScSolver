@@ -76,7 +76,8 @@ ENABLE_TESTING()
 
 set (ALL_TESTS
         HeatCond1D          HeatCond1D_MF         SodShockTube              LaxRiemannProblem         WaterFaucet_5E2P_SG_BDF1_1st
-        SinglePhaseFlow     SinglePhaseFlow_2nd   SinglePhaseChannel        SinglePhaseChannel_2nd)
+        SinglePhaseFlow     SinglePhaseFlow_2nd   SinglePhaseChannel        SinglePhaseChannel_2nd    SineWave_4E1P
+        SineWave_4E1P_2nd   )
 # The following are for each test in the format of a LIST: (test_name, 1st_step_to_test, 2nd_step_to_test)
 #   (Name                           TestName;           step; step)
 set (HeatCond1D                     HeatCond1D;         20;   40)
@@ -88,6 +89,8 @@ set (SinglePhaseFlow                SinglePhaseFlow;        5;   20)
 set (SinglePhaseFlow_2nd            SinglePhaseFlow_2nd;    5;   20)
 set (SinglePhaseChannel             SinglePhaseChannel;     5;   20)
 set (SinglePhaseChannel_2nd         SinglePhaseChannel_2nd; 5;   20)
+set (SineWave_4E1P                  SineWave_4E1P;          5;   40)
+set (SineWave_4E1P_2nd              SineWave_4E1P_2nd;      5;   40)
 
 foreach(TEST IN LISTS ALL_TESTS)
   LIST(GET ${TEST} 0 TEST_NAME)

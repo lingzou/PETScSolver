@@ -4,8 +4,6 @@
 #include <vector>
 #include "PETScProblem.h"
 
-static const double PI = asin(1) * 2;
-
 class HeatConduction1D : public PETScProblem
 {
 public:

@@ -14,6 +14,10 @@ ApplicationCtx::initializePETScApp(InputParser* input_parser)
   _input_parser = input_parser;
   myProblemSystem = new ProblemSystem(input_parser);
 
+  // Insert PETSc options provided from input file
+  std::string option = _input_parser->getGlobalParamList().getParameterValue<std::string>("petsc_options");
+  PetscOptionsInsertString(NULL, option.c_str());
+
   // Get total number of DOF
   N_DOFs = myProblemSystem->getNDOF();
 }

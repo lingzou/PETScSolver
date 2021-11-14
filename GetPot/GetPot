@@ -99,7 +99,7 @@ public:
     //     -- scalar values
     inline int                operator()(const char* VarName, int           Default) const;
     inline double             operator()(const char* VarName, const double& Default) const;
-    inline const std::string  operator()(const char* VarName, const char*   Default) const;
+    inline const std::string  operator()(const char* VarName, const std::string& Default) const;
     inline bool               hasVariable(std::string VarName) const;
     //     -- vectors
     inline int                operator()(const char* VarName, int Default, unsigned Idx) const;
@@ -1485,7 +1485,7 @@ GetPot::operator()(const char* VarName, const double& Default) const
 }
 
 inline const std::string
-GetPot::operator()(const char* VarName, const char* Default) const
+GetPot::operator()(const char* VarName, const std::string& Default) const
 {
     // (*) recording of requested variables happens in '__find_variable()'
     const variable*  sv = __find_variable(VarName);

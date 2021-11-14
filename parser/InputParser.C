@@ -31,6 +31,7 @@ InputParser::buildGlobalParamList()
   _global_ParamList->addOptionalParamFromInput<int>("linear_max_its", 30);
   _global_ParamList->addOptionalParamFromInput<int>("output_interval", 1);
   _global_ParamList->addOptionalParamFromInput<bool>("text_output", false);
+  _global_ParamList->addOptionalParamFromInput<std::string>("petsc_options", std::string(""));
   _global_ParamList->AddParameter<std::string>("input_file_name", UTILS::trim_file_name(ifile_name));
 }
 

@@ -5,6 +5,7 @@
 #include "HeatConduction1D.h"
 #include "EulerEquation1D.h"
 #include "FiveEqnTwoP_StagGrid.h"
+#include "FourEqnOneP.h"
 #include "SinglePhaseFlow.h"
 #include "SinglePhaseChannel.h"
 #include "vBC.h"
@@ -43,6 +44,8 @@ ProblemSystem::ProblemSystem(InputParser* input_parser) :
       problem_system[it.first] = new EulerEquation1D(_globalParamList, *(it.second), this);
     else if (problem_name == "FiveEqnTwoP_StagGrid")
       problem_system[it.first] = new FiveEqnTwoP_StagGrid(_globalParamList, *(it.second), this);
+    else if (problem_name == "FourEqnOneP")
+      problem_system[it.first] = new FourEqnOneP(_globalParamList, *(it.second), this);
     else if (problem_name == "SinglePhaseFlow")
       problem_system[it.first] = new SinglePhaseFlow(_globalParamList, *(it.second), this);
     else if (problem_name == "SinglePhaseChannel")

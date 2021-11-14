@@ -2,6 +2,9 @@
 #define UTILS_H
 
 #include <vector>
+#include <cmath>
+
+static const double PI = asin(1) * 2;
 
 // Some helper functions
 void sysError(std::string);
