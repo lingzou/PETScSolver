@@ -87,6 +87,9 @@ ProblemSystem::onTimestepEnd()
   // Let subProblems act
   for (auto& it : problem_system)   it.second->onTimestepEnd();
 
+  if (_step == _n_steps)
+    for (auto& it : problem_system)   it.second->onLastTimestepEnd();
+
   // March step forward
   _step ++;
 }

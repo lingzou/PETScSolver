@@ -24,6 +24,8 @@ public:
   void RHS_1st_order(double * rhs);
   void RHS_2nd_order(double * rhs);
 
+  virtual void onLastTimestepEnd() override final;
+
   enum ProblemType
   {
     SINE_WAVE       = 1,      // A gentel advection problem (sine wave)
@@ -36,6 +38,7 @@ public:
 protected:
   double rho_l_func(double p) { return 1000.0 + 1.0e-7 * (p - 1.0e5); }
   double rho_g_func(double p) { return    0.5 + 1.0e-5 * (p - 1.0e5); }
+  double gx_vol(unsigned);
 
 protected:
   int _problem_type;
@@ -48,6 +51,7 @@ protected:
   double length;
   double dx;
   unsigned int n_Cell, n_Node;
+  double ALPHA_MIN;
 
   // State variables
   // 1) Primary variables
@@ -67,6 +71,10 @@ protected:
   // Second-order helper variables
   std::vector<double> alpha_w, alpha_e, p_w, p_e;
   std::vector<double> v_l_w, v_l_e, v_g_w, v_g_e;
+
+  // Post-processing stuff, e.g., in Manometer problem, v_l_bottom vs. time
+  std::vector<double> time;
+  std::vector<double> v_l_bottom, p_bottom;
 };
 
 #endif /*FOUR_EQN_ONEP_H*/

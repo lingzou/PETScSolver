@@ -96,9 +96,47 @@ FourEqnOneP::SetupInitialCondition(double * u)
     break;
 
     case SQUARE_WAVE:
+      for(int i = 0; i < n_Cell + 1; i++)
+      {
+        v_l[i] = 1.0;
+        v_g[i] = 1.0;
+        u[index++] = v_l[i];
+        u[index++] = v_g[i];
+
+        if (i < n_Cell)
+        {
+          double xx = (i + 0.5) * dx;
+          alpha[i] = ((xx < 0.2) || (xx > 0.4)) ? 1 : 0;
+          p[i] = 1.e5;
+          rho_l[i] = rho_l_func(p[i]);
+          rho_g[i] = rho_g_func(p[i]);
+
+          u[index++] = alpha[i];
+          u[index++] = p[i];
+        }
+      }
     break;
 
     case MANOMETER:
+      for(int i = 0; i < n_Cell + 1; i++)
+      {
+        v_l[i] = -1.0;
+        v_g[i] = -1.0;
+        u[index++] = v_l[i];
+        u[index++] = v_g[i];
+
+        if (i < n_Cell)
+        {
+          double xx = (i + 0.5) * dx;
+          alpha[i] = ((xx < 5) || (xx > 15)) ? 1 : 0;
+          p[i] = 1.e5;
+          rho_l[i] = rho_l_func(p[i]);
+          rho_g[i] = rho_g_func(p[i]);
+
+          u[index++] = alpha[i];
+          u[index++] = p[i];
+        }
+      }
     break;
 
     case SEDIMENTATION:
@@ -115,6 +153,8 @@ FourEqnOneP::SetupInitialCondition(double * u)
 
   rho_l_old = rho_l;  rho_g_old = rho_g;
   rho_l_oo  = rho_l;  rho_g_oo  = rho_g;
+
+  ALPHA_MIN = 1e-6;
 }
 
 void
@@ -285,16 +325,27 @@ FourEqnOneP::RHS_2nd_order(double * rhs)
     v_g_outlet_ghost = v_g[1];
   }
   else
-    sysError("To be implemented.");
+  {
+    p_inlet_ghost = 2 * p[0] - p[1];
+    p_outlet_ghost = 2 * p[n_Cell-1] - p[n_Cell-2];
+    alpha_inlet_ghost = 2 * alpha[0] - alpha[1];
+    alpha_outlet_ghost = 2 * alpha[n_Cell-1] - alpha[n_Cell-2];
+    v_l_inlet_ghost = 2 * v_l[0] - v_l[1];
+    v_l_outlet_ghost = 2 * v_l[n_Cell] - v_l[n_Cell-1];
+    v_g_inlet_ghost = 2 * v_g[0] - v_g[1];
+    v_g_outlet_ghost = 2 * v_g[n_Cell] - v_g[n_Cell-1];
+  }
 
   UTILS::linearReconstruction(p_inlet_ghost, p_outlet_ghost, p, p_w, p_e);
   UTILS::linearReconstruction(alpha_inlet_ghost, alpha_outlet_ghost, alpha, alpha_w, alpha_e);
   UTILS::linearReconstruction(v_l_inlet_ghost, v_l_outlet_ghost, v_l, v_l_w, v_l_e);
   UTILS::linearReconstruction(v_g_inlet_ghost, v_g_outlet_ghost, v_g, v_g_w, v_g_e);
 
-  double alpha_inlet_bc, alpha_outlet_bc, rho_l_inlet_bc, rho_l_outlet_bc, rho_g_inlet_bc, rho_g_outlet_bc;
+  double p_inlet_bc, p_outlet_bc, alpha_inlet_bc, alpha_outlet_bc, rho_l_inlet_bc, rho_l_outlet_bc, rho_g_inlet_bc, rho_g_outlet_bc;
   if ((_problem_type == SINE_WAVE) || (_problem_type == SQUARE_WAVE))
   {
+    p_inlet_bc = p[n_Cell-1];
+    p_outlet_bc = p[0];
     alpha_inlet_bc = alpha_e[n_Cell-1];
     alpha_outlet_bc = alpha_w[0];
     rho_l_inlet_bc = rho_l_func(p_e[n_Cell-1]);
@@ -303,7 +354,16 @@ FourEqnOneP::RHS_2nd_order(double * rhs)
     rho_g_outlet_bc = rho_g_func(p_w[0]);
   }
   else
-    sysError("To be implemented.");
+  {
+    p_inlet_bc = 1e5;
+    p_outlet_bc = 1e5;
+    alpha_inlet_bc = 1;
+    alpha_outlet_bc = 1;
+    rho_l_inlet_bc = rho_l_func(1e5);
+    rho_l_outlet_bc = rho_l_func(1e5);
+    rho_g_inlet_bc = rho_g_func(1e5);
+    rho_g_outlet_bc = rho_g_func(1e5);
+  }
 
   rho_l_flux[0] = (v_l[0] > 0) ? v_l[0] * (1 - alpha_inlet_bc) * rho_l_inlet_bc : v_l[0] * (1 - alpha_w[0]) * rho_l_func(p_w[0]);
   rho_g_flux[0] = (v_g[0] > 0) ? v_g[0] * alpha_inlet_bc * rho_g_inlet_bc : v_g[0] * alpha_w[0] * rho_g_func(p_w[0]);
@@ -347,13 +407,68 @@ FourEqnOneP::RHS_2nd_order(double * rhs)
 
     // dp_dx term
     double dp_dx = 0;
-    if (i == 0)               dp_dx = (p[0] - p_inlet_ghost) / dx;
-    else if (i == n_Cell)     dp_dx = (p_outlet_ghost - p[n_Cell-1]) / dx;
+    if (i == 0)               dp_dx = (p[0] - p_inlet_bc) / dx;
+    else if (i == n_Cell)     dp_dx = (p_outlet_bc - p[n_Cell-1]) / dx;
     else                      dp_dx = (p[i] - p[i-1])/dx;
 
+    // gravity term and interfacial friction (drag)
+    double gravity_l = 0, gravity_g = 0;
+    double fric_l = 0, fric_g = 0;
+    if (_problem_type == MANOMETER)
+    {
+      // gravity
+      if (i == 0)
+      {
+        gravity_l = (1-alpha[0]) * rho_l[0] * gx_vol(0);
+        gravity_g = alpha[0] * rho_g[0] * gx_vol(0);
+      }
+      else if (i == n_Cell)
+      {
+        gravity_l = (1-alpha[n_Cell-1]) * rho_l[n_Cell-1] * gx_vol(n_Cell-1);
+        gravity_g = alpha[n_Cell-1] * rho_g[n_Cell-1] * gx_vol(n_Cell-1);
+      }
+      else
+      {
+        gravity_l = 0.5 * ((1-alpha[i-1]) * rho_l[i-1] * gx_vol(i-1) + (1-alpha[i]) * rho_l[i] * gx_vol(i));
+        gravity_g = 0.5 * (alpha[i-1] * rho_g[i-1] * gx_vol(i-1) + alpha[i] * rho_g[i] * gx_vol(i));
+      }
+
+      double alpha_edge_l = std::max(1 - alpha_edge[i], ALPHA_MIN);
+      gravity_l = gravity_l / alpha_edge_l / rho_l_edge[i];
+      double alpha_edge_g = std::max(alpha_edge[i], ALPHA_MIN);
+      gravity_g = gravity_g / alpha_edge_g / rho_g_edge[i];
+
+      // drag
+      double rp = 5e-4;
+      double cd = 0.44;
+      double a_int = 3 * std::max(alpha_edge[i] * (1 - alpha_edge[i]), ALPHA_MIN * (1 - ALPHA_MIN)) / rp;
+      double rho_mix = alpha_edge[i] * rho_g_edge[i] + (1 - alpha_edge[i]) * rho_l_edge[i];
+      double v_diff_sqr = (v_g[i] - v_l[i]) * std::fabs(v_g[i] - v_l[i]);
+
+      fric_l =  0.125 * cd * a_int * rho_mix * v_diff_sqr / alpha_edge_l / rho_l_edge[i];
+      fric_g = -0.125 * cd * a_int * rho_mix * v_diff_sqr / alpha_edge_g / rho_g_edge[i];
+      /*
+      double rp = 5.e-4;
+      double cd = 0.44; //2.2; //4.4;
+      double a_int = 3 * alpha_edge[i] * (1 - alpha_edge[i]) / rp;
+      double a_int_min = 3 * ALPHA_MIN * (1 - ALPHA_MIN) / rp;
+      double rho_mix = alpha_edge[i] * rho_g_edge[i] + (1 - alpha_edge[i]) * rho_l_edge[i];
+      double v_diff_sqr = (v_g[i] - v_l[i]) * std::fabs(v_g[i] - v_l[i]);
+
+      if((1 - alpha_edge[i]) > ALPHA_MIN)
+        fric_l = 0.125 * cd * a_int * rho_mix * v_diff_sqr / (1 - alpha_edge[i]) / rho_l_edge[i];
+      else
+        fric_l = 0.125 * cd * a_int_min * rho_mix * v_diff_sqr / ALPHA_MIN / rho_l_edge[i];
+
+      if(alpha_edge[i] > ALPHA_MIN)
+        fric_g = -0.125 * cd * a_int * rho_mix * v_diff_sqr / alpha_edge[i] / rho_g_edge[i];
+      else
+        fric_g = -0.125 * cd * a_int_min * rho_mix * v_diff_sqr / ALPHA_MIN / rho_g_edge[i];*/
+    }
+
     // residuals
-    rhs[4*i] = -v_l[i] * dv_l_dx - dp_dx / rho_l_edge[i];
-    rhs[4*i+1] = -v_g[i] * dv_g_dx - dp_dx / rho_g_edge[i];
+    rhs[4*i]   = -v_l[i] * dv_l_dx - dp_dx / rho_l_edge[i] + gravity_l + fric_l;
+    rhs[4*i+1] = -v_g[i] * dv_g_dx - dp_dx / rho_g_edge[i] + gravity_g + fric_g;
   }
 
   // RHS for mass conservation equations
@@ -365,12 +480,43 @@ FourEqnOneP::RHS_2nd_order(double * rhs)
   }
 }
 
+double
+FourEqnOneP::gx_vol(unsigned i)
+{
+  if (_problem_type == MANOMETER)     return (i < n_Cell/2) ? 9.81 : -9.81;
+  else                                return 0;
+}
+
 void
 FourEqnOneP::onTimestepEnd()
 {
   // save old solutions
   alpha_oo  = alpha_old;  p_oo  = p_old;     v_l_oo  = v_l_old;   v_g_oo  = v_g_old;   rho_l_oo  = rho_l_old;   rho_g_oo  = rho_g_old;
   alpha_old = alpha;      p_old = p;         v_l_old = v_l;       v_g_old = v_g;       rho_l_old = rho_l;       rho_g_old = rho_g;
+
+  if (_problem_type == MANOMETER)
+  {
+    time.push_back(_problemSystem->getCurrentTime());
+    v_l_bottom.push_back(v_l[n_Cell/2]);
+    p_bottom.push_back(0.5 * (p[n_Cell/2-1]+p[n_Cell/2]));
+  }
+}
+
+void
+FourEqnOneP::onLastTimestepEnd()
+{
+  if (_problem_type == MANOMETER)
+  {
+    FILE * file;
+    std::string file_name = "output/manometer_results.csv";
+    file = fopen(file_name.c_str(), "w");
+
+    fprintf(file, "%20s%20s%20s\n", "time,", "v_l_bottom,", "p_bottom");
+    for (unsigned i = 0; i < time.size(); i++)
+      fprintf(file, "%20.6e,%20.6e,%20.6e\n", time[i], v_l_bottom[i], p_bottom[i]);
+
+    fclose(file);
+  }
 }
 
 void

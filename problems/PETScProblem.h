@@ -16,6 +16,7 @@ public:
   virtual unsigned int getNDOF() const final { return _n_DOFs; }
 
   virtual void onTimestepEnd() = 0;
+  virtual void onLastTimestepEnd() {}
   virtual void SetupInitialCondition(double * u) = 0;
   virtual void updateSolution(double *u) = 0;
 
