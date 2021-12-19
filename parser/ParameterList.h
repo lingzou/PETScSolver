@@ -105,7 +105,8 @@ public:
 
   template <typename T>
   void addOptionalParamFromInput(std::string para_name, T default_val)
-  { AddParameter<T>(para_name, ifile(para_name.c_str(), default_val)); }
+  { ifile.set_prefix(prefix.c_str());
+    AddParameter<T>(para_name, ifile(para_name.c_str(), default_val)); }
 
 protected:
   GetPot &ifile;

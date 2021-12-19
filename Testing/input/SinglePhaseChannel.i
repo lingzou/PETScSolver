@@ -35,6 +35,11 @@
     P_INIT   = 1e5
     V_INIT   = 0.0
     T_INIT   = 300
+    f        = 0.01
+    dh       = 0.01
+    h        = 2000
+    aw       = 300
+    Tw       = 350
   [../]
   [./pBC]
     type     = pBC

@@ -48,8 +48,8 @@ public:
   virtual double massTranResBDF2(double dt) { return (1.5 * _rho - 2.0 * _rho_o + 0.5 * _rho_oo) / dt; }
   virtual double energyTranResBDF2(double dt) { return (1.5 * _rho * _e - 2.0 * _rho_o * _e_o + 0.5 * _rho_oo * _e_oo) / dt; }
   virtual double computeMassRHS(double dx);
-  virtual double computeEnergyRHS(double dx);
-  virtual void computeDP();
+  virtual double computeEnergyRHS(double dx, double h, double aw, double Tw);
+  virtual void computeDP(double f, double dh, double gx);
   virtual void saveOldSlns();
 
   // Debug functions

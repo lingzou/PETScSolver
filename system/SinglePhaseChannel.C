@@ -28,6 +28,11 @@
 SinglePhaseChannel::SinglePhaseChannel(InputParameterList & globalParamList, InputParameterList & inputParamList, ProblemSystem * problemSystem) :
   PETScProblem(globalParamList, inputParamList, problemSystem)
 {
+  _inputParamList.addOptionalParamFromInput<double>("gx", 0.0);
+  _inputParamList.addOptionalParamFromInput<double>("h", 0.0);
+  _inputParamList.addOptionalParamFromInput<double>("aw", 0.0);
+  _inputParamList.addOptionalParamFromInput<double>("Tw", 0.0);
+
   // initial conditions
   P_INIT     =  _inputParamList.getValueFromInput<double>("P_INIT");
   V_INIT     =  _inputParamList.getValueFromInput<double>("V_INIT");
@@ -36,6 +41,13 @@ SinglePhaseChannel::SinglePhaseChannel(InputParameterList & globalParamList, Inp
   _order = _inputParamList.getValueFromInput<int>("order");
   n_Cell = _inputParamList.getValueFromInput<int>("n_cells");
   length = _inputParamList.getValueFromInput<double>("length");
+  f      = _inputParamList.getValueFromInput<double>("f");
+  dh     = _inputParamList.getValueFromInput<double>("dh");
+
+  gx     = _inputParamList.getParameterValue<double>("gx");
+  h      = _inputParamList.getParameterValue<double>("h");
+  aw     = _inputParamList.getParameterValue<double>("aw");
+  Tw     = _inputParamList.getParameterValue<double>("Tw");
 
   n_Node = n_Cell + 1;
   _n_DOFs = n_Cell * 3-1;
@@ -155,7 +167,7 @@ SinglePhaseChannel::linearReconstruction()
 void
 SinglePhaseChannel::updateEdgeCellHelperVar()
 {
-  for (auto & cell : _cells)    cell->computeDP();
+  for (auto & cell : _cells)    cell->computeDP(f, dh, gx);
 
   switch (_order)
   {
@@ -171,7 +183,7 @@ SinglePhaseChannel::RHS(double * rhs)
   for (unsigned i = 0; i < n_Cell; i++)
   {
     rhs[3*i] = _cells[i]->computeMassRHS(dx);
-    rhs[3*i+1] = _cells[i]->computeEnergyRHS(dx);
+    rhs[3*i+1] = _cells[i]->computeEnergyRHS(dx, h, aw, Tw);
   }
   for (unsigned i = 0; i < n_Cell-1; i++)
     rhs[3*i+2] = _edges[i]->computeRHS(dx);

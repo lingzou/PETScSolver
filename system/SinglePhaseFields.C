@@ -47,13 +47,12 @@ SPCell::updateSolution(double p, double T)
 }
 
 void
-SPCell::computeDP()
+SPCell::SPCell::computeDP(double f, double dh, double gx)
 {
   double v_cell = 0.5 * (EAST_EDGE->v() + WEST_EDGE->v());
 
-  double _f = 0.01; double _dh = 0.01;
-  _dpdx_fric = 0.5 * _f / _dh * _rho * v_cell * std::fabs(v_cell);
-  _dpdx_gravity = 0; // FIXME rho*g
+  _dpdx_fric = 0.5 * f / dh * _rho * v_cell * std::fabs(v_cell);
+  _dpdx_gravity = _rho * gx;
 }
 
 double
@@ -63,12 +62,11 @@ SPCell::computeMassRHS(double dx)
 }
 
 double
-SPCell::computeEnergyRHS(double dx)
+SPCell::computeEnergyRHS(double dx, double h, double aw, double Tw)
 {
   double p_dv_dx = _p * (EAST_EDGE->v() - WEST_EDGE->v()) / dx;
 
-  double _h = 2000.0; double _aw = 300.0; double Tw = 350.0;
-  double src = _h * _aw * (Tw - _T);
+  double src = h * aw * (Tw - _T);
 
   return -(EAST_EDGE->energy_flux() - WEST_EDGE->energy_flux()) / dx - p_dv_dx + src;
 }
@@ -207,13 +205,14 @@ pBndryEdge::computeTranResBDF2(double dt)
 double
 pBndryEdge::computeRHS(double dx)
 {
-  double dp_dx = 0, dv_dx = 0, rho_edge = 0, fric = 0;
+  double dp_dx = 0, dv_dx = 0, rho_edge = 0, fric = 0, gravity = 0;
   if (WEST_CELL == NULL)
   {
     dp_dx = (EAST_CELL->p() - _p_bc) / dx * 2;
     dv_dx = (_v < 0) ? (EAST_EDGE->v() - _v) / dx : 0;
     rho_edge = EAST_CELL->rho();
     fric = EAST_CELL->dpdx_fric();
+    gravity = EAST_CELL->dpdx_gravity();
   }
   else
   {
@@ -221,9 +220,10 @@ pBndryEdge::computeRHS(double dx)
     dv_dx = (_v > 0) ? (_v - WEST_EDGE->v()) / dx : 0;
     rho_edge = WEST_CELL->rho();
     fric = WEST_CELL->dpdx_fric();
+    gravity = WEST_CELL->dpdx_gravity();
   }
 
-  return -rho_edge * _v * dv_dx - dp_dx - fric;
+  return -rho_edge * _v * dv_dx - dp_dx - fric + gravity;
 }
 
 void
@@ -261,8 +261,9 @@ IntEdge::computeRHS(double dx)
 
   double rho_edge = 0.5 * (WEST_CELL->rho() + EAST_CELL->rho());
   double fric = 0.5 * (WEST_CELL->dpdx_fric() + EAST_CELL->dpdx_fric());
+  double gravity = 0.5 * (WEST_CELL->dpdx_gravity() + EAST_CELL->dpdx_gravity());
 
   double dv_dx = (_v > 0) ? (_v - WEST_EDGE->v()) / dx : (EAST_EDGE->v() - _v) / dx;
 
-  return -rho_edge * _v * dv_dx - dp_dx - fric;
+  return -rho_edge * _v * dv_dx - dp_dx - fric + gravity;
 }

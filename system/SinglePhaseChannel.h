@@ -36,8 +36,9 @@ protected:
 
   unsigned int _order;
 
-  double length;
-  double dx;
+  double length, dx;
+  double f, dh, gx;
+  double h, aw, Tw;
   unsigned int n_Cell, n_Node;
 
   // base data structures
