@@ -24,8 +24,6 @@ public:
   virtual double rho_g()  const { return _rho_g;    }
   virtual double g()      const { return _g;        }
   void set_g(double g) { _g = g; }
-  //virtual double dpdx_fric()      const { return _dpdx_fric; }
-  //virtual double dpdx_gravity()   const { return _dpdx_gravity; }
   //   2nd-order related
   virtual double p_w()      const { return _p_w;      }
   virtual double p_e()      const { return _p_e;      }
@@ -55,7 +53,6 @@ public:
   virtual double gasMassTranResBDF2(double dt) { return (1.5 * _alpha * _rho_g - 2.0 * _alpha_o * _rho_g_o + 0.5 * _alpha_oo * _rho_g_oo) / dt; }
   virtual double liquidMassRHS(double dx);
   virtual double gasMassRHS(double dx);
-  //virtual void computeDP();
   virtual void saveOldSlns();
 
   // Debug functions
@@ -63,7 +60,6 @@ public:
 
 protected:
   std::string _name;
-  //SinglePhaseFluid* _fluid;
 
   double _g;
 
@@ -76,9 +72,6 @@ protected:
   // second-order related
   double _alpha_w, _alpha_e, _p_w, _p_e;
   double _rho_l_w, _rho_l_e, _rho_g_w, _rho_g_e;
-
-  // helper variables
-  //double _dpdx_fric, _dpdx_gravity;
 
   EdgeBase4E1P *WEST_EDGE, *EAST_EDGE;
   Cell4E1P *WEST_CELL, *EAST_CELL;
@@ -123,8 +116,6 @@ public:
   virtual double gasVelTranRes(double dt) = 0;
   virtual double liquidVelTranResBDF2(double dt) = 0;
   virtual double gasVelTranResBDF2(double dt) = 0;
-  //virtual double computeLiquidRHS(unsigned order, double dx) = 0;
-  //virtual double computeGasRHS(unsigned order, double dx) = 0;
   virtual void computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g) = 0;
   virtual void computeFluxes() = 0;
   virtual void computeFluxes2nd() = 0;
@@ -134,7 +125,6 @@ public:
 
 protected:
   std::string _name;
-  //SinglePhaseFluid* _fluid;
 
   unsigned _vlDOF, _vgDOF;
 
@@ -162,8 +152,6 @@ public:
   virtual double liquidVelTranResBDF2(double /*dt*/) override final { return 0; }
   virtual double gasVelTranRes(double /*dt*/) override final { return 0; }
   virtual double gasVelTranResBDF2(double /*dt*/) override final { return 0; }
-  //virtual double computeLiquidRHS(unsigned /*order*/, double /*dx*/) override final { return _vl - _vl_bc; }
-  //virtual double computeGasRHS(unsigned /*order*/, double /*dx*/) override final { return _vg - _vg_bc; }
   virtual void computeRHS(unsigned /*order*/, double /*dx*/, double & rhs_l, double & rhs_g) override final
   { rhs_l = _vl - _vl_bc; rhs_g = _vg - _vg_bc; }
 
@@ -183,8 +171,6 @@ public:
   virtual double liquidVelTranResBDF2(double dt) override final;
   virtual double gasVelTranRes(double dt) override final;
   virtual double gasVelTranResBDF2(double dt) override final;
-  //virtual double computeLiquidRHS(unsigned order, double dx) = 0;
-  //virtual double computeGasRHS(unsigned order, double dx) = 0;
 
 protected:
   double _p_bc, _alpha_bc;
@@ -196,8 +182,6 @@ public:
   pWESTBndryEdge4E1P(std::string name, double p_bc, double alpha_bc) : pBndryEdge4E1P(name, p_bc, alpha_bc) {}
   virtual ~pWESTBndryEdge4E1P() {}
 
-  //virtual double computeLiquidRHS(unsigned order, double dx) override final;
-  //virtual double computeGasRHS(unsigned order, double dx) override final;
   virtual void computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g) override final;
 };
 
@@ -207,8 +191,6 @@ public:
   pEASTBndryEdge4E1P(std::string name, double p_bc, double alpha_bc) : pBndryEdge4E1P(name, p_bc, alpha_bc) {}
   virtual ~pEASTBndryEdge4E1P() {}
 
-  //virtual double computeLiquidRHS(unsigned order, double dx) override final;
-  //virtual double computeGasRHS(unsigned order, double dx) override final;
   virtual void computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g) override final;
 };
 
@@ -223,8 +205,6 @@ public:
   virtual double liquidVelTranResBDF2(double dt) override final;
   virtual double gasVelTranRes(double dt) override final;
   virtual double gasVelTranResBDF2(double dt) override final;
-  //virtual double computeLiquidRHS(unsigned order, double dx) override final;
-  //virtual double computeGasRHS(unsigned order, double dx) override final;
   virtual void computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g) override final;
 };
 
@@ -273,39 +253,16 @@ protected:
 
 protected:
   int _problem_type;
-  bool _periodic_bc;
-  double P_INLET, P_OUTLET, ALPHA_INLET, ALPHA_OUTLET, V_L_INLET, V_G_INLET;
 
   unsigned int _order;
-  double g;
-
   double length;
   double dx;
   unsigned int n_Cell, n_Node;
   double ALPHA_MIN;
 
-  // State variables
-  // 1) Primary variables
-  std::vector<double> alpha,     p,     v_l,     v_g;
-  std::vector<double> alpha_old, p_old, v_l_old, v_g_old;
-  std::vector<double> alpha_oo,  p_oo,  v_l_oo,  v_g_oo;
-  // 2) Dependent variables (rho appears in d/dt terms, needs appropriately initialized)
-  std::vector<double> rho_l, rho_g, rho_l_old, rho_g_old, rho_l_oo, rho_g_oo;
-
-  // Helper variables
-  std::vector<double> alpha_edge, rho_l_edge, rho_g_edge;
-  std::vector<double> v_l_cell, v_g_cell;
-
-  // Fluxes
-  std::vector<double> rho_l_flux, rho_g_flux;
-
-  // Second-order helper variables
-  std::vector<double> alpha_w, alpha_e, p_w, p_e;
-  std::vector<double> v_l_w, v_l_e, v_g_w, v_g_e;
-
   // Post-processing stuff, e.g., in Manometer problem, v_l_bottom vs. time
   std::vector<double> time;
-  std::vector<double> v_l_bottom, p_bottom;
+  std::vector<double> v_l_bottom, p_bottom, h_left, h_right;
 
   //
   std::vector<EdgeBase4E1P*> _edges;

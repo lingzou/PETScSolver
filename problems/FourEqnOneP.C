@@ -402,9 +402,6 @@ FourEqnOneP::FourEqnOneP(InputParameterList & globalParamList, InputParameterLis
   length = _inputParamList.getValueFromInput<int>("length");
   n_Cell = _inputParamList.getValueFromInput<int>("n_cells");
 
-  // The sine wave and square wave problems use periodic BC
-  _periodic_bc = (_problem_type == SINE_WAVE) || (_problem_type == SQUARE_WAVE);
-
   n_Node = n_Cell + 1;
   dx = length / n_Cell;
 
@@ -511,7 +508,6 @@ FourEqnOneP::SetupInitialCondition(double * u)
     break;
 
     case MANOMETER:
-    /*
       for(unsigned i = 0; i < _edges.size(); i++)
       {
         _edges[i]->initialize(-1, -1);
@@ -522,15 +518,40 @@ FourEqnOneP::SetupInitialCondition(double * u)
       for(unsigned i = 0; i < _cells.size(); i++)
       {
         double xx = (i + 0.5) * dx;
-        double val = ((xx < 5) || (xx > 15)) ? 1 : 0;
-        _cells[i]->initialize(val, 1e5);
+        double alpha_init = 0, p_init = 0, depth = 0;
+        if (xx < 5) // left gas column
+        {
+          _cells[i]->set_g(9.81);
+          alpha_init = 1;
+          p_init = 1e5 + 0.5 * 9.81 * xx;
+        }
+        else if (xx < 10) // left water column
+        {
+          _cells[i]->set_g(9.81);
+          depth = xx - 5;
+          alpha_init = 0;
+          p_init = 1e5 + 0.5 * 9.81 * 5 + 1000 * 9.81 * depth;
+        }
+        else if (xx < 15) // right water column
+        {
+          _cells[i]->set_g(-9.81);
+          depth = 15 - xx;
+          alpha_init = 0;
+          p_init = 1e5 + 0.5 * 9.81 * 5 + 1000 * 9.81 * depth;
+        }
+        else // right gas column
+        {
+          _cells[i]->set_g(-9.81);
+          depth = 20 - xx;
+          alpha_init = 1;
+          p_init = 1e5 + 0.5 * 9.81 * xx;
+        }
 
-        u[4*i+2] = val;
-        u[4*i+3] = 1e5;
+        _cells[i]->initialize(alpha_init, p_init);
 
-        if (i < n_Cell/2)   _cells[i]->set_g(9.81);
-        else                _cells[i]->set_g(-9.81);
-      }*/
+        u[4*i+2] = alpha_init;
+        u[4*i+3] = p_init;
+      }
     break;
 
     case SEDIMENTATION:
@@ -617,16 +638,21 @@ FourEqnOneP::linearReconstruction()
         _edges[i]->linearReconstruction(vl_W, vl_E, vg_W, vg_E);
       }
     }
-    /*
     else if (_problem_type == MANOMETER)
     {
       for (unsigned i = 0; i < _cells.size(); i++)
       {
-
+/*
         double alpha_W  = (i == 0) ? 2*_cells[0]->alpha()-_cells[1]->alpha()  : _cells[i-1]->alpha();
         double p_W      = (i == 0) ? 2*_cells[0]->p()-_cells[1]->p()          : _cells[i-1]->p();
         double alpha_E  = (i == n_Cell-1) ? 2*_cells[n_Cell-1]->alpha()-_cells[n_Cell-2]->alpha() : _cells[i+1]->alpha();
         double p_E      = (i == n_Cell-1) ? 2*_cells[n_Cell-1]->p()-_cells[n_Cell-2]->p()         : _cells[i+1]->p();
+        */
+        double alpha_W  = (i == 0) ? 1  : _cells[i-1]->alpha();
+        double p_W      = (i == 0) ? 1e5          : _cells[i-1]->p();
+        double alpha_E  = (i == n_Cell-1) ? 1 : _cells[i+1]->alpha();
+        double p_E      = (i == n_Cell-1) ? 1e5         : _cells[i+1]->p();
+
         _cells[i]->linearReconstruction(alpha_W, alpha_E, p_W, p_E);
       }
       for (unsigned i = 0; i < _edges.size(); i++)
@@ -638,7 +664,7 @@ FourEqnOneP::linearReconstruction()
         double vg_E     = (i == n_Cell) ? 2*_edges[n_Cell]->v_g()-_edges[n_Cell-1]->v_g() : _edges[i+1]->v_g();
         _edges[i]->linearReconstruction(vl_W, vl_E, vg_W, vg_E);
       }
-    }*/
+    }
     else
       sysError("Not implemented");
   }
@@ -681,44 +707,60 @@ FourEqnOneP::RHS_2nd_order(double * rhs)
   }
 }
 
-double
-FourEqnOneP::gx_vol(unsigned i)
-{
-  if (_problem_type == MANOMETER)     return (i < n_Cell/2) ? 9.81 : -9.81;
-  else                                return 0;
-}
-
 void
 FourEqnOneP::onTimestepEnd()
 {
   // save old solutions
   for(auto& itr : _cells)   itr->saveOldSlns();
   for(auto& itr : _edges)   itr->saveOldSlns();
-  /*
+
   if (_problem_type == MANOMETER)
   {
     time.push_back(_problemSystem->getCurrentTime());
-    v_l_bottom.push_back(v_l[n_Cell/2]);
-    p_bottom.push_back(0.5 * (p[n_Cell/2-1]+p[n_Cell/2]));
-  }*/
+    v_l_bottom.push_back(_edges[n_Cell/2]->v_l());
+    p_bottom.push_back(0.5 * (_cells[n_Cell/2-1]->p()+_cells[n_Cell/2]->p()));
+
+    double h_l, h_r;
+    for(unsigned i = 0; i < n_Cell - 1; i++)
+    {
+      if ((_cells[i]->alpha() > 0.5) && (_cells[i+1]->alpha() <= 0.5))
+        h_l = (i + 0.5) * dx + dx * (0.5 - _cells[i]->alpha()) / (_cells[i+1]->alpha() - _cells[i]->alpha());
+
+      if ((_cells[i]->alpha() <= 0.5) && (_cells[i+1]->alpha() > 0.5))
+        h_r = (i + 0.5) * dx + dx * (0.5 - _cells[i]->alpha()) / (_cells[i+1]->alpha() - _cells[i]->alpha());
+    }
+    h_left.push_back(10 - h_l);
+    h_right.push_back(h_r - 10);
+  }
 }
 
 void
 FourEqnOneP::onLastTimestepEnd()
 {
-  /*
   if (_problem_type == MANOMETER)
   {
     FILE * file;
     std::string file_name = "output/manometer_results.csv";
     file = fopen(file_name.c_str(), "w");
 
-    fprintf(file, "%20s%20s%20s\n", "time,", "v_l_bottom,", "p_bottom");
+    // Reference analytical solutions see reference:
+    // Section 9.2 of:
+    // H. St\"{a}dtke, Gasdynamic Aspects of Two-Phase Flow, Wiley-VCH, 2006.
+    double L = 10; // length of total water column
+    double T = sqrt(2 * PI * PI * L / 9.81);
+    double h_max = sqrt(L / 2 / 9.81);
+
+    fprintf(file, "%20s,%20s,%20s,%20s,%20s,%20s,%20s\n", "time", "v_l_bottom", "p_bottom", "h_left", "h_right", "v_ana", "h_left_ana");
     for (unsigned i = 0; i < time.size(); i++)
-      fprintf(file, "%20.6e,%20.6e,%20.6e\n", time[i], v_l_bottom[i], p_bottom[i]);
+    {
+      double tt = time[i];
+      double v_ana = -cos(2 * PI * tt / T);
+      double h_left_ana = 5 + h_max * sin(2 * PI * tt / T);
+      fprintf(file, "%20.6e,%20.6e,%20.6e,%20.6e,%20.6e,%20.6e,%20.6e\n", tt, v_l_bottom[i], p_bottom[i], h_left[i], h_right[i], v_ana, h_left_ana);
+    }
 
     fclose(file);
-  }*/
+  }
 }
 
 void
@@ -807,14 +849,14 @@ FourEqnOneP::writeTextOutput(FILE * file)
   fprintf(file, "Time = %20.6e\n", _problemSystem->getCurrentTime());
   fprintf(file, "#Cell data\n");
   fprintf(file, "%20s%20s%20s%20s%20s\n", "x", "alpha", "p", "rho_l", "rho_g");
-  for (unsigned i = 0; i < n_Cell; i++)
-    fprintf(file, "%20.6e%20.6e%20.6e%20.6e%20.6e\n", (i+0.5)*dx, alpha[i], p[i], rho_l[i], rho_g[i]);
+  for (unsigned i = 0; i < _cells.size(); i++)
+    fprintf(file, "%20.6e%20.6e%20.6e%20.6e%20.6e\n", (i+0.5)*dx, _cells[i]->alpha(), _cells[i]->p(), _cells[i]->rho_l(), _cells[i]->rho_g());
 
   // edge data
   fprintf(file, "#Edge data\n");
   fprintf(file, "%20s%20s%20s\n", "x", "v_l", "v_g");
-  for (unsigned i = 0; i < n_Node; i++)
-    fprintf(file, "%20.6e%20.6e%20.6e\n", i*dx, v_l[i], v_g[i]);
+  for (unsigned i = 0; i < _edges.size(); i++)
+    fprintf(file, "%20.6e%20.6e%20.6e\n", i*dx, _edges[i]->v_l(), _edges[i]->v_g());
 }
 
 void
