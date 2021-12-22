@@ -119,6 +119,7 @@ public:
   virtual void computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g) = 0;
   virtual void computeFluxes() = 0;
   virtual void computeFluxes2nd() = 0;
+  virtual double interfacial_drag(double alpha_edge, double rho_l_edge, double rho_g_edge) final;
 
   // Debug functions
   virtual void printConnection() final;
@@ -258,7 +259,6 @@ protected:
   double length;
   double dx;
   unsigned int n_Cell, n_Node;
-  double ALPHA_MIN;
 
   // Post-processing stuff, e.g., in Manometer problem, v_l_bottom vs. time
   std::vector<double> time;

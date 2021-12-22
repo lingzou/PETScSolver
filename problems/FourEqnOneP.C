@@ -164,6 +164,19 @@ EdgeBase4E1P::getConnectedDOFs()
   return dofs;
 }
 
+double
+EdgeBase4E1P::interfacial_drag(double alpha_edge, double rho_l_edge, double rho_g_edge)
+{
+  double rp = 5e-4;
+  double cd = 0.44;
+  double ALPHA_MIN = 1e-6;
+  double a_int = 3 * std::max(alpha_edge * (1 - alpha_edge), ALPHA_MIN * (1 - ALPHA_MIN)) / rp;
+  double rho_mix = alpha_edge * rho_g_edge + (1 - alpha_edge) * rho_l_edge;
+  double v_diff_sqr = (_vg - _vl) * std::fabs(_vg - _vl);
+
+  return 0.125 * cd * a_int * rho_mix * v_diff_sqr;
+}
+
 void
 vBndryEdge4E1P::computeFluxes()
 {
@@ -254,18 +267,9 @@ pWESTBndryEdge4E1P::computeRHS(unsigned order, double dx, double & rhs_l, double
   double gravity_g = EAST_CELL->alpha() * EAST_CELL->rho_g() * EAST_CELL->g();
   gravity_g = gravity_g / rho_g_edge / alpha_edge_g;
 
-  // friction
-  double rp = 5e-4;
-  double cd = 0.44;
-  double a_int = 3 * std::max(alpha_edge * (1 - alpha_edge), 1e-6 * (1 - 1e-6)) / rp;
-  double rho_mix = alpha_edge * rho_g_edge + (1 - alpha_edge) * rho_l_edge;
-  double v_diff_sqr = (_vg - _vl) * std::fabs(_vg - _vl);
-
-  double fric_l =  0.125 * cd * a_int * rho_mix * v_diff_sqr / alpha_edge_l / rho_l_edge;
-  double fric_g = -0.125 * cd * a_int * rho_mix * v_diff_sqr / alpha_edge_g / rho_g_edge;
-
-  rhs_l = -_vl * dv_l_dx - dp_dx / rho_l_edge + gravity_l + fric_l;
-  rhs_g = -_vg * dv_g_dx - dp_dx / rho_g_edge + gravity_g + fric_g;
+  double int_drag = interfacial_drag(alpha_edge, rho_l_edge, rho_g_edge);
+  rhs_l = -_vl * dv_l_dx - dp_dx / rho_l_edge + gravity_l + int_drag / alpha_edge_l / rho_l_edge;
+  rhs_g = -_vg * dv_g_dx - dp_dx / rho_g_edge + gravity_g - int_drag / alpha_edge_g / rho_g_edge;
 }
 
 void
@@ -286,18 +290,9 @@ pEASTBndryEdge4E1P::computeRHS(unsigned order, double dx, double & rhs_l, double
   double gravity_g = WEST_CELL->alpha() * WEST_CELL->rho_g() * WEST_CELL->g();
   gravity_g = gravity_g / rho_g_edge / alpha_edge_g;
 
-  // friction
-  double rp = 5e-4;
-  double cd = 0.44;
-  double a_int = 3 * std::max(alpha_edge * (1 - alpha_edge), 1e-6 * (1 - 1e-6)) / rp;
-  double rho_mix = alpha_edge * rho_g_edge + (1 - alpha_edge) * rho_l_edge;
-  double v_diff_sqr = (_vg - _vl) * std::fabs(_vg - _vl);
-
-  double fric_l =  0.125 * cd * a_int * rho_mix * v_diff_sqr / alpha_edge_l / rho_l_edge;
-  double fric_g = -0.125 * cd * a_int * rho_mix * v_diff_sqr / alpha_edge_g / rho_g_edge;
-
-  rhs_l = -_vl * dv_l_dx - dp_dx / rho_l_edge + gravity_l + fric_l;
-  rhs_g = -_vg * dv_g_dx - dp_dx / rho_g_edge + gravity_g + fric_g;
+  double int_drag = interfacial_drag(alpha_edge, rho_l_edge, rho_g_edge);
+  rhs_l = -_vl * dv_l_dx - dp_dx / rho_l_edge + gravity_l + int_drag / alpha_edge_l / rho_l_edge;
+  rhs_g = -_vg * dv_g_dx - dp_dx / rho_g_edge + gravity_g - int_drag / alpha_edge_g / rho_g_edge;
 }
 
 void
@@ -379,18 +374,9 @@ IntEdge4E1P::computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_
   gravity_g *= 0.5;
   gravity_g = gravity_g / rho_g_edge / alpha_edge_g;
 
-  // friction
-  double rp = 5e-4;
-  double cd = 0.44;
-  double a_int = 3 * std::max(alpha_edge * (1 - alpha_edge), 1e-6 * (1 - 1e-6)) / rp;
-  double rho_mix = alpha_edge * rho_g_edge + (1 - alpha_edge) * rho_l_edge;
-  double v_diff_sqr = (_vg - _vl) * std::fabs(_vg - _vl);
-
-  double fric_l =  0.125 * cd * a_int * rho_mix * v_diff_sqr / alpha_edge_l / rho_l_edge;
-  double fric_g = -0.125 * cd * a_int * rho_mix * v_diff_sqr / alpha_edge_g / rho_g_edge;
-
-  rhs_l = -_vl * dv_l_dx - dp_dx / rho_l_edge + gravity_l + fric_l;
-  rhs_g = -_vg * dv_g_dx - dp_dx / rho_g_edge + gravity_g + fric_g;
+  double int_drag = interfacial_drag(alpha_edge, rho_l_edge, rho_g_edge);
+  rhs_l = -_vl * dv_l_dx - dp_dx / rho_l_edge + gravity_l + int_drag / alpha_edge_l / rho_l_edge;
+  rhs_g = -_vg * dv_g_dx - dp_dx / rho_g_edge + gravity_g - int_drag / alpha_edge_g / rho_g_edge;
 }
 /**** End of Data Structure for 4E1P problems ****/
 
@@ -434,8 +420,24 @@ FourEqnOneP::FourEqnOneP(InputParameterList & globalParamList, InputParameterLis
     for (unsigned i = 1; i < n_Cell; i++)   _edges[i]->setNghbrCells(_cells[i-1], _cells[i]);
     _edges[n_Cell]->setNghbrCells(_cells[n_Cell-1], NULL);
   }
+  else if (_problem_type == SEDIMENTATION)
+  {
+    std::cout << "SEDIMENTATION begin" << std::endl;
+    _n_DOFs = n_Cell * 4 + 2;
 
-  ALPHA_MIN = 1e-6;
+    for (unsigned i = 0; i < n_Cell; i++)   _cells.push_back(new Cell4E1P("CELL_"+std::to_string(i)));
+
+    _edges.push_back(new vBndryEdge4E1P("TOP", 0, 0, 1));
+    for (unsigned i = 0; i < n_Cell-1; i++)   _edges.push_back(new IntEdge4E1P("EDGE_"+std::to_string(i)));
+    _edges.push_back(new vBndryEdge4E1P("OUTLET", 0, 0, 1));
+
+    for (unsigned i = 0; i < n_Cell; i++)   _cells[i]->setNghbrEdges(_edges[i], _edges[i+1]);
+
+    _edges[0]->setNghbrCells(NULL, _cells[0]);
+    for (unsigned i = 1; i < n_Cell; i++)   _edges[i]->setNghbrCells(_cells[i-1], _cells[i]);
+    _edges[n_Cell]->setNghbrCells(_cells[n_Cell-1], NULL);
+    std::cout << "SEDIMENTATION end" << std::endl;
+  }
 }
 
 FourEqnOneP::~FourEqnOneP()
@@ -555,6 +557,20 @@ FourEqnOneP::SetupInitialCondition(double * u)
     break;
 
     case SEDIMENTATION:
+      for(unsigned i = 0; i < _edges.size(); i++)
+      {
+        _edges[i]->initialize(0, 0);
+        u[4*i] = 0;
+        u[4*i+1] = 0;
+      }
+      for(unsigned i = 0; i < _cells.size(); i++)
+      {
+        _cells[i]->initialize(0.5, 1e5);
+        u[4*i+2] = 0.5;
+        u[4*i+3] = 1e5;
+
+        _cells[i]->set_g(-9.81);
+      }
     break;
 
     case WATER_FAUCET:
@@ -642,22 +658,35 @@ FourEqnOneP::linearReconstruction()
     {
       for (unsigned i = 0; i < _cells.size(); i++)
       {
-/*
-        double alpha_W  = (i == 0) ? 2*_cells[0]->alpha()-_cells[1]->alpha()  : _cells[i-1]->alpha();
-        double p_W      = (i == 0) ? 2*_cells[0]->p()-_cells[1]->p()          : _cells[i-1]->p();
-        double alpha_E  = (i == n_Cell-1) ? 2*_cells[n_Cell-1]->alpha()-_cells[n_Cell-2]->alpha() : _cells[i+1]->alpha();
-        double p_E      = (i == n_Cell-1) ? 2*_cells[n_Cell-1]->p()-_cells[n_Cell-2]->p()         : _cells[i+1]->p();
-        */
-        double alpha_W  = (i == 0) ? 1  : _cells[i-1]->alpha();
+        double alpha_W  = (i == 0) ? 1            : _cells[i-1]->alpha();
         double p_W      = (i == 0) ? 1e5          : _cells[i-1]->p();
-        double alpha_E  = (i == n_Cell-1) ? 1 : _cells[i+1]->alpha();
-        double p_E      = (i == n_Cell-1) ? 1e5         : _cells[i+1]->p();
+        double alpha_E  = (i == n_Cell-1) ? 1     : _cells[i+1]->alpha();
+        double p_E      = (i == n_Cell-1) ? 1e5   : _cells[i+1]->p();
 
         _cells[i]->linearReconstruction(alpha_W, alpha_E, p_W, p_E);
       }
       for (unsigned i = 0; i < _edges.size(); i++)
       {
+        double vl_W     = (i == 0) ? 2*_edges[0]->v_l()-_edges[1]->v_l()  : _edges[i-1]->v_l();
+        double vg_W     = (i == 0) ? 2*_edges[0]->v_g()-_edges[1]->v_g()  : _edges[i-1]->v_g();
+        double vl_E     = (i == n_Cell) ? 2*_edges[n_Cell]->v_l()-_edges[n_Cell-1]->v_l() : _edges[i+1]->v_l();
+        double vg_E     = (i == n_Cell) ? 2*_edges[n_Cell]->v_g()-_edges[n_Cell-1]->v_g() : _edges[i+1]->v_g();
+        _edges[i]->linearReconstruction(vl_W, vl_E, vg_W, vg_E);
+      }
+    }
+    else if (_problem_type == SEDIMENTATION)
+    {
+      for (unsigned i = 0; i < _cells.size(); i++)
+      {
+        double alpha_W  = (i == 0) ? _cells[0]->alpha()            : _cells[i-1]->alpha();
+        double p_W      = (i == 0) ? _cells[0]->p()          : _cells[i-1]->p();
+        double alpha_E  = (i == n_Cell-1) ? _cells[n_Cell-1]->alpha()     : _cells[i+1]->alpha();
+        double p_E      = (i == n_Cell-1) ? _cells[n_Cell-1]->p()   : _cells[i+1]->p();
 
+        _cells[i]->linearReconstruction(alpha_W, alpha_E, p_W, p_E);
+      }
+      for (unsigned i = 0; i < _edges.size(); i++)
+      {
         double vl_W     = (i == 0) ? 2*_edges[0]->v_l()-_edges[1]->v_l()  : _edges[i-1]->v_l();
         double vg_W     = (i == 0) ? 2*_edges[0]->v_g()-_edges[1]->v_g()  : _edges[i-1]->v_g();
         double vl_E     = (i == n_Cell) ? 2*_edges[n_Cell]->v_l()-_edges[n_Cell-1]->v_l() : _edges[i+1]->v_l();
