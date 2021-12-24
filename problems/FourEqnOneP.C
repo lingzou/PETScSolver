@@ -100,9 +100,19 @@ Cell4E1P::getConnectedDOFs()
 {
   std::vector<unsigned> dofs;
   dofs.push_back(_aDOF);  dofs.push_back(_pDOF);
-  if (WEST_CELL != NULL) { dofs.push_back(WEST_CELL->aDOF());   dofs.push_back(WEST_CELL->pDOF());}
+  if (WEST_CELL != NULL)
+  {
+    dofs.push_back(WEST_CELL->aDOF());   dofs.push_back(WEST_CELL->pDOF());
+    Cell4E1P * WW_CELL = WEST_CELL->west_cell();
+    if (WW_CELL != NULL) { dofs.push_back(WW_CELL->aDOF());   dofs.push_back(WW_CELL->pDOF()); }
+  }
   if (WEST_EDGE != NULL) { dofs.push_back(WEST_EDGE->vlDOF());  dofs.push_back(WEST_EDGE->vgDOF());}
-  if (EAST_CELL != NULL) { dofs.push_back(EAST_CELL->aDOF());   dofs.push_back(EAST_CELL->pDOF());}
+  if (EAST_CELL != NULL)
+  {
+    dofs.push_back(EAST_CELL->aDOF());   dofs.push_back(EAST_CELL->pDOF());
+    Cell4E1P * EE_CELL = EAST_CELL->east_cell();
+    if (EE_CELL != NULL) { dofs.push_back(EE_CELL->aDOF());   dofs.push_back(EE_CELL->pDOF()); }
+  }
   if (EAST_EDGE != NULL) { dofs.push_back(EAST_EDGE->vlDOF());  dofs.push_back(EAST_EDGE->vgDOF());}
   return dofs;
 }
@@ -158,9 +168,19 @@ EdgeBase4E1P::getConnectedDOFs()
   std::vector<unsigned> dofs;
   dofs.push_back(_vlDOF); dofs.push_back(_vgDOF);
   if (WEST_CELL != NULL) { dofs.push_back(WEST_CELL->aDOF());   dofs.push_back(WEST_CELL->pDOF());}
-  if (WEST_EDGE != NULL) { dofs.push_back(WEST_EDGE->vlDOF());  dofs.push_back(WEST_EDGE->vgDOF());}
+  if (WEST_EDGE != NULL)
+  {
+    dofs.push_back(WEST_EDGE->vlDOF());  dofs.push_back(WEST_EDGE->vgDOF());
+    EdgeBase4E1P * WW_EDGE = WEST_EDGE->west_edge();
+    if (WW_EDGE != NULL ) { dofs.push_back(WW_EDGE->vlDOF());  dofs.push_back(WW_EDGE->vgDOF()); }
+  }
   if (EAST_CELL != NULL) { dofs.push_back(EAST_CELL->aDOF());   dofs.push_back(EAST_CELL->pDOF());}
-  if (EAST_EDGE != NULL) { dofs.push_back(EAST_EDGE->vlDOF());  dofs.push_back(EAST_EDGE->vgDOF());}
+  if (EAST_EDGE != NULL)
+  {
+    dofs.push_back(EAST_EDGE->vlDOF());  dofs.push_back(EAST_EDGE->vgDOF());
+    EdgeBase4E1P * EE_EDGE = EAST_EDGE->east_edge();
+    if (EE_EDGE != NULL ) { dofs.push_back(EE_EDGE->vlDOF());  dofs.push_back(EE_EDGE->vgDOF()); }
+  }
   return dofs;
 }
 
@@ -250,7 +270,7 @@ pBndryEdge4E1P::gasVelTranResBDF2(double dt)
 }
 
 void
-pWESTBndryEdge4E1P::computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g)
+pWESTBndryEdge4E1P::computeRHS(bool compute_int_drag, unsigned order, double dx, double & rhs_l, double & rhs_g)
 {
   double rho_l_edge = EAST_CELL->rho_l();
   double rho_g_edge = EAST_CELL->rho_g();
@@ -267,30 +287,42 @@ pWESTBndryEdge4E1P::computeRHS(unsigned order, double dx, double & rhs_l, double
   double gravity_g = EAST_CELL->alpha() * EAST_CELL->rho_g() * EAST_CELL->g();
   gravity_g = gravity_g / rho_g_edge / alpha_edge_g;
 
-  double int_drag = interfacial_drag(alpha_edge, rho_l_edge, rho_g_edge);
+  double int_drag = compute_int_drag ? interfacial_drag(alpha_edge, rho_l_edge, rho_g_edge) : 0;
   rhs_l = -_vl * dv_l_dx - dp_dx / rho_l_edge + gravity_l + int_drag / alpha_edge_l / rho_l_edge;
   rhs_g = -_vg * dv_g_dx - dp_dx / rho_g_edge + gravity_g - int_drag / alpha_edge_g / rho_g_edge;
 }
 
 void
-pEASTBndryEdge4E1P::computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g)
+pEASTBndryEdge4E1P::computeRHS(bool compute_int_drag, unsigned order, double dx, double & rhs_l, double & rhs_g)
 {
   double rho_l_edge = WEST_CELL->rho_l();
   double rho_g_edge = WEST_CELL->rho_g();
   double alpha_edge = WEST_CELL->alpha();
   double alpha_edge_l = std::max(1 - alpha_edge, 1e-6);
   double alpha_edge_g = std::max(alpha_edge, 1e-6);
-
+  /*
+  double dv_l_dx = 0;
+  if (order == 1)
+    dv_l_dx = (_vl > 0) ? (_vl - WEST_EDGE->v_l()) / dx : 0;
+  else
+    dv_l_dx = (_vl > 0) ? (_vl_e - WEST_EDGE->vl_e()) / dx : (_vl - WEST_EDGE->v_l()) / dx;
+  */
   double dv_l_dx = (_vl > 0) ? (_vl - WEST_EDGE->v_l()) / dx : 0;
   double dp_dx = 2 * (_p_bc - WEST_CELL->p()) / dx;
   double gravity_l = (1 - WEST_CELL->alpha()) * WEST_CELL->rho_l() * WEST_CELL->g();
   gravity_l = gravity_l / rho_l_edge / alpha_edge_l;
 
   double dv_g_dx = (_vg > 0) ? (_vg - WEST_EDGE->v_g()) / dx : 0;
+  /*
+  double dv_g_dx = 0;
+  if (order == 1)
+    dv_g_dx = (_vg > 0) ? (_vg - WEST_EDGE->v_g()) / dx : 0;
+  else
+    dv_g_dx = (_vg > 0) ? (_vg_e - WEST_EDGE->vg_e()) / dx : (_vg - WEST_EDGE->v_g()) / dx;*/
   double gravity_g = WEST_CELL->alpha() * WEST_CELL->rho_g() * WEST_CELL->g();
   gravity_g = gravity_g / rho_g_edge / alpha_edge_g;
 
-  double int_drag = interfacial_drag(alpha_edge, rho_l_edge, rho_g_edge);
+  double int_drag = compute_int_drag ? interfacial_drag(alpha_edge, rho_l_edge, rho_g_edge) : 0;
   rhs_l = -_vl * dv_l_dx - dp_dx / rho_l_edge + gravity_l + int_drag / alpha_edge_l / rho_l_edge;
   rhs_g = -_vg * dv_g_dx - dp_dx / rho_g_edge + gravity_g - int_drag / alpha_edge_g / rho_g_edge;
 }
@@ -340,7 +372,7 @@ IntEdge4E1P::gasVelTranResBDF2(double dt)
 }
 
 void
-IntEdge4E1P::computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g)
+IntEdge4E1P::computeRHS(bool compute_int_drag, unsigned order, double dx, double & rhs_l, double & rhs_g)
 {
   double rho_l_edge = 0.5 * (WEST_CELL->rho_l() + EAST_CELL->rho_l());
   double rho_g_edge = 0.5 * (WEST_CELL->rho_g() + EAST_CELL->rho_g());
@@ -374,7 +406,7 @@ IntEdge4E1P::computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_
   gravity_g *= 0.5;
   gravity_g = gravity_g / rho_g_edge / alpha_edge_g;
 
-  double int_drag = interfacial_drag(alpha_edge, rho_l_edge, rho_g_edge);
+  double int_drag = compute_int_drag ? interfacial_drag(alpha_edge, rho_l_edge, rho_g_edge) : 0;
   rhs_l = -_vl * dv_l_dx - dp_dx / rho_l_edge + gravity_l + int_drag / alpha_edge_l / rho_l_edge;
   rhs_g = -_vg * dv_g_dx - dp_dx / rho_g_edge + gravity_g - int_drag / alpha_edge_g / rho_g_edge;
 }
@@ -394,6 +426,7 @@ FourEqnOneP::FourEqnOneP(InputParameterList & globalParamList, InputParameterLis
   if ((_problem_type == SINE_WAVE) || (_problem_type == SQUARE_WAVE))
   {
     _n_DOFs = n_Cell * 4;
+    _compute_int_drag = false;
 
     for (unsigned i = 0; i < n_Cell; i++)   _cells.push_back(new Cell4E1P("CELL_"+std::to_string(i)));
     for (unsigned i = 0; i < n_Cell; i++)   _edges.push_back(new IntEdge4E1P("EDGE_"+std::to_string(i)));
@@ -407,6 +440,7 @@ FourEqnOneP::FourEqnOneP(InputParameterList & globalParamList, InputParameterLis
   else if (_problem_type == MANOMETER)
   {
     _n_DOFs = n_Cell * 4 + 2;
+    _compute_int_drag = true;
 
     for (unsigned i = 0; i < n_Cell; i++)   _cells.push_back(new Cell4E1P("CELL_"+std::to_string(i)));
 
@@ -422,8 +456,8 @@ FourEqnOneP::FourEqnOneP(InputParameterList & globalParamList, InputParameterLis
   }
   else if (_problem_type == SEDIMENTATION)
   {
-    std::cout << "SEDIMENTATION begin" << std::endl;
     _n_DOFs = n_Cell * 4 + 2;
+    _compute_int_drag = true;
 
     for (unsigned i = 0; i < n_Cell; i++)   _cells.push_back(new Cell4E1P("CELL_"+std::to_string(i)));
 
@@ -436,8 +470,26 @@ FourEqnOneP::FourEqnOneP(InputParameterList & globalParamList, InputParameterLis
     _edges[0]->setNghbrCells(NULL, _cells[0]);
     for (unsigned i = 1; i < n_Cell; i++)   _edges[i]->setNghbrCells(_cells[i-1], _cells[i]);
     _edges[n_Cell]->setNghbrCells(_cells[n_Cell-1], NULL);
-    std::cout << "SEDIMENTATION end" << std::endl;
   }
+  else if (_problem_type == WATER_FAUCET)
+  {
+    _n_DOFs = n_Cell * 4 + 2;
+    _compute_int_drag = false;
+
+    for (unsigned i = 0; i < n_Cell; i++)   _cells.push_back(new Cell4E1P("CELL_"+std::to_string(i)));
+
+    _edges.push_back(new vBndryEdge4E1P("TOP", 10, 0, 0.2));
+    for (unsigned i = 0; i < n_Cell-1; i++)   _edges.push_back(new IntEdge4E1P("EDGE_"+std::to_string(i)));
+    _edges.push_back(new pEASTBndryEdge4E1P("OUTLET", 1e5, 0.2));
+
+    for (unsigned i = 0; i < n_Cell; i++)   _cells[i]->setNghbrEdges(_edges[i], _edges[i+1]);
+
+    _edges[0]->setNghbrCells(NULL, _cells[0]);
+    for (unsigned i = 1; i < n_Cell; i++)   _edges[i]->setNghbrCells(_cells[i-1], _cells[i]);
+    _edges[n_Cell]->setNghbrCells(_cells[n_Cell-1], NULL);
+  }
+  else
+    sysError("Problem type not supported.");
 }
 
 FourEqnOneP::~FourEqnOneP()
@@ -574,6 +626,20 @@ FourEqnOneP::SetupInitialCondition(double * u)
     break;
 
     case WATER_FAUCET:
+      for(unsigned i = 0; i < _edges.size(); i++)
+      {
+        _edges[i]->initialize(10, 0);
+        u[4*i] = 10;
+        u[4*i+1] = 0;
+      }
+      for(unsigned i = 0; i < _cells.size(); i++)
+      {
+        _cells[i]->initialize(0.2, 1e5);
+        u[4*i+2] = 0.2;
+        u[4*i+3] = 1e5;
+
+        _cells[i]->set_g(9.81);
+      }
     break;
 
     defaut: sysError("Unknown problem_type.");
@@ -622,11 +688,13 @@ FourEqnOneP::transientResidual(double * res)
 void
 FourEqnOneP::RHS(double * rhs)
 {
-  switch (_order)
+  for(unsigned i = 0; i < _edges.size(); i++)
+    _edges[i]->computeRHS(_compute_int_drag, _order, dx, rhs[4*i], rhs[4*i+1]);
+
+  for(unsigned i = 0; i < _cells.size(); i++)
   {
-    case 1:     RHS_1st_order(rhs);     break;
-    case 2:     RHS_2nd_order(rhs);     break;
-    default :   sysError("Spatial order not implemented.");
+    rhs[4*i+2] = _cells[i]->liquidMassRHS(dx);
+    rhs[4*i+3] = _cells[i]->gasMassRHS(dx);
   }
 }
 
@@ -694,6 +762,28 @@ FourEqnOneP::linearReconstruction()
         _edges[i]->linearReconstruction(vl_W, vl_E, vg_W, vg_E);
       }
     }
+    else if (_problem_type == WATER_FAUCET)
+    {
+      for (unsigned i = 0; i < _cells.size(); i++)
+      {
+        double alpha_W  = (i == 0) ? 0.2            : _cells[i-1]->alpha();
+        double p_W      = (i == 0) ? _cells[0]->p()          : _cells[i-1]->p();
+        double alpha_E  = 0;
+        if (i == n_Cell-1)    alpha_E = (_edges[n_Cell]->v_l() > 0) ? _cells[n_Cell-1]->alpha() : 0.2;
+        else                  alpha_E = _cells[i+1]->alpha();
+        double p_E      = (i == n_Cell-1) ? 1e5   : _cells[i+1]->p();
+
+        _cells[i]->linearReconstruction(alpha_W, alpha_E, p_W, p_E);
+      }
+      for (unsigned i = 0; i < _edges.size(); i++)
+      {
+        double vl_W     = (i == 0) ? 2*_edges[0]->v_l()-_edges[1]->v_l()  : _edges[i-1]->v_l();
+        double vg_W     = (i == 0) ? 2*_edges[0]->v_g()-_edges[1]->v_g()  : _edges[i-1]->v_g();
+        double vl_E     = (i == n_Cell) ? 2*_edges[n_Cell]->v_l()-_edges[n_Cell-1]->v_l() : _edges[i+1]->v_l();
+        double vg_E     = (i == n_Cell) ? 2*_edges[n_Cell]->v_g()-_edges[n_Cell-1]->v_g() : _edges[i+1]->v_g();
+        _edges[i]->linearReconstruction(vl_W, vl_E, vg_W, vg_E);
+      }
+    }
     else
       sysError("Not implemented");
   }
@@ -707,32 +797,6 @@ FourEqnOneP::updateEdgeCellHelperVar()
     case 1:     for(auto& edge : _edges)   edge->computeFluxes();       break;
     case 2:     for(auto& edge : _edges)   edge->computeFluxes2nd();    break;
     default :   sysError("Spatial order not implemented.");
-  }
-}
-
-void
-FourEqnOneP::RHS_1st_order(double * rhs)
-{
-  for(unsigned i = 0; i < _edges.size(); i++)
-    _edges[i]->computeRHS(1, dx, rhs[4*i], rhs[4*i+1]);
-
-  for(unsigned i = 0; i < _cells.size(); i++)
-  {
-    rhs[4*i+2] = _cells[i]->liquidMassRHS(dx);
-    rhs[4*i+3] = _cells[i]->gasMassRHS(dx);
-  }
-}
-
-void
-FourEqnOneP::RHS_2nd_order(double * rhs)
-{
-  for(unsigned i = 0; i < _edges.size(); i++)
-    _edges[i]->computeRHS(2, dx, rhs[4*i], rhs[4*i+1]);
-
-  for(unsigned i = 0; i < _cells.size(); i++)
-  {
-    rhs[4*i+2] = _cells[i]->liquidMassRHS(dx);
-    rhs[4*i+3] = _cells[i]->gasMassRHS(dx);
   }
 }
 

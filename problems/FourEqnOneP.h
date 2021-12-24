@@ -9,6 +9,7 @@
 
 /**** Data Structure for 4E1P problems ****/
 class EdgeBase4E1P;
+class Cell4E1P;
 
 class Cell4E1P
 {
@@ -39,6 +40,9 @@ public:
   virtual EdgeBase4E1P * getOtherSideEdge(EdgeBase4E1P* edge);
   virtual void setNghbrEdges(EdgeBase4E1P * west, EdgeBase4E1P * east) { WEST_EDGE = west; EAST_EDGE = east; }
   virtual void setExtendedNghbrs();
+
+  virtual Cell4E1P * west_cell() final { return WEST_CELL; }
+  virtual Cell4E1P * east_cell() final { return EAST_CELL; }
 
   // Residual related functions
   virtual void setDOF(unsigned aDOF, unsigned pDOF) { _aDOF = aDOF; _pDOF = pDOF; }
@@ -101,6 +105,9 @@ public:
   virtual void setExtendedNghbrs() final ;
   virtual Cell4E1P * getOtherSideCell(Cell4E1P* cell) final;
 
+  virtual EdgeBase4E1P * west_edge() final { return WEST_EDGE; }
+  virtual EdgeBase4E1P * east_edge() final { return EAST_EDGE; }
+
   // Residual related functions
   virtual void setDOF(unsigned vlDOF, unsigned vgDOF) final { _vlDOF = vlDOF; _vgDOF = vgDOF; }
   virtual unsigned vlDOF() const final { return _vlDOF; }
@@ -116,7 +123,7 @@ public:
   virtual double gasVelTranRes(double dt) = 0;
   virtual double liquidVelTranResBDF2(double dt) = 0;
   virtual double gasVelTranResBDF2(double dt) = 0;
-  virtual void computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g) = 0;
+  virtual void computeRHS(bool compute_int_drag, unsigned order, double dx, double & rhs_l, double & rhs_g) = 0;
   virtual void computeFluxes() = 0;
   virtual void computeFluxes2nd() = 0;
   virtual double interfacial_drag(double alpha_edge, double rho_l_edge, double rho_g_edge) final;
@@ -153,8 +160,8 @@ public:
   virtual double liquidVelTranResBDF2(double /*dt*/) override final { return 0; }
   virtual double gasVelTranRes(double /*dt*/) override final { return 0; }
   virtual double gasVelTranResBDF2(double /*dt*/) override final { return 0; }
-  virtual void computeRHS(unsigned /*order*/, double /*dx*/, double & rhs_l, double & rhs_g) override final
-  { rhs_l = _vl - _vl_bc; rhs_g = _vg - _vg_bc; }
+  virtual void computeRHS(bool /*compute_int_drag*/, unsigned /*order*/, double /*dx*/, double & rhs_l, double & rhs_g) override final
+  { rhs_l = _vl_bc - _vl; rhs_g = _vg_bc - _vg; } // rhs will flip sign
 
 protected:
   double _vl_bc, _vg_bc, _alpha_bc;
@@ -183,7 +190,7 @@ public:
   pWESTBndryEdge4E1P(std::string name, double p_bc, double alpha_bc) : pBndryEdge4E1P(name, p_bc, alpha_bc) {}
   virtual ~pWESTBndryEdge4E1P() {}
 
-  virtual void computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g) override final;
+  virtual void computeRHS(bool compute_int_drag, unsigned order, double dx, double & rhs_l, double & rhs_g) override final;
 };
 
 class pEASTBndryEdge4E1P : public pBndryEdge4E1P
@@ -192,7 +199,7 @@ public:
   pEASTBndryEdge4E1P(std::string name, double p_bc, double alpha_bc) : pBndryEdge4E1P(name, p_bc, alpha_bc) {}
   virtual ~pEASTBndryEdge4E1P() {}
 
-  virtual void computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g) override final;
+  virtual void computeRHS(bool compute_int_drag, unsigned order, double dx, double & rhs_l, double & rhs_g) override final;
 };
 
 class IntEdge4E1P : public EdgeBase4E1P
@@ -206,7 +213,7 @@ public:
   virtual double liquidVelTranResBDF2(double dt) override final;
   virtual double gasVelTranRes(double dt) override final;
   virtual double gasVelTranResBDF2(double dt) override final;
-  virtual void computeRHS(unsigned order, double dx, double & rhs_l, double & rhs_g) override final;
+  virtual void computeRHS(bool compute_int_drag, unsigned order, double dx, double & rhs_l, double & rhs_g) override final;
 };
 
 /**** End of Data Structure for 4E1P problems ****/
@@ -227,9 +234,6 @@ public:
   virtual void writeTextOutput(FILE * file) override final;
 
   virtual void FillJacobianMatrixNonZeroPattern(MatrixNonZeroPattern * mnzp) override final;
-
-  void RHS_1st_order(double * rhs);
-  void RHS_2nd_order(double * rhs);
 
   virtual void onLastTimestepEnd() override final;
 
@@ -254,6 +258,7 @@ protected:
 
 protected:
   int _problem_type;
+  bool _compute_int_drag;
 
   unsigned int _order;
   double length;
