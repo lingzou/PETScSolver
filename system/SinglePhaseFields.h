@@ -1,5 +1,4 @@
-#ifndef SINGLE_PHASE_FIELDS_H
-#define SINGLE_PHASE_FIELDS_H
+#pragma once
 
 #include <iostream>
 #include "SinglePhaseFluid.h"
@@ -197,5 +196,3 @@ public:
 
   virtual double computeRHS(double dx) override;
 };
-
-#endif /*SINGLE_PHASE_FIELDS_H*/

@@ -1,5 +1,4 @@
-#ifndef PBC_H
-#define PBC_H
+#pragma once
 
 #include "PETScProblem.h"
 #include "SinglePhaseFields.h"
@@ -32,5 +31,3 @@ protected:
 
   EdgeBase* _edge;
 };
-
-#endif /*PBC_H*/

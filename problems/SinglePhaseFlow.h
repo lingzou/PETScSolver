@@ -1,5 +1,4 @@
-#ifndef SINGLE_PHASE_FLOW_H
-#define SINGLE_PHASE_FLOW_H
+#pragma once
 
 #include <vector>
 #include "PETScProblem.h"
@@ -55,5 +54,3 @@ protected:
   // Second-order helper variables
   std::vector<double> p_w, p_e, T_w, T_e, rho_w, rho_e, e_w, e_e;
 };
-
-#endif /*SINGLE_PHASE_FLOW_H*/

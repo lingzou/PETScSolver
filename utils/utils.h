@@ -1,5 +1,4 @@
-#ifndef UTILS_H
-#define UTILS_H
+#pragma once
 
 #include <vector>
 #include <cmath>
@@ -29,5 +28,3 @@ namespace UTILS
   void linearReconstruction(double, double, std::vector<double> &, std::vector<double> &, std::vector<double> &);
   void linearReconstruction(double u_W, double u_E, double u_P, double &u_west, double &u_east);
 }
-
-#endif /*UTILS_H*/

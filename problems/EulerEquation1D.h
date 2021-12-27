@@ -1,5 +1,4 @@
-#ifndef EULER_EQUATION_1D_H
-#define EULER_EQUATION_1D_H
+#pragma once
 
 #include <vector>
 #include "PETScProblem.h"
@@ -45,5 +44,3 @@ protected:
   std::vector<double> rho_w, rho_e, m_w, m_e, E_w, E_e;
   std::vector<double> flux_rho, flux_m, flux_E; // Fluxes
 };
-
-#endif /*EULER_EQUATION_1D_H*/

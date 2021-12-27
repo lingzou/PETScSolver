@@ -1,5 +1,4 @@
-#ifndef INPUT_PARSER_H
-#define INPUT_PARSER_H
+#pragma once
 
 //#include <GetPot>
 #include "ParameterList.h"
@@ -29,5 +28,3 @@ protected:
   std::map<std::string, InputParameterList *> _problemParamList_map;
   std::map<std::string, InputParameterList *> _fluidParamList_map;
 };
-
-#endif /*INPUT_PARSER_H*/

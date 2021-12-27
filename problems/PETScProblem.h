@@ -1,5 +1,4 @@
-#ifndef PETSC_PROBLEM_H
-#define PETSC_PROBLEM_H
+#pragma once
 
 #include <petsc.h>
 #include "ParameterList.h"
@@ -44,4 +43,3 @@ protected:
 
   unsigned _n_DOFs, _DOF_offset;
 };
-#endif /*PETSC_PROBLEM_H*/

@@ -1,5 +1,4 @@
-#ifndef HEAT_CONDUCTION_1D_H
-#define HEAT_CONDUCTION_1D_H
+#pragma once
 
 #include <vector>
 #include "PETScProblem.h"
@@ -35,5 +34,3 @@ protected:
   double k;
   double alpha;
 };
-
-#endif /*HEAT_CONDUCTION_1D_H*/

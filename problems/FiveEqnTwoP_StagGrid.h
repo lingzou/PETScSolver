@@ -1,5 +1,4 @@
-#ifndef FIVE_EQN_TWOP_STAGGRID_H
-#define FIVE_EQN_TWOP_STAGGRID_H
+#pragma once
 
 #include <vector>
 #include "PETScProblem.h"
@@ -60,5 +59,3 @@ protected:
   std::vector<double> alpha_w, alpha_e, p_l_w, p_l_e, p_g_w, p_g_e;
   std::vector<double> v_l_w, v_l_e, v_g_w, v_g_e;
 };
-
-#endif /*FIVE_EQN_TWOP_STAGGRID_H*/

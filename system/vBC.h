@@ -1,5 +1,4 @@
-#ifndef VBC_H
-#define VBC_H
+#pragma once
 
 #include "PETScProblem.h"
 #include "SinglePhaseFields.h"
@@ -35,5 +34,3 @@ protected:
   EdgeBase* _edge;
   SPCell* _EAST_cell;
 };
-
-#endif /*VBC_H*/

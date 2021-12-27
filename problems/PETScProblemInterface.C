@@ -34,7 +34,7 @@ ApplicationCtx::setupPETScWorkSpace()
   fdcoloring = NULL;
 
   // Prepare PETSc vectors
-  VecCreate(PETSC_COMM_SELF, &u);
+  VecCreate(PETSC_COMM_WORLD, &u);
   VecSetSizes(u, PETSC_DECIDE, N_DOFs);
   VecSetFromOptions(u);
   VecDuplicate(u, &u_old);

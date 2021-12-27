@@ -1,5 +1,4 @@
-#ifndef PROBLEM_SYSTEM_H
-#define PROBLEM_SYSTEM_H
+#pragma once
 
 #include <petsc.h>
 #include "ParameterList.h"
@@ -56,4 +55,3 @@ protected:
 
   unsigned int _n_DOFs;
 };
-#endif /*PROBLEM_SYSTEM_H*/

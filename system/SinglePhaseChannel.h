@@ -1,5 +1,4 @@
-#ifndef SINGLE_PHASE_CHANNEL_H
-#define SINGLE_PHASE_CHANNEL_H
+#pragma once
 
 #include <vector>
 #include "PETScProblem.h"
@@ -46,5 +45,3 @@ protected:
   std::vector<EdgeBase*> _edges;
   EdgeBase *edge_begin, *edge_end;
 };
-
-#endif /*SINGLE_PHASE_CHANNEL_H*/

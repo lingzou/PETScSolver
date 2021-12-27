@@ -1,5 +1,4 @@
-#ifndef SINGLE_PHASE_FLUID_H
-#define SINGLE_PHASE_FLUID_H
+#pragma once
 
 #include "ParameterList.h"
 
@@ -29,5 +28,3 @@ protected:
   double _rho0, _p0, _T0, _e0;
   double _drho_dp, _drho_dT, _cv;
 };
-
-#endif /*SINGLE_PHASE_FLUID_H*/

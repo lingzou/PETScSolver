@@ -1,7 +1,5 @@
-#ifndef PETSC_PROBLEM_INTERFACE_H
-#define PETSC_PROBLEM_INTERFACE_H
+#pragma once
 
-//#include <petscmat.h>
 #include <set>
 #include "InputParser.h"
 #include "ProblemSystem.h"
@@ -55,5 +53,3 @@ struct ApplicationCtx
   void FreePETScWorkSpace();
   void setupMatrices();
 };
-
-#endif /*PETSC_PROBLEM_INTERFACE_H*/

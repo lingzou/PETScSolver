@@ -1,5 +1,4 @@
-#ifndef PARAMETER_LIST_H
-#define PARAMETER_LIST_H
+#pragma once
 
 #include <map>
 #include <iomanip>      // std::setw
@@ -112,5 +111,3 @@ protected:
   GetPot &ifile;
   std::string prefix;
 };
-
-#endif /*PARAMETER_LIST_H*/

@@ -1,5 +1,4 @@
-#ifndef CHANNEL_ARRAY_H
-#define CHANNEL_ARRAY_H
+#pragma once
 
 #include <vector>
 #include "PETScProblem.h"
@@ -160,5 +159,3 @@ protected:
   std::vector<double> _Areas, _dh;
   double _PI;
 };
-
-#endif /*CHANNEL_ARRAY_H*/

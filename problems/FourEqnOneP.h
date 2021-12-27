@@ -1,5 +1,4 @@
-#ifndef FOUR_EQN_ONEP_H
-#define FOUR_EQN_ONEP_H
+#pragma once
 
 #include <vector>
 #include "PETScProblem.h"
@@ -273,5 +272,3 @@ protected:
   std::vector<EdgeBase4E1P*> _edges;
   std::vector<Cell4E1P*> _cells;
 };
-
-#endif /*FOUR_EQN_ONEP_H*/
