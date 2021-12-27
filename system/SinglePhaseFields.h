@@ -5,6 +5,7 @@
 #include "SinglePhaseFluid.h"
 
 class EdgeBase;
+class crossEdge;
 
 class SPCell
 {
@@ -18,6 +19,7 @@ public:
   virtual double T()    const { return _T;    }
   virtual double rho()  const { return _rho;  }
   virtual double e()    const { return _e;    }
+  virtual double v_cell()         const { return _v_cell; }
   virtual double dpdx_fric()      const { return _dpdx_fric; }
   virtual double dpdx_gravity()   const { return _dpdx_gravity; }
   //   2nd-order related
@@ -55,6 +57,9 @@ public:
   // Debug functions
   virtual void printConnection();
 
+  // temp functions
+  virtual void addCrossEdge(crossEdge* edge, double norm) { _cross_edges.push_back(edge); _cross_edges_in_norm.push_back(norm); }
+
 protected:
   std::string _name;
   SinglePhaseFluid* _fluid;
@@ -70,10 +75,14 @@ protected:
   double _rho_w, _rho_e, _e_w, _e_e;
 
   // helper variables
-  double _dpdx_fric, _dpdx_gravity;
+  double _v_cell, _dpdx_fric, _dpdx_gravity;
 
   EdgeBase *WEST_EDGE, *EAST_EDGE;
   SPCell *WEST_CELL, *EAST_CELL;
+
+  // cross flow
+  std::vector<crossEdge*> _cross_edges;
+  std::vector<double> _cross_edges_in_norm;
 };
 
 class EdgeBase
@@ -90,7 +99,7 @@ public:
 
   // Connection related functions
   virtual void setNghbrCells(SPCell * west, SPCell * east) final;
-  virtual void setExtendedNghbrs() final ;
+  virtual void setExtendedNghbrs();
   virtual SPCell * getOtherSideCell(SPCell* cell) final;
 
   // Residual related functions
@@ -145,14 +154,23 @@ public:
   pBndryEdge(std::string name, SinglePhaseFluid* fluid, double p_bc, double T_bc) : EdgeBase(name, fluid), _p_bc(p_bc), _T_bc(T_bc) {}
   virtual ~pBndryEdge() {}
 
-  virtual void computeFluxes() override final;
-  virtual void computeFluxes2nd() override final;
-  virtual double computeTranRes(double dt) override final;
-  virtual double computeTranResBDF2(double dt) override final;
-  virtual double computeRHS(double dx) override final;
+  virtual void computeFluxes() override;
+  virtual void computeFluxes2nd() override;
+  virtual double computeTranRes(double dt) override;
+  virtual double computeTranResBDF2(double dt) override;
+  virtual double computeRHS(double dx) override;
 
 protected:
   double _p_bc, _T_bc;
+};
+
+class pPseudo3DBndryEdge : public pBndryEdge
+{
+public:
+  pPseudo3DBndryEdge(std::string name, SinglePhaseFluid* fluid, double p_bc, double T_bc) : pBndryEdge(name, fluid, p_bc, T_bc) {}
+  virtual ~pPseudo3DBndryEdge() {}
+
+  virtual void updatePBC(double p) { _p_bc = p; }
 };
 
 class IntEdge : public EdgeBase
@@ -164,7 +182,20 @@ public:
   virtual void computeFluxes2nd() override final;
   virtual double computeTranRes(double dt) override final;
   virtual double computeTranResBDF2(double dt) override final;
-  virtual double computeRHS(double dx) override final;
+  virtual double computeRHS(double dx) override;
+};
+
+class crossEdge : public IntEdge
+{
+public:
+  crossEdge(std::string name, SinglePhaseFluid* fluid) : IntEdge(name, fluid) {}
+  ~crossEdge() {}
+
+  virtual void setNghbrEdges(EdgeBase * west, EdgeBase * east) { WEST_EDGE = west; EAST_EDGE = east; }
+
+  virtual void setExtendedNghbrs() override final { /* do not find extended neighbors*/ }
+
+  virtual double computeRHS(double dx) override;
 };
 
 #endif /*SINGLE_PHASE_FIELDS_H*/

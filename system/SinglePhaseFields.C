@@ -49,16 +49,19 @@ SPCell::updateSolution(double p, double T)
 void
 SPCell::SPCell::computeDP(double f, double dh, double gx)
 {
-  double v_cell = 0.5 * (EAST_EDGE->v() + WEST_EDGE->v());
-
-  _dpdx_fric = 0.5 * f / dh * _rho * v_cell * std::fabs(v_cell);
+  _v_cell = 0.5 * (EAST_EDGE->v() + WEST_EDGE->v());
+  _dpdx_fric = 0.5 * f / dh * _rho * _v_cell * std::fabs(_v_cell);
   _dpdx_gravity = _rho * gx;
 }
 
 double
 SPCell::computeMassRHS(double dx)
 {
-  return -(EAST_EDGE->mass_flux() - WEST_EDGE->mass_flux()) / dx;
+  double mass_adv = -(EAST_EDGE->mass_flux() - WEST_EDGE->mass_flux()) / dx;
+  for (unsigned i = 0; i < _cross_edges.size(); i++)
+    mass_adv += _cross_edges[i]->mass_flux() * _cross_edges_in_norm[i];
+
+  return mass_adv;
 }
 
 double
@@ -68,7 +71,12 @@ SPCell::computeEnergyRHS(double dx, double h, double aw, double Tw)
 
   double src = h * aw * (Tw - _T);
 
-  return -(EAST_EDGE->energy_flux() - WEST_EDGE->energy_flux()) / dx - p_dv_dx + src;
+  double res = -(EAST_EDGE->energy_flux() - WEST_EDGE->energy_flux()) / dx - p_dv_dx + src;
+
+  for (unsigned i = 0; i < _cross_edges.size(); i++)
+    res += _cross_edges[i]->energy_flux() * _cross_edges_in_norm[i];
+
+  return res;
 }
 
 void
@@ -91,6 +99,14 @@ SPCell::getConnectedDOFs()
   if (WEST_EDGE != NULL) { dofs.push_back(WEST_EDGE->vDOF()); }
   if (EAST_CELL != NULL) { dofs.push_back(EAST_CELL->pDOF()); dofs.push_back(EAST_CELL->TDOF());}
   if (EAST_EDGE != NULL) { dofs.push_back(EAST_EDGE->vDOF()); }
+
+  for (unsigned i = 0; i < _cross_edges.size(); i++)
+  {
+    SPCell * other_cell = _cross_edges[i]->getOtherSideCell(this);
+    dofs.push_back(_cross_edges[i]->vDOF());
+    dofs.push_back(other_cell->pDOF());
+    dofs.push_back(other_cell->TDOF());
+  }
   return dofs;
 }
 
@@ -266,4 +282,22 @@ IntEdge::computeRHS(double dx)
   double dv_dx = (_v > 0) ? (_v - WEST_EDGE->v()) / dx : (EAST_EDGE->v() - _v) / dx;
 
   return -rho_edge * _v * dv_dx - dp_dx - fric + gravity;
+}
+
+double
+crossEdge::computeRHS(double dx)
+{
+  double dp_dx = (EAST_CELL->p() - WEST_CELL->p()) / dx;
+  double v_axial = 0.5 * (WEST_CELL->v_cell() + EAST_CELL->v_cell());
+
+  double f = 0.1; // FIXME
+  double dh = 0.168 * 0.0254; // FIXME
+  double rho_edge = 0.5 * (WEST_CELL->rho() + EAST_CELL->rho());
+  double fric = 0.5 * f / dh * rho_edge * _v * std::fabs(_v);
+
+  double dv_dx = 0;
+  if (WEST_EDGE != NULL)
+    dv_dx = (_v - WEST_EDGE->v()) / dx;  //<-- this term seems causing convergence issue. Most likely: -rho_edge * _v * dv_dx, not using _v, but the axial direction velocity.
+
+  return -rho_edge * v_axial * dv_dx - dp_dx - fric;  // this fixed the previous line comment on convergence issue
 }

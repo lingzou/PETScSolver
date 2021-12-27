@@ -10,6 +10,7 @@
 #include "SinglePhaseChannel.h"
 #include "vBC.h"
 #include "pBC.h"
+#include "Pseudo3D.h"
 
 ProblemSystem::ProblemSystem(InputParser* input_parser) :
   _globalParamList(input_parser->getGlobalParamList()),
@@ -54,6 +55,8 @@ ProblemSystem::ProblemSystem(InputParser* input_parser) :
       problem_system[it.first] = new vBC(_globalParamList, *(it.second), this);
     else if (problem_name == "pBC")
       problem_system[it.first] = new pBC(_globalParamList, *(it.second), this);
+    else if (problem_name == "Pseudo3D")
+      problem_system[it.first] = new Pseudo3D(_globalParamList, *(it.second), this);
     else
       sysError("ERROR: UNKNOWN problem: " + problem_name);
   }
