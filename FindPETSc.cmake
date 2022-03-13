@@ -23,7 +23,7 @@
 #
 
 # Change these two lines to your PETSc location
-set (PETSC_DIR /Users/lzou/Downloads/petsc-3.15.0)
+set (PETSC_DIR /Users/lingzou/Downloads/petsc-3.15.0)
 set (PETSC_ARCH arch-darwin-c-opt)
 
 message(${PETSC_DIR})

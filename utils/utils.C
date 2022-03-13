@@ -85,3 +85,10 @@ UTILS::linearReconstruction(double u_W, double u_E, double u_P, double &u_west, 
   u_west = u_P - 0.25 * wf * (u_E - u_W);   // Eqn. (5) of Ref. [1]
   u_east = u_P + 0.25 * wf * (u_E - u_W);
 }
+
+double
+UTILS::bilinear(double x, double y, double x0, double x1, double y0, double y1, double z00, double z01, double z10, double z11)
+{
+  return (z00 * (x1-x)*(y1-y) + z10 * (x-x0)*(y1-y) + z01 * (x1-x)*(y-y0) + z11 * (x-x0)*(y-y0))
+          / ((x1 - x0) * (y1 - y0));
+}

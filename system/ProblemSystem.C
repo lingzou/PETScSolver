@@ -6,6 +6,7 @@
 #include "EulerEquation1D.h"
 #include "FiveEqnTwoP_StagGrid.h"
 #include "FourEqnOneP.h"
+#include "SixEqnOneP.h"
 #include "SinglePhaseFlow.h"
 #include "SinglePhaseChannel.h"
 #include "vBC.h"
@@ -47,6 +48,8 @@ ProblemSystem::ProblemSystem(InputParser* input_parser) :
       problem_system[it.first] = new FiveEqnTwoP_StagGrid(_globalParamList, *(it.second), this);
     else if (problem_name == "FourEqnOneP")
       problem_system[it.first] = new FourEqnOneP(_globalParamList, *(it.second), this);
+    else if (problem_name == "SixEqnOneP")
+      problem_system[it.first] = new SixEqnOneP(_globalParamList, *(it.second), this);
     else if (problem_name == "SinglePhaseFlow")
       problem_system[it.first] = new SinglePhaseFlow(_globalParamList, *(it.second), this);
     else if (problem_name == "SinglePhaseChannel")
