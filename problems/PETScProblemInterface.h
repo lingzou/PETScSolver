@@ -39,8 +39,7 @@ struct ApplicationCtx
   Mat             J_MatrixFree; // Jacobian-free
 
   Vec             u;          // unknown vector
-  Vec             u_old;      // unknown vector old
-  Vec             u_oldold;   // unknown vector oldold
+  Vec             u_backup;   // unknown vector backup (in case retry a failed time step)
 
   Vec             r;               // total residual = res_transient - res_RHS
   Vec             res_transient;   /* residual from transient term */

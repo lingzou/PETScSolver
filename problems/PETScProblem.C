@@ -6,9 +6,8 @@ PETScProblem::PETScProblem(InputParameterList & globalParamList, InputParameterL
   _globalParamList(globalParamList),
   _inputParamList(inputParamList),
   _problemSystem(problemSystem),
-  //_input_file_name(_globalParamList.getParameterValue<std::string>("input_file_name")),
-  _time_scheme(_globalParamList.getParameterValue<TimeScheme>("ts")),
-  _dt(_globalParamList.getParameterValue<double>("dt")),
+  _time_scheme(_problemSystem->getTimeScheme()),
+  _dt(_problemSystem->getDt()),
   _n_DOFs(0)
 {
 }

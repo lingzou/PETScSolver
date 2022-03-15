@@ -21,6 +21,7 @@ ProblemSystem::ProblemSystem(InputParser* input_parser) :
   _time_scheme(_globalParamList.getParameterValue<TimeScheme>("ts")),
   _t(0.0),
   _dt(_globalParamList.getParameterValue<double>("dt")),
+  _dt_max(_dt),
   _step(1),
   _n_steps(_globalParamList.getParameterValue<int>("n_steps")),
   _output_interval(_globalParamList.getParameterValue<int>("output_interval")),
@@ -79,6 +80,13 @@ ProblemSystem::~ProblemSystem()
 {
   for (auto& it : problem_system)   delete it.second;
   for (auto& it : fluid_system)     delete it.second;
+}
+
+void
+ProblemSystem::adjustTimeStepSize(double ratio)
+{
+  _dt = std::min(_dt * ratio, _dt_max);
+  for (auto& it : problem_system)   it.second->updateTimeStepSize(_dt);
 }
 
 void

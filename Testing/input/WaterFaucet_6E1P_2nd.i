@@ -5,7 +5,9 @@
   output_interval   = 10
   linear_rtol = 1.e-4
   # default line search has difficulty for dt = 0.01
-  petsc_options = '-snes_linesearch_type basic'
+  # Using '-snes_linesearch_type basic' would help it converge
+  # but here I'd like to test the time step size cut feature
+  petsc_options = '-snes_max_it 15'
 []
 [System]
   [./problem]

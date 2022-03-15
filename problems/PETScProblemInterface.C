@@ -37,8 +37,7 @@ ApplicationCtx::setupPETScWorkSpace()
   VecCreate(PETSC_COMM_WORLD, &u);
   VecSetSizes(u, PETSC_DECIDE, N_DOFs);
   VecSetFromOptions(u);
-  VecDuplicate(u, &u_old);
-  VecDuplicate(u, &u_oldold);
+  VecDuplicate(u, &u_backup);
   VecDuplicate(u, &r);
   VecDuplicate(u, &res_transient);
   VecDuplicate(u, &res_RHS);
@@ -143,9 +142,6 @@ ApplicationCtx::setupInitialConditions()
   myProblemSystem->SetupInitialCondition(uu);
   VecRestoreArray(u, &uu);
 
-  VecCopy(u, u_old);
-  VecCopy(u, u_oldold);
-
   // Write output for t = 0
   myProblemSystem->writeOutput(0);
 }
@@ -156,8 +152,7 @@ ApplicationCtx::FreePETScWorkSpace()
   _input_parser->checkUnusedVariables();
   // Destroy PETSc vectors
   VecDestroy(&u);
-  VecDestroy(&u_old);
-  VecDestroy(&u_oldold);
+  VecDestroy(&u_backup);
   VecDestroy(&r);
   VecDestroy(&res_transient);
   VecDestroy(&res_RHS);

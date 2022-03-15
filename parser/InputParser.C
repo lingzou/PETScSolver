@@ -27,6 +27,7 @@ InputParser::buildGlobalParamList()
   _global_ParamList->addRequiredParamFromInput<TimeScheme>("ts");
   // solver option: 0) Newton + hand-coded jacobian; 1) Matrix-free + hand-coded jacobian; 2) MF + fd coloring J; 3) MF + fd no coloring J
   _global_ParamList->addOptionalParamFromInput<int>("solver_option", 2);
+  _global_ParamList->addOptionalParamFromInput<double>("dt_min", 1.e-6);
   _global_ParamList->addOptionalParamFromInput<double>("linear_rtol", 1.e-3);
   _global_ParamList->addOptionalParamFromInput<int>("linear_max_its", 30);
   _global_ParamList->addOptionalParamFromInput<int>("output_interval", 1);

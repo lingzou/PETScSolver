@@ -4,7 +4,7 @@
   n_steps   = 50
   output_interval   = 10
   # default line search has difficulty for dt = 0.01
-  petsc_options = '-snes_linesearch_type basic'
+  # petsc_options = '-snes_linesearch_type basic'
 []
 [System]
   [./problem]

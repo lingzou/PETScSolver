@@ -14,6 +14,7 @@ public:
   virtual unsigned int getDOFoffset() const final { return _DOF_offset; }
   virtual unsigned int getNDOF() const final { return _n_DOFs; }
 
+  virtual void updateTimeStepSize(double dt) { _dt = dt; }
   virtual void onTimestepEnd() = 0;
   virtual void onLastTimestepEnd() {}
   virtual void SetupInitialCondition(double * u) = 0;
