@@ -139,7 +139,7 @@ Cell6E1P::liquidEnergyRHS(double dx)
   double flux_term = -(EAST_EDGE->energy_flux_l() - WEST_EDGE->energy_flux_l()) / dx;
   double d_alphal_ul_dx = (EAST_EDGE->alphal_ul() - WEST_EDGE->alphal_ul()) / dx;
 
-  return flux_term - _p * d_alphal_ul_dx; // + 10000 * (_T_g - _T_l);
+  return flux_term - _p * d_alphal_ul_dx + 100 * (_T_g - _T_l);
 }
 
 double
@@ -148,7 +148,7 @@ Cell6E1P::gasEnergyRHS(double dx)
   double flux_term = -(EAST_EDGE->energy_flux_g() - WEST_EDGE->energy_flux_g()) / dx;
   double d_alphag_ug_dx = (EAST_EDGE->alphag_ug() - WEST_EDGE->alphag_ug()) / dx;
 
-  return flux_term - _p * d_alphag_ug_dx; // + 10000 * (_T_l - _T_g);
+  return flux_term - _p * d_alphag_ug_dx + 100 * (_T_l - _T_g);
 }
 
 void
@@ -447,8 +447,6 @@ pBndryEdge6E1P::gasVelTranResBDF2(double dt)
 void
 pWESTBndryEdge6E1P::computeRHS(bool compute_int_drag, unsigned order, double dx, double & rhs_l, double & rhs_g)
 {
-  // FIXME
-  /*
   double rho_l_edge = EAST_CELL->rho_l();
   double rho_g_edge = EAST_CELL->rho_g();
   double alpha_edge = EAST_CELL->alpha();
@@ -458,15 +456,13 @@ pWESTBndryEdge6E1P::computeRHS(bool compute_int_drag, unsigned order, double dx,
   double dv_l_dx = (_vl < 0) ? (EAST_EDGE->v_l() - _vl) / dx : 0;
   double dp_dx = 2 * (EAST_CELL->p() - _p_bc) / dx;
   double gravity_l = (1 - EAST_CELL->alpha()) * EAST_CELL->rho_l() * EAST_CELL->g();
-  gravity_l = gravity_l / rho_l_edge / alpha_edge_l;
 
   double dv_g_dx = (_vg < 0) ? (EAST_EDGE->v_g() - _vg) / dx : 0;
   double gravity_g = EAST_CELL->alpha() * EAST_CELL->rho_g() * EAST_CELL->g();
-  gravity_g = gravity_g / rho_g_edge / alpha_edge_g;
 
   double int_drag = compute_int_drag ? interfacial_drag(alpha_edge, rho_l_edge, rho_g_edge) : 0;
-  rhs_l = -_vl * dv_l_dx - dp_dx / rho_l_edge + gravity_l + int_drag / alpha_edge_l / rho_l_edge;
-  rhs_g = -_vg * dv_g_dx - dp_dx / rho_g_edge + gravity_g - int_drag / alpha_edge_g / rho_g_edge;*/
+  rhs_l = -(1 - alpha_edge) * rho_l_edge * _vl * dv_l_dx - (1 - alpha_edge) * dp_dx + gravity_l + int_drag;
+  rhs_g = -alpha_edge       * rho_g_edge * _vg * dv_g_dx -       alpha_edge * dp_dx + gravity_g - int_drag;
 }
 
 void
@@ -651,9 +647,9 @@ SixEqnOneP::SixEqnOneP(InputParameterList & globalParamList, InputParameterList 
 
     for (unsigned i = 0; i < n_Cell; i++)   _cells.push_back(new Cell6E1P("CELL_"+std::to_string(i)));
 
-    _edges.push_back(new pWESTBndryEdge6E1P("INLET", 1e5, 1, 300, 300));
+    _edges.push_back(new pWESTBndryEdge6E1P("INLET", 1e5, 1, 450, 450));
     for (unsigned i = 0; i < n_Cell-1; i++)   _edges.push_back(new IntEdge6E1P("EDGE_"+std::to_string(i)));
-    _edges.push_back(new pEASTBndryEdge6E1P("OUTLET", 1e5, 1, 300, 300));
+    _edges.push_back(new pEASTBndryEdge6E1P("OUTLET", 1e5, 1, 450, 450));
 
     for (unsigned i = 0; i < n_Cell; i++)   _cells[i]->setNghbrEdges(_edges[i], _edges[i+1]);
 
@@ -668,9 +664,9 @@ SixEqnOneP::SixEqnOneP(InputParameterList & globalParamList, InputParameterList 
 
     for (unsigned i = 0; i < n_Cell; i++)   _cells.push_back(new Cell6E1P("CELL_"+std::to_string(i)));
 
-    _edges.push_back(new vBndryEdge6E1P("TOP", 0, 0, 1, 300, 300));
+    _edges.push_back(new vBndryEdge6E1P("TOP", 0, 0, 1, 450, 450));
     for (unsigned i = 0; i < n_Cell-1; i++)   _edges.push_back(new IntEdge6E1P("EDGE_"+std::to_string(i)));
-    _edges.push_back(new vBndryEdge6E1P("OUTLET", 0, 0, 1, 300, 300));
+    _edges.push_back(new vBndryEdge6E1P("OUTLET", 0, 0, 1, 450, 450));
 
     for (unsigned i = 0; i < n_Cell; i++)   _cells[i]->setNghbrEdges(_edges[i], _edges[i+1]);
 
@@ -796,40 +792,42 @@ SixEqnOneP::SetupInitialCondition(double * u)
       {
         double xx = (i + 0.5) * dx;
         double alpha_init = 0, p_init = 0, depth = 0;
+        double rho_l0 = _water->rho(1e5, 450);
+        double rho_g0 = _steam->rho(1e5, 450);
         if (xx < 5) // left gas column
         {
           _cells[i]->set_g(9.81);
           alpha_init = 1;
-          p_init = 1e5 + 0.5 * 9.81 * xx;
+          p_init = 1e5 + rho_g0 * 9.81 * xx;
         }
         else if (xx < 10) // left water column
         {
           _cells[i]->set_g(9.81);
           depth = xx - 5;
           alpha_init = 0;
-          p_init = 1e5 + 0.5 * 9.81 * 5 + 1000 * 9.81 * depth;
+          p_init = 1e5 + rho_g0 * 9.81 * 5 + rho_l0 * 9.81 * depth;
         }
         else if (xx < 15) // right water column
         {
           _cells[i]->set_g(-9.81);
           depth = 15 - xx;
           alpha_init = 0;
-          p_init = 1e5 + 0.5 * 9.81 * 5 + 1000 * 9.81 * depth;
+          p_init = 1e5 + rho_g0 * 9.81 * 5 + rho_l0 * 9.81 * depth;
         }
         else // right gas column
         {
           _cells[i]->set_g(-9.81);
           depth = 20 - xx;
           alpha_init = 1;
-          p_init = 1e5 + 0.5 * 9.81 * xx;
+          p_init = 1e5 + rho_g0 * 9.81 * xx;
         }
 
-        _cells[i]->initialize(alpha_init, p_init, 300, 300);
+        _cells[i]->initialize(alpha_init, p_init, 450, 450);
 
         u[6*i+2] = alpha_init;
         u[6*i+3] = p_init;
-        u[6*i+4] = 300;
-        u[6*i+5] = 300;
+        u[6*i+4] = 450;
+        u[6*i+5] = 450;
       }
     break;
 
@@ -842,11 +840,11 @@ SixEqnOneP::SetupInitialCondition(double * u)
       }
       for(unsigned i = 0; i < _cells.size(); i++)
       {
-        _cells[i]->initialize(0.5, 1e5, 300, 300);
+        _cells[i]->initialize(0.5, 1e5, 450, 450);
         u[6*i+2] = 0.5;
         u[6*i+3] = 1e5;
-        u[6*i+4] = 300;
-        u[6*i+5] = 300;
+        u[6*i+4] = 450;
+        u[6*i+5] = 450;
 
         _cells[i]->set_g(-9.81);
       }
@@ -898,8 +896,8 @@ SixEqnOneP::transientResidual(double * res)
     {
       res[6*i+2] = _cells[i]->liquidMassTranResBDF2(_dt);
       res[6*i+3] = _cells[i]->gasMassTranResBDF2(_dt);
-      res[6*i+4] = _cells[i]->liquidEnergyTranResBDF2(_dt);
-      res[6*i+5] = _cells[i]->gasEnergyTranResBDF2(_dt);
+      res[6*i+4] = _cells[i]->liquidEnergyTranResBDF2(_dt) * 1e-6;
+      res[6*i+5] = _cells[i]->gasEnergyTranResBDF2(_dt) * 1e-6;
     }
   }
   else
@@ -913,8 +911,8 @@ SixEqnOneP::transientResidual(double * res)
     {
       res[6*i+2] = _cells[i]->liquidMassTranRes(_dt);
       res[6*i+3] = _cells[i]->gasMassTranRes(_dt);
-      res[6*i+4] = _cells[i]->liquidEnergyTranRes(_dt);
-      res[6*i+5] = _cells[i]->gasEnergyTranRes(_dt);
+      res[6*i+4] = _cells[i]->liquidEnergyTranRes(_dt) * 1e-6;
+      res[6*i+5] = _cells[i]->gasEnergyTranRes(_dt) * 1e-6;
     }
   }
 }
@@ -929,8 +927,8 @@ SixEqnOneP::RHS(double * rhs)
   {
     rhs[6*i+2] = _cells[i]->liquidMassRHS(dx);
     rhs[6*i+3] = _cells[i]->gasMassRHS(dx);
-    rhs[6*i+4] = _cells[i]->liquidEnergyRHS(dx);
-    rhs[6*i+5] = _cells[i]->gasEnergyRHS(dx);
+    rhs[6*i+4] = _cells[i]->liquidEnergyRHS(dx) * 1e-6;
+    rhs[6*i+5] = _cells[i]->gasEnergyRHS(dx) * 1e-6;
   }
 }
 
@@ -968,12 +966,12 @@ SixEqnOneP::linearReconstruction()
       {
         double alpha_W  = (i == 0) ? 1            : _cells[i-1]->alpha();
         double p_W      = (i == 0) ? 1e5          : _cells[i-1]->p();
-        double T_l_W    = (i == 0) ? 300          : _cells[i-1]->T_l();
-        double T_g_W    = (i == 0) ? 300          : _cells[i-1]->T_g();
+        double T_l_W    = (i == 0) ? 450          : _cells[i-1]->T_l();
+        double T_g_W    = (i == 0) ? 450          : _cells[i-1]->T_g();
         double alpha_E  = (i == n_Cell-1) ? 1     : _cells[i+1]->alpha();
         double p_E      = (i == n_Cell-1) ? 1e5   : _cells[i+1]->p();
-        double T_l_E    = (i == n_Cell-1) ? 300   : _cells[i+1]->T_l();
-        double T_g_E    = (i == n_Cell-1) ? 300   : _cells[i+1]->T_g();
+        double T_l_E    = (i == n_Cell-1) ? 450   : _cells[i+1]->T_l();
+        double T_g_E    = (i == n_Cell-1) ? 450   : _cells[i+1]->T_g();
 
         _cells[i]->linearReconstruction(alpha_W, alpha_E, p_W, p_E, T_l_W, T_l_E, T_g_W, T_g_E);
       }
@@ -1066,17 +1064,14 @@ SixEqnOneP::onTimestepEnd()
     v_l_bottom.push_back(_edges[n_Cell/2]->v_l());
     p_bottom.push_back(0.5 * (_cells[n_Cell/2-1]->p()+_cells[n_Cell/2]->p()));
 
-    double h_l, h_r;
-    for(unsigned i = 0; i < n_Cell - 1; i++)
+    double h_l = 0, h_r = 0;
+    for(int i = 0; i < n_Cell/2; i++)
     {
-      if ((_cells[i]->alpha() > 0.5) && (_cells[i+1]->alpha() <= 0.5))
-        h_l = (i + 0.5) * dx + dx * (0.5 - _cells[i]->alpha()) / (_cells[i+1]->alpha() - _cells[i]->alpha());
-
-      if ((_cells[i]->alpha() <= 0.5) && (_cells[i+1]->alpha() > 0.5))
-        h_r = (i + 0.5) * dx + dx * (0.5 - _cells[i]->alpha()) / (_cells[i+1]->alpha() - _cells[i]->alpha());
+      h_l += (1.0 - _cells[i]->alpha()) * dx;
+      h_r += (1.0 - _cells[n_Cell-1-i]->alpha()) * dx;
     }
-    h_left.push_back(10 - h_l);
-    h_right.push_back(h_r - 10);
+    h_left.push_back(h_l);
+    h_right.push_back(h_r);
   }
 }
 

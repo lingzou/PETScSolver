@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <petscsnes.h>
 
 #include "WaterIF97.h"
 #include "utils.h"
@@ -127,9 +128,9 @@ Water_IF97::computeProperties(double p, double T, double & rho, double & e, doub
 int
 Water_IF97::find_T_lower_bound(double T) const
 {
-  if (T < T_array[0])           sysError("T out of lower bound." + std::to_string(T));
+  if (T < T_array[0])           SETERRQ(PETSC_COMM_WORLD, 103, "103"); //throw std::runtime_error("103"); //sysException("T out of lower bound." + std::to_string(T), 103);
   else if (T < T_array[373])    return floor(T - T_array[0]);
-  else                          sysError("T out of upper bound." + std::to_string(T));
+  else                          SETERRQ(PETSC_COMM_WORLD, 104, "104"); //throw std::runtime_error("104"); //ysException("T out of upper bound." + std::to_string(T), 104);
 
   return -1;
 }
@@ -141,7 +142,8 @@ Water_IF97::find_p_lower_bound(double p) const
   // 10k -> 95k every 5k (18)
   // 100k -> 22000k every 100k (220)
   if (p < p_array[0])
-    sysError("p out of lower bound.");
+    //sysError("p out of lower bound.");
+    SETERRQ(PETSC_COMM_WORLD, 203, "203");
   else if (p < 3e3)
     return 0;
   else if (p < 5e3)
@@ -155,7 +157,8 @@ Water_IF97::find_p_lower_bound(double p) const
   else if (p < 22e6)
     return floor((p - 100.e3) / 100.e3) + 22;
   else
-    sysError("p out of upper bound.");
+    SETERRQ(PETSC_COMM_WORLD, 204, "204");
+    //sysError("p out of upper bound.");
 
   return -1;
 }

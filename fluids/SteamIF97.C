@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <petscsnes.h>
 
 #include "SteamIF97.h"
 #include "utils.h"
@@ -132,11 +133,11 @@ Steam_IF97::find_T_lower_bound(double T) const
   // 755 -> 1270 every 5 Kelven   # 104   data pts
   // 1273 K                       # 1     data pts
 
-  if (T < T_array[0])           sysError("T out of lower bound." + std::to_string(T) + std::to_string(T_array[0]));
+  if (T < T_array[0])           SETERRQ(PETSC_COMM_WORLD, 101, "101"); //sysException("T out of lower bound." + std::to_string(T) + std::to_string(T_array[0]), 101);
   else if (T < 650)             return floor(T - T_array[0]);
   else if (T < 750)             return floor((T - 650) / 2.) + 376;
   else if (T < 1273)            return floor((T - 750) / 5.) + 426;
-  else                          sysError("T out of upper bound." + std::to_string(T));
+  else                          SETERRQ(PETSC_COMM_WORLD, 102, "102"); //sysException("T out of upper bound." + std::to_string(T), 102);
 
   return -1;
 }
@@ -148,7 +149,8 @@ Steam_IF97::find_p_lower_bound(double p) const
   // 10k -> 95k every 5k (18)
   // 100k -> 22000k every 100k (220)
   if (p < p_array[0])
-    sysError("p out of lower bound.");
+    //sysError("p out of lower bound.");
+    SETERRQ(PETSC_COMM_WORLD, 201, "201");
   else if (p < 3e3)
     return 0;
   else if (p < 5e3)
@@ -162,7 +164,8 @@ Steam_IF97::find_p_lower_bound(double p) const
   else if (p < 22e6)
     return floor((p - 100.e3) / 100.e3) + 22;
   else
-    sysError("p out of upper bound.");
+    SETERRQ(PETSC_COMM_WORLD, 202, "202");
+    //sysError("p out of upper bound.");
 
   return -1;
 }

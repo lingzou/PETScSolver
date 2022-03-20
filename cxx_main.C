@@ -1,5 +1,6 @@
 #include <iostream>
 #include <petscsnes.h>
+#include <petsc.h>
 
 #include "PETScProblemInterface.h"
 #include "InputParser.h"
@@ -60,19 +61,12 @@ int main(int argc, char **argv)
     converged = false; // reset converged to be false at the beginning of every time step
     while(!converged)
     {
-      try
-      {
-        SNESSolve(AppCtx.snes, NULL, AppCtx.u);
-        SNESConvergedReason snes_converged_reason;
-        SNESGetConvergedReason(AppCtx.snes, &snes_converged_reason);  // https://petsc.org/main/docs/manualpages/SNES/SNESGetConvergedReason.html
-        converged = (snes_converged_reason > 0); // https://petsc.org/main/docs/manualpages/SNES/SNESConvergedReason.html#SNESConvergedReason
-      }
-      catch (int err)
-      {
-        PetscPrintf(PETSC_COMM_WORLD, "There was an exception %d during SNESSolve, so we will try to cut the time step size.\n", err);
-      }
+      SNESSolve(AppCtx.snes, NULL, AppCtx.u);
+      SNESConvergedReason snes_converged_reason;
+      SNESGetConvergedReason(AppCtx.snes, &snes_converged_reason);  // https://petsc.org/main/docs/manualpages/SNES/SNESGetConvergedReason.html
+      converged = (snes_converged_reason > 0); // https://petsc.org/main/docs/manualpages/SNES/SNESConvergedReason.html#SNESConvergedReason
 
-      if (!converged) // PETSc solving not converged, or exception happened
+      if (!converged) // PETSc solving not converged
       {
         AppCtx.myProblemSystem->adjustTimeStepSize(0.8);
         PetscPrintf(PETSC_COMM_WORLD, "  Did not converge, try a smaller dt = %g.\n", AppCtx.myProblemSystem->getDt());

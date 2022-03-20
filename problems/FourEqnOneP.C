@@ -813,17 +813,14 @@ FourEqnOneP::onTimestepEnd()
     v_l_bottom.push_back(_edges[n_Cell/2]->v_l());
     p_bottom.push_back(0.5 * (_cells[n_Cell/2-1]->p()+_cells[n_Cell/2]->p()));
 
-    double h_l, h_r;
-    for(unsigned i = 0; i < n_Cell - 1; i++)
+    double h_l = 0, h_r = 0;
+    for(int i = 0; i < n_Cell/2; i++)
     {
-      if ((_cells[i]->alpha() > 0.5) && (_cells[i+1]->alpha() <= 0.5))
-        h_l = (i + 0.5) * dx + dx * (0.5 - _cells[i]->alpha()) / (_cells[i+1]->alpha() - _cells[i]->alpha());
-
-      if ((_cells[i]->alpha() <= 0.5) && (_cells[i+1]->alpha() > 0.5))
-        h_r = (i + 0.5) * dx + dx * (0.5 - _cells[i]->alpha()) / (_cells[i+1]->alpha() - _cells[i]->alpha());
+      h_l += (1.0 - _cells[i]->alpha()) * dx;
+      h_r += (1.0 - _cells[n_Cell-1-i]->alpha()) * dx;
     }
-    h_left.push_back(10 - h_l);
-    h_right.push_back(h_r - 10);
+    h_left.push_back(h_l);
+    h_right.push_back(h_r);
   }
 }
 

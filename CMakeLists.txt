@@ -80,7 +80,7 @@ set (ALL_TESTS
         HeatCond1D          HeatCond1D_MF         SodShockTube              LaxRiemannProblem         WaterFaucet_5E2P_SG_BDF1_1st
         SinglePhaseFlow     SinglePhaseFlow_2nd   SinglePhaseChannel        SinglePhaseChannel_2nd    SineWave_4E1P
         SineWave_4E1P_2nd   SquareWave_4E1P_2nd   Manometer_4E1P_2nd        Sedimentation_4E1P_2nd    WaterFaucet_4E1P_2nd
-        pseudo3d            WaterFaucet_6E1P_1st  WaterFaucet_6E1P_2nd)
+        pseudo3d            WaterFaucet_6E1P_1st  WaterFaucet_6E1P_2nd      Manometer_6E1P_2nd        Sedimentation_6E1P_2nd)
 # The following are for each test in the format of a LIST: (test_name, 1st_step_to_test, 2nd_step_to_test)
 #   (Name                           TestName;           step; step)
 set (HeatCond1D                     HeatCond1D;         20;   40)
@@ -101,6 +101,8 @@ set (WaterFaucet_4E1P_2nd           WaterFaucet_4E1P_2nd;   20;  50)
 set (pseudo3d                       pseudo3d;               5;   20)
 set (WaterFaucet_6E1P_1st           WaterFaucet_6E1P_1st;   20;  50)
 set (WaterFaucet_6E1P_2nd           WaterFaucet_6E1P_2nd;   20;  50)
+set (Manometer_6E1P_2nd             Manometer_6E1P_2nd;     100; 600)
+set (Sedimentation_6E1P_2nd         Sedimentation_6E1P_2nd; 100; 1000)
 
 foreach(TEST IN LISTS ALL_TESTS)
   LIST(GET ${TEST} 0 TEST_NAME)
