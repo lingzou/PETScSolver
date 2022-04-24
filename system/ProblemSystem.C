@@ -86,7 +86,6 @@ void
 ProblemSystem::adjustTimeStepSize(double ratio)
 {
   _dt = std::min(_dt * ratio, _dt_max);
-  for (auto& it : problem_system)   it.second->updateTimeStepSize(_dt);
 }
 
 void

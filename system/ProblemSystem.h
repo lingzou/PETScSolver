@@ -15,10 +15,10 @@ public:
   virtual ~ProblemSystem();
 
   virtual unsigned int getNDOF() const final { return _n_DOFs; }
-  virtual TimeScheme getTimeScheme() const final { return _time_scheme; }
+  virtual const TimeScheme& getTimeScheme() const final { return _time_scheme; }
   virtual double getCurrentTime() const final { return _t; }
   virtual unsigned int getCurrentTimeStep() const final { return _step; }
-  virtual double getDt() const final { return _dt; }
+  virtual const double& getDt() const final { return _dt; }
   virtual void adjustTimeStepSize(double ratio) final;
 
   virtual void onTimestepEnd();
