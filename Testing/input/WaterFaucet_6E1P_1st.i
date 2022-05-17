@@ -3,8 +3,8 @@
   dt        = 1.0e-2
   n_steps   = 50
   output_interval   = 10
-  # default line search has difficulty for dt = 0.01
-  # petsc_options = '-snes_linesearch_type basic'
+  # use tighter convergence for regression test
+  petsc_options = '-snes_rtol 1e-10 -snes_atol 1e-8 -snes_stol 1e-10'
 []
 [System]
   [./problem]

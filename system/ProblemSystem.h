@@ -19,6 +19,7 @@ public:
   virtual double getCurrentTime() const final { return _t; }
   virtual unsigned int getCurrentTimeStep() const final { return _step; }
   virtual const double& getDt() const final { return _dt; }
+  virtual const double& getDtOld() const final { return _dt_old; }
   virtual void adjustTimeStepSize(double ratio) final;
 
   virtual void onTimestepEnd();
@@ -49,6 +50,7 @@ protected:
   TimeScheme _time_scheme;
   double _t;
   double _dt;
+  double _dt_old;
   double _dt_max;
   int _n_steps;
   unsigned int _step;

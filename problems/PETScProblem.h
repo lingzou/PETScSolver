@@ -40,6 +40,7 @@ protected:
 
   const TimeScheme& _time_scheme;
   const double& _dt;
+  const double& _dt_old;
 
   unsigned _n_DOFs, _DOF_offset;
 };

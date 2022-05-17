@@ -4,10 +4,8 @@
   n_steps   = 50
   output_interval   = 10
   linear_rtol = 1.e-4
-  # default line search has difficulty for dt = 0.01
-  # Using '-snes_linesearch_type basic' would help it converge
-  # but here I'd like to test the time step size cut feature
-  petsc_options = '-snes_max_it 15'
+  # use tighter convergence for regression test
+  petsc_options = '-snes_rtol 1e-10 -snes_atol 1e-8 -snes_stol 1e-10'
 []
 [System]
   [./problem]

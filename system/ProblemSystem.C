@@ -21,6 +21,7 @@ ProblemSystem::ProblemSystem(InputParser* input_parser) :
   _time_scheme(_globalParamList.getParameterValue<TimeScheme>("ts")),
   _t(0.0),
   _dt(_globalParamList.getParameterValue<double>("dt")),
+  _dt_old(_dt),
   _dt_max(_dt),
   _step(1),
   _n_steps(_globalParamList.getParameterValue<int>("n_steps")),
@@ -93,6 +94,7 @@ ProblemSystem::onTimestepEnd()
 {
   // March time forward
   _t += _dt;
+  _dt_old = _dt;
 
   // write solution
   if ((_step % _output_interval == 0) || (_step == _n_steps))     writeOutput(_step);

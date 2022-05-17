@@ -7,6 +7,8 @@
 
   linear_rtol = 1.e-4
   linear_max_its = 60
+
+  petsc_options = '-mat_mffd_type ds -mat_fd_type ds'
 []
 [System]
   [./problem]

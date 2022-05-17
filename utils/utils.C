@@ -92,3 +92,18 @@ UTILS::bilinear(double x, double y, double x0, double x1, double y0, double y1, 
   return (z00 * (x1-x)*(y1-y) + z10 * (x-x0)*(y1-y) + z01 * (x1-x)*(y-y0) + z11 * (x-x0)*(y-y0))
           / ((x1 - x0) * (y1 - y0));
 }
+
+double
+UTILS::BDF2Tran(double u, double u_o, double u_oo, double dt, double dt_o)
+{
+  // References:
+  // [1] Hiroaki Nishikawa, Derivation of BDF2/BDF3 for Variable Step Size, April 24, 2021
+  // https://www.researchgate.net/publication/351082535_Derivation_of_BDF2BDF3_for_Variable_Step_Size
+  // [2] Anja Katrin Denner, Experiments on Temporal Variable Step BDF2 Algorithms, University of Wisconsin-Milwaukee, May 2014
+  double r = dt / dt_o;
+  double w0 = (2 * r + 1) / (r + 1);
+  double w1 = -(r + 1);
+  double w2 = r * r / (r + 1);
+
+  return (w0 * u + w1 * u_o + w2 * u_oo) / dt;
+}

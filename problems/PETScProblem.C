@@ -8,6 +8,7 @@ PETScProblem::PETScProblem(InputParameterList & globalParamList, InputParameterL
   _problemSystem(problemSystem),
   _time_scheme(_problemSystem->getTimeScheme()),
   _dt(_problemSystem->getDt()),
+  _dt_old(_problemSystem->getDtOld()),
   _n_DOFs(0)
 {
 }
