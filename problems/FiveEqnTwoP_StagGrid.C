@@ -163,13 +163,17 @@ FiveEqnTwoP_StagGrid::transientResidual(double * res)
   {
     for(unsigned i = 0; i < n_Cell + 1; i++)
     {
-      res[idx++] = (1.0 - alpha_edge[i]) * rho_l_edge[i] * (1.5 * v_l[i] - 2.0 * v_l_old[i] + 0.5 * v_l_oo[i]) / _dt;
-      res[idx++] = alpha_edge[i] * rho_g_edge[i] * (1.5 * v_g[i] - 2.0 * v_g_old[i] + 0.5 * v_g_oo[i]) / _dt;
+      res[idx++] = (1.0 - alpha_edge[i]) * rho_l_edge[i] * UTILS::BDF2Tran(v_l[i], v_l_old[i], v_l_oo[i], _dt, _dt_old);
+      res[idx++] = alpha_edge[i] * rho_g_edge[i] * UTILS::BDF2Tran(v_g[i], v_g_old[i], v_g_oo[i], _dt, _dt_old);
       if (i < n_Cell)
       {
-        res[idx++] = (1.5 * alpha[i] - 2.0 * alpha_old[i] + 0.5 * alpha_oo[i]) / _dt;
-        res[idx++] = (1.5 * (1.0 - alpha[i]) * rho_l[i] - 2.0 * (1.0 - alpha_old[i]) * rho_l_old[i] + 0.5 * (1.0 - alpha_oo[i]) * rho_l_oo[i]) / _dt;
-        res[idx++] = (1.5 * alpha[i] * rho_g[i] - 2.0 * alpha_old[i] * rho_g_old[i] + 0.5 * alpha_oo[i] * rho_g_oo[i]) / _dt;
+        res[idx++] = UTILS::BDF2Tran(alpha[i], alpha_old[i], alpha_oo[i], _dt, _dt_old);
+        res[idx++] = UTILS::BDF2Tran( (1-alpha[i])     * rho_l[i],
+                                      (1-alpha_old[i]) * rho_l_old[i],
+                                      (1-alpha_oo[i])  * rho_l_oo[i], _dt, _dt_old);
+        res[idx++] = UTILS::BDF2Tran(alpha[i]     * rho_g[i],
+                                     alpha_old[i] * rho_g_old[i],
+                                     alpha_oo[i]  * rho_g_oo[i], _dt, _dt_old);
       }
     }
   }

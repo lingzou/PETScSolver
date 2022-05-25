@@ -70,7 +70,7 @@ HeatConduction1D::transientResidual(double * res)
     // however, it is also associated with large error
     // see H. Nishikawa, "On large start-up error of BDF2", Journal of Computational Physics, Vol. 392, 2019, Pages 456-461
     for (unsigned i = 1; i < _n_DOFs-1; i++)
-      res[i] = (1.5 * T[i] - 2.0 * T_old[i] + 0.5 * T_oldold[i]) / _dt / alpha;
+      res[i] = UTILS::BDF2Tran(T[i], T_old[i], T_oldold[i], _dt, _dt_old) / alpha;
   }
   else
   {

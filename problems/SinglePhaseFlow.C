@@ -128,11 +128,14 @@ SinglePhaseFlow::transientResidual(double * res)
   {
     for(unsigned i = 0; i < n_Cell + 1; i++)
     {
-      res[idx++] = rho_edge[i] * (1.5 * v[i] - 2.0 * v_old[i] + 0.5 * v_oo[i]) / _dt;
+      //res[idx++] = rho_edge[i] * (1.5 * v[i] - 2.0 * v_old[i] + 0.5 * v_oo[i]) / _dt;
+      res[idx++] = rho_edge[i] * UTILS::BDF2Tran(v[i], v_old[i], v_oo[i], _dt, _dt_old);
       if (i < n_Cell)
       {
-        res[idx++] = (1.5 * rho[i] - 2.0 * rho_old[i] + 0.5 * rho_oo[i]) / _dt;
-        res[idx++] = (1.5 * rho[i] * e[i] - 2.0 * rho_old[i] * e_old[i] + 0.5 * rho_oo[i] * e_oo[i]) / _dt;
+        //res[idx++] = (1.5 * rho[i] - 2.0 * rho_old[i] + 0.5 * rho_oo[i]) / _dt;
+        //res[idx++] = (1.5 * rho[i] * e[i] - 2.0 * rho_old[i] * e_old[i] + 0.5 * rho_oo[i] * e_oo[i]) / _dt;
+        res[idx++] = UTILS::BDF2Tran(rho[i], rho_old[i], rho_oo[i], _dt, _dt_old);
+        res[idx++] = UTILS::BDF2Tran(rho[i] * e[i], rho_old[i] * e_old[i], rho_oo[i] * e_oo[i], _dt, _dt_old);
       }
     }
   }

@@ -43,8 +43,9 @@ protected:
   ProblemSystem * _problemSystem;
   Pseudo3D * _parent;
 
-  TimeScheme _time_scheme;
-  double _dt;
+  const TimeScheme& _time_scheme;
+  const double& _dt;
+  const double& _dt_old;
 
   unsigned _order;
   double length;
@@ -99,8 +100,9 @@ protected:
 
   double P_INIT, V_INIT, T_INIT;
 
-  TimeScheme _time_scheme;
-  double _dt;
+  const TimeScheme& _time_scheme;
+  const double& _dt;
+  const double& _dt_old;
 
   unsigned _order;
   double length;

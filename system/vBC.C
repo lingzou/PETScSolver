@@ -61,7 +61,7 @@ void
 vBC::transientResidual(double * res)
 {
   unsigned int time_step = _problemSystem->getCurrentTimeStep();
-  if ((_time_scheme == BDF2) && (time_step > 1))      res[0] = _edge->computeTranResBDF2(_dt);
+  if ((_time_scheme == BDF2) && (time_step > 1))      res[0] = _edge->computeTranResBDF2(_dt, _dt_old);
   else                                                res[0] = _edge->computeTranRes(_dt);
 }
 

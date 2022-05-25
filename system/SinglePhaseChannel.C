@@ -34,9 +34,9 @@ SinglePhaseChannel::SinglePhaseChannel(InputParameterList & globalParamList, Inp
   _inputParamList.addOptionalParamFromInput<double>("Tw", 0.0);
 
   // initial conditions
-  P_INIT     =  _inputParamList.getValueFromInput<double>("P_INIT");
-  V_INIT     =  _inputParamList.getValueFromInput<double>("V_INIT");
-  T_INIT     =  _inputParamList.getValueFromInput<double>("T_INIT");
+  P_INIT =  _inputParamList.getValueFromInput<double>("P_INIT");
+  V_INIT =  _inputParamList.getValueFromInput<double>("V_INIT");
+  T_INIT =  _inputParamList.getValueFromInput<double>("T_INIT");
 
   _order = _inputParamList.getValueFromInput<int>("order");
   n_Cell = _inputParamList.getValueFromInput<int>("n_cells");
@@ -133,11 +133,11 @@ SinglePhaseChannel::transientResidual(double * res)
   {
     for(int i = 0; i < n_Cell; i++)
     {
-      res[3*i] = _cells[i]->massTranResBDF2(_dt);
-      res[3*i+1] = _cells[i]->energyTranResBDF2(_dt);
+      res[3*i] = _cells[i]->massTranResBDF2(_dt, _dt_old);
+      res[3*i+1] = _cells[i]->energyTranResBDF2(_dt, _dt_old);
     }
     for(int i = 0; i < n_Cell-1; i++)
-      res[3*i+2] = _edges[i]->computeTranResBDF2(_dt);
+      res[3*i+2] = _edges[i]->computeTranResBDF2(_dt, _dt_old);
   }
   else
   {

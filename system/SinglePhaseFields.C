@@ -212,10 +212,10 @@ pBndryEdge::computeTranRes(double dt)
 }
 
 double
-pBndryEdge::computeTranResBDF2(double dt)
+pBndryEdge::computeTranResBDF2(double dt, double dt_o)
 {
   double rho_edge = (WEST_CELL == NULL) ? EAST_CELL->rho() : WEST_CELL->rho();
-  return rho_edge * (1.5 * _v - 2.0 * _v_o + 0.5 * _v_oo) / dt;
+  return rho_edge * UTILS::BDF2Tran(_v, _v_o, _v_oo, dt, dt_o);
 }
 
 double
@@ -264,10 +264,10 @@ IntEdge::computeTranRes(double dt)
 }
 
 double
-IntEdge::computeTranResBDF2(double dt)
+IntEdge::computeTranResBDF2(double dt, double dt_o)
 {
   double rho_edge = 0.5 * (WEST_CELL->rho() + EAST_CELL->rho());
-  return rho_edge * (1.5 * _v - 2.0 * _v_o + 0.5 * _v_oo) / dt;
+  return rho_edge * UTILS::BDF2Tran(_v, _v_o, _v_oo, dt, dt_o);
 }
 
 double

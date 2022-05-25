@@ -46,8 +46,8 @@ public:
   virtual void updateSolution(double p, double T);
   virtual double massTranRes(double dt) { return (_rho - _rho_o) / dt; }
   virtual double energyTranRes(double dt) { return (_rho * _e - _rho_o * _e_o) / dt; }
-  virtual double massTranResBDF2(double dt) { return (1.5 * _rho - 2.0 * _rho_o + 0.5 * _rho_oo) / dt; }
-  virtual double energyTranResBDF2(double dt) { return (1.5 * _rho * _e - 2.0 * _rho_o * _e_o + 0.5 * _rho_oo * _e_oo) / dt; }
+  virtual double massTranResBDF2(double dt, double dt_o) { return UTILS::BDF2Tran(_rho, _rho_o, _rho_oo, dt, dt_o); }
+  virtual double energyTranResBDF2(double dt, double dt_o) { return UTILS::BDF2Tran(_rho * _e, _rho_o * _e_o, _rho_oo * _e_oo, dt, dt_o); }
   virtual double computeMassRHS(double dx);
   virtual double computeEnergyRHS(double dx, double h, double aw, double Tw);
   virtual void computeDP(double f, double dh, double gx);
@@ -109,7 +109,7 @@ public:
   virtual void updateSolution(double v) final { _v = v; }
   virtual void saveOldSlns()            final { _v_oo = _v_o; _v_o = _v; }
   virtual double computeTranRes(double dt) = 0;
-  virtual double computeTranResBDF2(double dt) = 0;
+  virtual double computeTranResBDF2(double dt, double dt_o) = 0;
   virtual double computeRHS(double dx) = 0;
   virtual void computeFluxes() = 0;
   virtual void computeFluxes2nd() = 0;
@@ -140,7 +140,7 @@ public:
   virtual void computeFluxes() override final;
   virtual void computeFluxes2nd() override final;
   virtual double computeTranRes(double /*dt*/) override final { return 0; }
-  virtual double computeTranResBDF2(double /*dt*/) override final { return 0; }
+  virtual double computeTranResBDF2(double /*dt*/, double /*dt_o*/) override final { return 0; }
   virtual double computeRHS(double dx) override final { return _v - _v_bc; }
 
 protected:
@@ -156,7 +156,7 @@ public:
   virtual void computeFluxes() override;
   virtual void computeFluxes2nd() override;
   virtual double computeTranRes(double dt) override;
-  virtual double computeTranResBDF2(double dt) override;
+  virtual double computeTranResBDF2(double dt, double dt_o) override;
   virtual double computeRHS(double dx) override;
 
 protected:
@@ -180,7 +180,7 @@ public:
   virtual void computeFluxes() override final;
   virtual void computeFluxes2nd() override final;
   virtual double computeTranRes(double dt) override final;
-  virtual double computeTranResBDF2(double dt) override final;
+  virtual double computeTranResBDF2(double dt, double dt_o) override final;
   virtual double computeRHS(double dx) override;
 };
 

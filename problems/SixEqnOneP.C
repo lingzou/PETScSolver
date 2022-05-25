@@ -105,19 +105,20 @@ Cell6E1P::gasEnergyTranRes(double dt)
 }
 
 double
-Cell6E1P::liquidEnergyTranResBDF2(double dt)
+Cell6E1P::liquidEnergyTranResBDF2(double dt, double dt_o)
 {
-  double dt_term = (1.5 * (1-_alpha) * _rho_l * _e_l - 2.0 * (1-_alpha_o) * _rho_l_o * _e_l_o + 0.5 * (1-_alpha_oo) * _rho_l_oo * _e_l_oo) / dt;
-  double dalpha_dt = (1.5 * _alpha - 2.0 * _alpha_o + 0.5 * _alpha_oo) / dt;
+  double dt_term = UTILS::BDF2Tran((1-_alpha) * _rho_l * _e_l, (1-_alpha_o) * _rho_l_o * _e_l_o, (1-_alpha_oo) * _rho_l_oo * _e_l_oo, dt, dt_o);
+  double dalpha_dt = UTILS::BDF2Tran(_alpha, _alpha_o, _alpha_oo, dt, dt_o);
 
   return dt_term - _p * dalpha_dt;
 }
 
 double
-Cell6E1P::gasEnergyTranResBDF2(double dt)
+Cell6E1P::gasEnergyTranResBDF2(double dt, double dt_o)
 {
-  double dt_term = (1.5 * _alpha * _rho_g * _e_g - 2.0 * _alpha_o * _rho_g_o * _e_g_o + 0.5 * _alpha_oo * _rho_g_oo * _e_g_oo) / dt;
-  double dalpha_dt = (1.5 * _alpha - 2.0 * _alpha_o + 0.5 * _alpha_oo) / dt;
+  double dt_term = UTILS::BDF2Tran(_alpha * _rho_g * _e_g, _alpha_o * _rho_g_o * _e_g_o, _alpha_oo * _rho_g_oo * _e_g_oo, dt, dt_o);
+  double dalpha_dt = UTILS::BDF2Tran(_alpha, _alpha_o, _alpha_oo, dt, dt_o);
+
   return dt_term + _p * dalpha_dt;
 }
 
@@ -155,11 +156,11 @@ void
 Cell6E1P::printConnection()
 {
   std::cout << _name << std::endl;
-  std::cout << "  "  << ((WEST_CELL == NULL) ? "NULL" : WEST_CELL->name()) << " -> ";
-  std::cout          << ((WEST_EDGE == NULL) ? "NULL" : WEST_EDGE->name()) << " -> ";
-  std::cout << _name << " -> ";
-  std::cout          << ((EAST_EDGE == NULL) ? "NULL" : EAST_EDGE->name()) << " -> ";
-  std::cout          << ((EAST_CELL == NULL) ? "NULL" : EAST_CELL->name()) << std::endl;
+  std::cout << "  "  << ((WEST_CELL == NULL) ? "NULL" : WEST_CELL->name()) << " -> "
+                     << ((WEST_EDGE == NULL) ? "NULL" : WEST_EDGE->name()) << " -> "
+                     << _name << " -> "
+                     << ((EAST_EDGE == NULL) ? "NULL" : EAST_EDGE->name()) << " -> "
+                     << ((EAST_CELL == NULL) ? "NULL" : EAST_CELL->name()) << std::endl;
 }
 
 std::vector<unsigned>
@@ -226,11 +227,11 @@ void
 EdgeBase6E1P::printConnection()
 {
   std::cout << _name << std::endl;
-  std::cout << "  "  << ((WEST_EDGE == NULL) ? "NULL" : WEST_EDGE->name()) << " -> ";
-  std::cout          << ((WEST_CELL == NULL) ? "NULL" : WEST_CELL->name()) << " -> ";
-  std::cout << _name << " -> ";
-  std::cout          << ((EAST_CELL == NULL) ? "NULL" : EAST_CELL->name()) << " -> ";
-  std::cout          << ((EAST_EDGE == NULL) ? "NULL" : EAST_EDGE->name()) << std::endl;
+  std::cout << "  "  << ((WEST_EDGE == NULL) ? "NULL" : WEST_EDGE->name()) << " -> "
+                     << ((WEST_CELL == NULL) ? "NULL" : WEST_CELL->name()) << " -> "
+                     << _name << " -> "
+                     << ((EAST_CELL == NULL) ? "NULL" : EAST_CELL->name()) << " -> "
+                     << ((EAST_EDGE == NULL) ? "NULL" : EAST_EDGE->name()) << std::endl;
 }
 
 std::vector<unsigned>
@@ -427,21 +428,21 @@ pBndryEdge6E1P::gasVelTranRes(double dt)
 }
 
 double
-pBndryEdge6E1P::liquidVelTranResBDF2(double dt)
+pBndryEdge6E1P::liquidVelTranResBDF2(double dt, double dt_o)
 {
   double rho_l_edge = (WEST_CELL == NULL) ? EAST_CELL->rho_l() : WEST_CELL->rho_l();
   double alpha_edge = (WEST_CELL == NULL) ? EAST_CELL->alpha() : WEST_CELL->alpha();
 
-  return (1 - alpha_edge) * rho_l_edge * (1.5 * _vl - 2 * _vl_o + 0.5 * _vl_oo) / dt;
+  return (1 - alpha_edge) * rho_l_edge * UTILS::BDF2Tran(_vl, _vl_o, _vl_oo, dt, dt_o);
 }
 
 double
-pBndryEdge6E1P::gasVelTranResBDF2(double dt)
+pBndryEdge6E1P::gasVelTranResBDF2(double dt, double dt_o)
 {
   double rho_g_edge = (WEST_CELL == NULL) ? EAST_CELL->rho_g() : WEST_CELL->rho_g();
   double alpha_edge = (WEST_CELL == NULL) ? EAST_CELL->alpha() : WEST_CELL->alpha();
 
-  return alpha_edge * rho_g_edge * (1.5 * _vg - 2 * _vg_o + 0.5 * _vg_oo) / dt;
+  return alpha_edge * rho_g_edge * UTILS::BDF2Tran(_vg, _vg_o, _vg_oo, dt, dt_o);
 }
 
 void
@@ -555,21 +556,21 @@ IntEdge6E1P::gasVelTranRes(double dt)
 }
 
 double
-IntEdge6E1P::liquidVelTranResBDF2(double dt)
+IntEdge6E1P::liquidVelTranResBDF2(double dt, double dt_o)
 {
   double rho_l_edge = 0.5 * (WEST_CELL->rho_l() + EAST_CELL->rho_l());
   double alpha_edge = 0.5 * (WEST_CELL->alpha() + EAST_CELL->alpha());
 
-  return (1 - alpha_edge) * rho_l_edge * (1.5 * _vl - 2 * _vl_o + 0.5 * _vl_oo) / dt;
+  return (1 - alpha_edge) * rho_l_edge * UTILS::BDF2Tran(_vl, _vl_o, _vl_oo, dt, dt_o);
 }
 
 double
-IntEdge6E1P::gasVelTranResBDF2(double dt)
+IntEdge6E1P::gasVelTranResBDF2(double dt, double dt_o)
 {
   double rho_g_edge = 0.5 * (WEST_CELL->rho_g() + EAST_CELL->rho_g());
   double alpha_edge = 0.5 * (WEST_CELL->alpha() + EAST_CELL->alpha());
 
-  return alpha_edge * rho_g_edge * (1.5 * _vg - 2 * _vg_o + 0.5 * _vg_oo) / dt;
+  return alpha_edge * rho_g_edge * UTILS::BDF2Tran(_vg, _vg_o, _vg_oo, dt, dt_o);
 }
 
 void
@@ -711,11 +712,9 @@ SixEqnOneP::~SixEqnOneP()
 void
 SixEqnOneP::setDOFoffset(unsigned offset)
 {
-  std::cout << "SixEqnOneP::setDOFoffset begin" << std::endl;
   _DOF_offset = offset;
   for(unsigned i = 0; i < _edges.size(); i++)   _edges[i]->setDOF(_DOF_offset + 6*i,      _DOF_offset + 6*i + 1);
   for(unsigned i = 0; i < _cells.size(); i++)   _cells[i]->setDOF(_DOF_offset + 6*i + 2,  _DOF_offset + 6*i + 3,  _DOF_offset + 6*i + 4,  _DOF_offset + 6*i + 5);
-  std::cout << "SixEqnOneP::setDOFoffset end" << std::endl;
 }
 
 void
@@ -889,15 +888,15 @@ SixEqnOneP::transientResidual(double * res)
   {
     for(unsigned i = 0; i < _edges.size(); i++)
     {
-      res[6*i] = _edges[i]->liquidVelTranResBDF2(_dt);
-      res[6*i+1] = _edges[i]->gasVelTranResBDF2(_dt);
+      res[6*i] = _edges[i]->liquidVelTranResBDF2(_dt, _dt_old);
+      res[6*i+1] = _edges[i]->gasVelTranResBDF2(_dt, _dt_old);
     }
     for(unsigned i = 0; i < _cells.size(); i++)
     {
-      res[6*i+2] = _cells[i]->liquidMassTranResBDF2(_dt);
-      res[6*i+3] = _cells[i]->gasMassTranResBDF2(_dt);
-      res[6*i+4] = _cells[i]->liquidEnergyTranResBDF2(_dt) * 1e-6;
-      res[6*i+5] = _cells[i]->gasEnergyTranResBDF2(_dt) * 1e-6;
+      res[6*i+2] = _cells[i]->liquidMassTranResBDF2(_dt, _dt_old);
+      res[6*i+3] = _cells[i]->gasMassTranResBDF2(_dt, _dt_old);
+      res[6*i+4] = _cells[i]->liquidEnergyTranResBDF2(_dt, _dt_old) * 1e-6;
+      res[6*i+5] = _cells[i]->gasEnergyTranResBDF2(_dt, _dt_old) * 1e-6;
     }
   }
   else

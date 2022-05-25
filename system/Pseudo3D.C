@@ -12,7 +12,10 @@ CrossFlow::CrossFlow(Channel* west_chan, Channel* east_chan, InputParameterList 
   EAST_CHAN(east_chan),
   _globalParamList(globalParamList),
   _inputParamList(inputParamList),
-  _problemSystem(problemSystem)
+  _problemSystem(problemSystem),
+  _time_scheme(_problemSystem->getTimeScheme()),
+  _dt(_problemSystem->getDt()),
+  _dt_old(_problemSystem->getDtOld())
 {
   _order = _inputParamList.getParameterValue<int>("order");
   n_Cell = _inputParamList.getParameterValue<int>("n_cells");
@@ -20,8 +23,6 @@ CrossFlow::CrossFlow(Channel* west_chan, Channel* east_chan, InputParameterList 
 
   dx = length / n_Cell;
   n_Node = n_Cell + 1;
-  _dt = _globalParamList.getParameterValue<double>("dt");
-  _time_scheme = _globalParamList.getParameterValue<TimeScheme>("ts");
 
   _n_DOFs = n_Cell;
 
@@ -77,7 +78,7 @@ CrossFlow::transientResidual(double * res)
   if ((_time_scheme == BDF2) && (time_step > 1))
   {
     for(int i = 0; i < n_Cell; i++)
-      res[i] = _edges[i]->computeTranResBDF2(_dt);
+      res[i] = _edges[i]->computeTranResBDF2(_dt, _dt_old);
   }
   else
   {
@@ -116,21 +117,21 @@ Channel::Channel(unsigned row, unsigned col, InputParameterList & globalParamLis
   _globalParamList(globalParamList),
   _inputParamList(inputParamList),
   _problemSystem(problemSystem),
+  _time_scheme(_problemSystem->getTimeScheme()),
+  _dt(_problemSystem->getDt()),
+  _dt_old(_problemSystem->getDtOld()),
   _row(row),
   _col(col)
 {
-  // std::cout << "Creating Channel" << std::endl;
-  P_INIT =  _inputParamList.getParameterValue<double>("P_INIT");
-  V_INIT =  _inputParamList.getParameterValue<double>("V_INIT");
-  T_INIT =  _inputParamList.getParameterValue<double>("T_INIT");
+  P_INIT = _inputParamList.getParameterValue<double>("P_INIT");
+  V_INIT = _inputParamList.getParameterValue<double>("V_INIT");
+  T_INIT = _inputParamList.getParameterValue<double>("T_INIT");
   _order = _inputParamList.getParameterValue<int>("order");
   n_Cell = _inputParamList.getParameterValue<int>("n_cells");
   length = _inputParamList.getParameterValue<double>("length");
 
   dx = length / n_Cell;
   n_Node = n_Cell + 1;
-  _dt = _globalParamList.getParameterValue<double>("dt");
-  _time_scheme = _globalParamList.getParameterValue<TimeScheme>("ts");
 
   _n_DOFs = n_Cell * 3 + 1;
 
@@ -209,11 +210,11 @@ Channel::transientResidual(double * res)
   {
     for(int i = 0; i < n_Cell; i++)
     {
-      res[3*i+1] = _cells[i]->massTranResBDF2(_dt);
-      res[3*i+2] = _cells[i]->energyTranResBDF2(_dt);
+      res[3*i+1] = _cells[i]->massTranResBDF2(_dt, _dt_old);
+      res[3*i+2] = _cells[i]->energyTranResBDF2(_dt, _dt_old);
     }
     for(int i = 0; i < n_Cell + 1; i++)
-      res[3*i] = _edges[i]->computeTranResBDF2(_dt);
+      res[3*i] = _edges[i]->computeTranResBDF2(_dt, _dt_old);
   }
   else
   {

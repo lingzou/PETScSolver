@@ -20,9 +20,9 @@ public:
   // Data access
   virtual double p()      const { return _p;      }
   virtual double alpha()  const { return _alpha;  }
-  virtual double rho_l()  const { return _rho_l;    }
-  virtual double rho_g()  const { return _rho_g;    }
-  virtual double g()      const { return _g;        }
+  virtual double rho_l()  const { return _rho_l;  }
+  virtual double rho_g()  const { return _rho_g;  }
+  virtual double g()      const { return _g;      }
   void set_g(double g) { _g = g; }
   //   2nd-order related
   virtual double p_w()      const { return _p_w;      }
@@ -52,8 +52,10 @@ public:
   virtual void updateSolution(double alpha, double p);
   virtual double liquidMassTranRes(double dt) { return ((1-_alpha) * _rho_l - (1-_alpha_o) * _rho_l_o) / dt; }
   virtual double gasMassTranRes(double dt) { return (_alpha * _rho_g - _alpha_o * _rho_g_o) / dt; }
-  virtual double liquidMassTranResBDF2(double dt) { return (1.5 * (1-_alpha) * _rho_l - 2.0 * (1-_alpha_o) * _rho_l_o + 0.5 * (1-_alpha_oo) * _rho_l_oo) / dt; }
-  virtual double gasMassTranResBDF2(double dt) { return (1.5 * _alpha * _rho_g - 2.0 * _alpha_o * _rho_g_o + 0.5 * _alpha_oo * _rho_g_oo) / dt; }
+  virtual double liquidMassTranResBDF2(double dt, double dt_o)
+  { return UTILS::BDF2Tran((1-_alpha)*_rho_l, (1-_alpha_o)*_rho_l_o, (1-_alpha_oo)*_rho_l_oo, dt, dt_o); }
+  virtual double gasMassTranResBDF2(double dt, double dt_o)
+  { return UTILS::BDF2Tran(_alpha*_rho_g, _alpha_o*_rho_g_o, _alpha_oo*_rho_g_oo, dt, dt_o); }
   virtual double liquidMassRHS(double dx);
   virtual double gasMassRHS(double dx);
   virtual void saveOldSlns();
@@ -120,8 +122,8 @@ public:
   { _vl_oo = _vl_o; _vl_o = _vl;   _vg_oo = _vg_o; _vg_o = _vg;}
   virtual double liquidVelTranRes(double dt) = 0;
   virtual double gasVelTranRes(double dt) = 0;
-  virtual double liquidVelTranResBDF2(double dt) = 0;
-  virtual double gasVelTranResBDF2(double dt) = 0;
+  virtual double liquidVelTranResBDF2(double dt, double dt_o) = 0;
+  virtual double gasVelTranResBDF2(double dt, double dt_o) = 0;
   virtual void computeRHS(bool compute_int_drag, unsigned order, double dx, double & rhs_l, double & rhs_g) = 0;
   virtual void computeFluxes() = 0;
   virtual void computeFluxes2nd() = 0;
@@ -156,9 +158,9 @@ public:
   virtual void computeFluxes() override final;
   virtual void computeFluxes2nd() override final;
   virtual double liquidVelTranRes(double /*dt*/) override final { return 0; }
-  virtual double liquidVelTranResBDF2(double /*dt*/) override final { return 0; }
+  virtual double liquidVelTranResBDF2(double /*dt*/, double /*dt_o*/) override final { return 0; }
   virtual double gasVelTranRes(double /*dt*/) override final { return 0; }
-  virtual double gasVelTranResBDF2(double /*dt*/) override final { return 0; }
+  virtual double gasVelTranResBDF2(double /*dt*/, double /*dt_o*/) override final { return 0; }
   virtual void computeRHS(bool /*compute_int_drag*/, unsigned /*order*/, double /*dx*/, double & rhs_l, double & rhs_g) override final
   { rhs_l = _vl_bc - _vl; rhs_g = _vg_bc - _vg; } // rhs will flip sign
 
@@ -175,9 +177,9 @@ public:
   virtual void computeFluxes() override final;
   virtual void computeFluxes2nd() override final;
   virtual double liquidVelTranRes(double dt) override final;
-  virtual double liquidVelTranResBDF2(double dt) override final;
+  virtual double liquidVelTranResBDF2(double dt, double dt_o) override final;
   virtual double gasVelTranRes(double dt) override final;
-  virtual double gasVelTranResBDF2(double dt) override final;
+  virtual double gasVelTranResBDF2(double dt, double dt_o) override final;
 
 protected:
   double _p_bc, _alpha_bc;
@@ -209,9 +211,9 @@ public:
   virtual void computeFluxes() override final;
   virtual void computeFluxes2nd() override final;
   virtual double liquidVelTranRes(double dt) override final;
-  virtual double liquidVelTranResBDF2(double dt) override final;
+  virtual double liquidVelTranResBDF2(double dt, double dt_o) override final;
   virtual double gasVelTranRes(double dt) override final;
-  virtual double gasVelTranResBDF2(double dt) override final;
+  virtual double gasVelTranResBDF2(double dt, double dt_o) override final;
   virtual void computeRHS(bool compute_int_drag, unsigned order, double dx, double & rhs_l, double & rhs_g) override final;
 };
 

@@ -88,11 +88,11 @@ void
 Cell4E1P::printConnection()
 {
   std::cout << _name << std::endl;
-  std::cout << "  "  << ((WEST_CELL == NULL) ? "NULL" : WEST_CELL->name()) << " -> ";
-  std::cout          << ((WEST_EDGE == NULL) ? "NULL" : WEST_EDGE->name()) << " -> ";
-  std::cout << _name << " -> ";
-  std::cout          << ((EAST_EDGE == NULL) ? "NULL" : EAST_EDGE->name()) << " -> ";
-  std::cout          << ((EAST_CELL == NULL) ? "NULL" : EAST_CELL->name()) << std::endl;
+  std::cout << "  "  << ((WEST_CELL == NULL) ? "NULL" : WEST_CELL->name()) << " -> "
+                     << ((WEST_EDGE == NULL) ? "NULL" : WEST_EDGE->name()) << " -> "
+                     << " -> "
+                     << ((EAST_EDGE == NULL) ? "NULL" : EAST_EDGE->name()) << " -> "
+                     << ((EAST_CELL == NULL) ? "NULL" : EAST_CELL->name()) << std::endl;
 }
 
 std::vector<unsigned>
@@ -155,11 +155,11 @@ void
 EdgeBase4E1P::printConnection()
 {
   std::cout << _name << std::endl;
-  std::cout << "  "  << ((WEST_EDGE == NULL) ? "NULL" : WEST_EDGE->name()) << " -> ";
-  std::cout          << ((WEST_CELL == NULL) ? "NULL" : WEST_CELL->name()) << " -> ";
-  std::cout << _name << " -> ";
-  std::cout          << ((EAST_CELL == NULL) ? "NULL" : EAST_CELL->name()) << " -> ";
-  std::cout          << ((EAST_EDGE == NULL) ? "NULL" : EAST_EDGE->name()) << std::endl;
+  std::cout << "  "  << ((WEST_EDGE == NULL) ? "NULL" : WEST_EDGE->name()) << " -> "
+                     << ((WEST_CELL == NULL) ? "NULL" : WEST_CELL->name()) << " -> "
+                     << " -> "
+                     << ((EAST_CELL == NULL) ? "NULL" : EAST_CELL->name()) << " -> "
+                     << ((EAST_EDGE == NULL) ? "NULL" : EAST_EDGE->name()) << std::endl;
 }
 
 std::vector<unsigned>
@@ -258,15 +258,15 @@ pBndryEdge4E1P::gasVelTranRes(double dt)
 }
 
 double
-pBndryEdge4E1P::liquidVelTranResBDF2(double dt)
+pBndryEdge4E1P::liquidVelTranResBDF2(double dt, double dt_o)
 {
-  return (1.5 * _vl - 2 * _vl_o + 0.5 * _vl_oo) / dt;
+  return UTILS::BDF2Tran(_vl, _vl_o, _vl_oo, dt, dt_o);
 }
 
 double
-pBndryEdge4E1P::gasVelTranResBDF2(double dt)
+pBndryEdge4E1P::gasVelTranResBDF2(double dt, double dt_o)
 {
-  return (1.5 * _vg - 2 * _vg_o + 0.5 * _vg_oo) / dt;
+  return UTILS::BDF2Tran(_vg, _vg_o, _vg_oo, dt, dt_o);
 }
 
 void
@@ -360,15 +360,17 @@ IntEdge4E1P::gasVelTranRes(double dt)
 }
 
 double
-IntEdge4E1P::liquidVelTranResBDF2(double dt)
+IntEdge4E1P::liquidVelTranResBDF2(double dt, double dt_o)
 {
-  return (1.5 * _vl - 2 * _vl_o + 0.5 * _vl_oo) / dt;
+  //return (1.5 * _vl - 2 * _vl_o + 0.5 * _vl_oo) / dt;
+  return UTILS::BDF2Tran(_vl, _vl_o, _vl_oo, dt, dt_o);
 }
 
 double
-IntEdge4E1P::gasVelTranResBDF2(double dt)
+IntEdge4E1P::gasVelTranResBDF2(double dt, double dt_o)
 {
-  return (1.5 * _vg - 2 * _vg_o + 0.5 * _vg_oo) / dt;
+  //return (1.5 * _vg - 2 * _vg_o + 0.5 * _vg_oo) / dt;
+  return UTILS::BDF2Tran(_vg, _vg_o, _vg_oo, dt, dt_o);
 }
 
 void
@@ -661,13 +663,13 @@ FourEqnOneP::transientResidual(double * res)
   {
     for(unsigned i = 0; i < _edges.size(); i++)
     {
-      res[4*i] = _edges[i]->liquidVelTranResBDF2(_dt);
-      res[4*i+1] = _edges[i]->gasVelTranResBDF2(_dt);
+      res[4*i] = _edges[i]->liquidVelTranResBDF2(_dt, _dt_old);
+      res[4*i+1] = _edges[i]->gasVelTranResBDF2(_dt, _dt_old);
     }
     for(unsigned i = 0; i < _cells.size(); i++)
     {
-      res[4*i+2] = _cells[i]->liquidMassTranResBDF2(_dt);
-      res[4*i+3] = _cells[i]->gasMassTranResBDF2(_dt);
+      res[4*i+2] = _cells[i]->liquidMassTranResBDF2(_dt, _dt_old);
+      res[4*i+3] = _cells[i]->gasMassTranResBDF2(_dt, _dt_old);
     }
   }
   else

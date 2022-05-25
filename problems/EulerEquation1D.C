@@ -94,9 +94,9 @@ EulerEquation1D::transientResidual(double * res)
     // see H. Nishikawa, "On large start-up error of BDF2", Journal of Computational Physics, Vol. 392, 2019, Pages 456-461
     for(unsigned i = 0; i < n_Cell; i++)
     {
-      res[idx++] = (1.5 * rho[i] - 2.0 * rho_old[i] + 0.5 * rho_oo[i]) / _dt;
-      res[idx++] = (1.5 * m[i]   - 2.0 * m_old[i]   + 0.5 * m_oo[i])   / _dt;
-      res[idx++] = (1.5 * E[i]   - 2.0 * E_old[i]   + 0.5 * E_oo[i])   / _dt;
+      res[idx++] = UTILS::BDF2Tran(rho[i], rho_old[i], rho_oo[i], _dt, _dt_old);
+      res[idx++] = UTILS::BDF2Tran(m[i],   m_old[i],   m_oo[i],   _dt, _dt_old);
+      res[idx++] = UTILS::BDF2Tran(E[i],   E_old[i],   E_oo[i],   _dt, _dt_old);
     }
   }
   else
